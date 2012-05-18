@@ -68,7 +68,7 @@ else
     RGBldr = RGBlog2Scaled;
 end
 
-% RGBldr = uint8(RGBldr * 255);
+RGBldr = uint8(RGBldr * 255);
 
 
 
@@ -148,19 +148,19 @@ function RGBldr = toneOperator(RGBlog2Scaled, LRemap, saturation, numtiles)
 
 % Colorspaces for HDR imagery is tricky.  For simplicity, assign the
 % log-luminance image to be in sRGB.
-Lab = colorspace('sRGB->Lab', RGBlog2Scaled);
+Lab = sRGB2Lab(RGBlog2Scaled);
 
 % Tone map the L* values from the RGB HDR to preserve overall color as much
 % as possible.  This decreases global saturation, which can be reintroduced
 % by scaling the a* and b* channels.
 Lab(:,:,1) = Lab(:,:,1) ./ 100;
-% Lab(:,:,1) = adapthisteq(Lab(:,:,1), 'NumTiles', numtiles);
+Lab(:,:,1) = adapthisteq(Lab(:,:,1), 'NumTiles', numtiles);
 Lab(:,:,1) = imadjust(Lab(:,:,1), LRemap, [0 1]) * 100;
 Lab(:,:,2) = Lab(:,:,2) * saturation;
 Lab(:,:,3) = Lab(:,:,3) * saturation;
 
 % Convert the image back to sRGB.
-RGBldr = colorspace('Lab->sRGB', Lab);
+RGBldr = Lab2sRGB(Lab);
 
 
 
@@ -183,3 +183,118 @@ else
     % Linearly scale the values to [0,1].
     y = (x - xMin) ./ (xMax - xMin);
 end
+
+
+
+function Lab = sRGB2Lab(rgb)
+% Convert sRGB values in the range [0,1] to Lab via XYZ.
+
+dims = size(rgb);
+rgb = reshape(permute(rgb, [3 1 2]), [3, dims(1) * dims(2)]);
+Lab = XYZ2Lab(sRGB2XYZ(rgb));
+Lab = permute(reshape(Lab, [3, dims(1), dims(2)]), [2 3 1]);
+
+
+
+function rgb = Lab2sRGB(lab)
+% Convert Lab values to sRGB values in the range [0,1] via XYZ.
+
+dims = size(lab);
+lab = reshape(permute(lab, [3 1 2]), [3, dims(1) * dims(2)]);
+rgb = XYZ2sRGB(Lab2XYZ(lab));
+rgb = permute(reshape(rgb, [3, dims(1), dims(2)]), [2 3 1]);
+
+
+function xyz = sRGB2XYZ(rgb)
+% Convert sRGB values to XYZ assuming a D65 whitepoint.
+
+% See <http://brucelindbloom.com/index.html?Eqn_RGB_to_XYZ.html> for
+% implementation details.
+M = [0.412424    0.212656    0.0193324  
+     0.357579    0.715158    0.119193
+     0.180464    0.0721856   0.950444];
+
+mask = (rgb > 0.04045);
+
+rgb(mask) = ((rgb(mask) + 0.055) ./ 1.055) .^ 2.4;
+rgb(~mask) = rgb(~mask) ./ 12.92;
+
+xyz = M' * rgb;
+
+
+function lab = XYZ2Lab(xyz)
+% Convert XYZ to Lab using a D65 whitepoint.
+
+% See <http://brucelindbloom.com/index.html?Eqn_XYZ_to_Lab.html> for
+% implementation details and explanation of E and K.
+E = 216/24389;
+K = 24389/27;
+
+% Whitepoint adjustment.
+xyz(1,:) = xyz(1,:) ./ 0.95047;
+xyz(3,:) = xyz(3,:) ./ 1.08883;
+
+mask = (xyz > E);
+
+f = xyz;
+f(mask) = f(mask) .^ (1/3);
+f(~mask) = (K * f(~mask) + 16) ./ 116;
+
+lab = [116 * f(2,:) - 16;
+       500 * (f(1,:) - f(2,:));
+       200 * (f(2,:) - f(3,:))];
+
+
+
+function xyz = Lab2XYZ(lab)
+% Convert Lab to XYZ using a D65 whitepoint.
+
+% See <http://brucelindbloom.com/index.html?Eqn_Lab_to_XYZ.html> for
+% implementation details and explanation of E and K.
+E = 216/24389;
+K = 24389/27;
+
+f = lab;
+xyz = f;
+
+mask = lab(1,:) > K*E;
+xyz(2,mask) = ((lab(1,mask) + 16) ./ 116) .^ 3;
+xyz(2,~mask) = lab(1,~mask) ./ K;
+
+mask = (xyz(2,:) > E);
+f(2,mask) = (lab(1,mask) + 16) ./ 116;
+f(2,~mask) = (K * xyz(2,~mask) + 16) ./ 116;
+
+f(1,:) = lab(2,:) ./ 500 + f(2,:);
+f(3,:) = f(2,:) - lab(3,:) ./ 200;
+
+tmp = f(1,:) .^ 3;
+mask = (tmp > E);
+xyz(1,mask) = tmp(mask);
+xyz(1,~mask) = (116 * f(1,~mask) - 16) ./ K;
+
+tmp = f(3,:) .^ 3;
+mask = (tmp > E);
+xyz(3,mask) = tmp(mask);
+xyz(3,~mask) = (116 * f(3,~mask) - 16) ./ K;
+
+% Whitepoint adjustment.
+xyz(1,:) = xyz(1,:) * 0.95047;
+xyz(3,:) = xyz(3,:) * 1.08883;
+
+
+
+function rgb = XYZ2sRGB(xyz)
+% Convert XYZ to sRGB using a D65 whitepoint.
+
+% See <http://brucelindbloom.com/index.html?Eqn_XYZ_to_RGB.html> for
+% implementation details.
+M = [0.412424    0.212656    0.0193324  
+     0.357579    0.715158    0.119193
+     0.180464    0.0721856   0.950444];
+
+rgb = M' \ xyz;
+
+mask = (rgb > 0.0031308);
+rgb(mask) = ((1.055 * rgb(mask)) .^ (1 / 2.4)) - 0.055;
+rgb(~mask) = 12.92 * rgb(~mask);
