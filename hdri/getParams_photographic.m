@@ -4,6 +4,8 @@ if ((nargin < 2) || isempty(mask)),
 	mask = true(size(imIn, 1), size(imIn, 2));
 end;
 
+% TODO: Perhaps add parameter to exclude bottom/top 1% of pixels?
+
 mask = repmat(mask, [1 1 size(imIn, 3)]);
 vals = imIn(mask);
 inds = ((vals > prctile(vals, 1)) & (vals < prctile(vals, 99)));

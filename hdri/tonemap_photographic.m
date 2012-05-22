@@ -14,6 +14,8 @@ if ((nargin < 4) || isempty(mask)),
 	mask = true(size(imIn, 1), size(imIn, 2));
 end;
 
+% TODO: Perhaps add parameter to exclude bottom/top 1% of pixels?
+
 mask = repmat(mask, [1 1 size(imIn, 3)]);
 imOut = key / meanlogv(imIn(mask)) * imIn;
 imOut = imOut .* (1 + imOut / (burn * maxv(imOut)) ^ 2) ./ (1 + imOut);
