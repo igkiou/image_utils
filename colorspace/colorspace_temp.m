@@ -248,7 +248,7 @@ case {'xyz','xyy','lab','luv','lch','cat02lms'}
    % Convert to CIE XYZ
    Image = xyz(Image,SrcSpace);
    % Convert XYZ to RGB
-   T = [3.2406, -1.5372, -0.4986; -0.9689, 1.8758, 0.0415; 0.0557, -0.2040, 1.057];
+   T = getXYZ2RGBTransform('d65');
    R = T(1)*Image(:,:,1) + T(4)*Image(:,:,2) + T(7)*Image(:,:,3);  % R
    G = T(2)*Image(:,:,1) + T(5)*Image(:,:,2) + T(8)*Image(:,:,3);  % G
    B = T(3)*Image(:,:,1) + T(6)*Image(:,:,2) + T(9)*Image(:,:,3);  % B
@@ -263,7 +263,7 @@ case {'xyz','xyy','lab','luv','lch','cat02lms'}
    Image(:,:,3) = gammacorrection(B);  % B'
 otherwise  % Conversion is through an affine transform
    T = gettransform(SrcSpace);
-   temp = inv(T(:,1:3));
+   temp = eye(3) / (T(:,1:3));
    T = [temp,-temp*T(:,4)];
    R = T(1)*Image(:,:,1) + T(4)*Image(:,:,2) + T(7)*Image(:,:,3) + T(10);
    G = T(2)*Image(:,:,1) + T(5)*Image(:,:,2) + T(8)*Image(:,:,3) + T(11);
@@ -287,7 +287,7 @@ case {'xyz','xyy','lab','luv','lch','cat02lms'}
    % Convert to CIE XYZ
    Image = xyz(Image,SrcSpace);
    % Convert XYZ to RGB
-   T = [3.2406, -1.5372, -0.4986; -0.9689, 1.8758, 0.0415; 0.0557, -0.2040, 1.057];
+   T = getXYZ2RGBTransform('d65');
    R = T(1)*Image(:,:,1) + T(4)*Image(:,:,2) + T(7)*Image(:,:,3);  % R
    G = T(2)*Image(:,:,1) + T(5)*Image(:,:,2) + T(8)*Image(:,:,3);  % G
    B = T(3)*Image(:,:,1) + T(6)*Image(:,:,2) + T(9)*Image(:,:,3);  % B
@@ -346,7 +346,7 @@ case {'lab','lch'}
    Image(:,:,3) = WhitePoint(3)*invf(fZ);  % Z
 case 'cat02lms'
    % Convert CAT02 LMS to XYZ
-   T = inv([0.7328, 0.4296, -0.1624;-0.7036, 1.6975, 0.0061; 0.0030, 0.0136, 0.9834]);
+   T = eye(3) / ([0.7328, 0.4296, -0.1624;-0.7036, 1.6975, 0.0061; 0.0030, 0.0136, 0.9834]);
    L = Image(:,:,1);
    M = Image(:,:,2);
    S = Image(:,:,3);
@@ -355,7 +355,7 @@ case 'cat02lms'
    Image(:,:,3) = T(3)*L + T(6)*M + T(9)*S;  % Z
 case 'rgb'
 	% Convert RGB to XYZ
-   T = inv([3.2406, -1.5372, -0.4986; -0.9689, 1.8758, 0.0415; 0.0557, -0.2040, 1.057]);
+   T = eye(3) / ([3.2406, -1.5372, -0.4986; -0.9689, 1.8758, 0.0415; 0.0557, -0.2040, 1.057]);
    R = Image(:,:,1);
    G = Image(:,:,2);
    B = Image(:,:,3);
@@ -370,7 +370,7 @@ otherwise   % Convert from some gamma-corrected space
    G = invgammacorrection(Image(:,:,2));
    B = invgammacorrection(Image(:,:,3));
    % Convert RGB to XYZ
-   T = inv([3.2406, -1.5372, -0.4986; -0.9689, 1.8758, 0.0415; 0.0557, -0.2040, 1.057]);
+   T = eye(3) / getXYZ2RGBTransform('d65');
    Image(:,:,1) = T(1)*R + T(4)*G + T(7)*B;  % X 
    Image(:,:,2) = T(2)*R + T(5)*G + T(8)*B;  % Y
    Image(:,:,3) = T(3)*R + T(6)*G + T(9)*B;  % Z
@@ -378,7 +378,7 @@ end
 return;
 
 function xyY = xyy(Image,SrcSpace)
-% Convert to HSV
+% Convert to xyY
 Image = xyz(Image,SrcSpace);
 xyY = zeros(size(Image));
 xyY(:, :, 1) = Image(:, :, 1) ./ sum(Image, 3);
@@ -528,21 +528,22 @@ H(Delta == 0) = nan;
 return;
 
 
-function Rp = gammacorrection(R)
-Rp = zeros(size(R));
-i = (R <= 0.0031306684425005883);
-Rp(i) = 12.92*R(i);
-Rp(~i) = real(1.055*R(~i).^0.416666666666666667 - 0.055);
-return;
+% igkiou: replaced with stand-alone function
+% function Rp = gammacorrection(R)
+% Rp = zeros(size(R));
+% i = (R <= 0.0031306684425005883);
+% Rp(i) = 12.92*R(i);
+% Rp(~i) = real(1.055*R(~i).^0.416666666666666667 - 0.055);
+% return;
 
 
-function R = invgammacorrection(Rp)
-R = zeros(size(Rp));
-i = (Rp <= 0.0404482362771076);
-R(i) = Rp(i)/12.92;
-R(~i) = real(((Rp(~i) + 0.055)/1.055).^2.4);
-return;
-
+% igkiou: replaced with stand-alone function 
+% function R = invgammacorrection(Rp)
+% R = zeros(size(Rp));
+% i = (Rp <= 0.0404482362771076);
+% R(i) = Rp(i)/12.92;
+% R(~i) = real(((Rp(~i) + 0.055)/1.055).^2.4);
+% return;
 
 function fY = f(Y)
 fY = real(Y.^(1/3));

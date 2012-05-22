@@ -1,19 +1,11 @@
-function imOut = tonemap_luminance(imIn, value, gammaCorrection)
+function imOut = tonemap_luminance(imIn, whitepoint, varargin)
 
-if ((nargin < 3) || isempty(gammaCorrection)),
-	gammaCorrection = 1;
+if ((nargin < 2) || isempty(whitepoint)),
+	whitepoint = 'D65';
 end;
 
-imInXYZ = RGB2XYZ(imIn, 'D65');
-imInxyY = XYZ2xyY(imInXYZ);
-
-imOutxyY = imInxyY;
-imOutxyY(:, :, 3) = tonemap_clipping(imInxyY(:, :, 3), 'percentile', value);
-imOutXYZ = xyY2XYZ(imOutxyY);
-imOut = XYZ2RGB(imOutXYZ, 'D65');
-
-if (ischar(gammaCorrection)),
-	imOut = feval(gammaCorrection, imOut);
-elseif (gammaCorrection ~= 1),
-	imOut = imOut .^ gammaCorrection;
-end;
+imOut = RGB2XYZ(imIn, whitepoint);
+imOut = XYZ2xyY(imOut);
+imOut(:, :, 3) = tonemap_clipping(imOut(:, :, 3), varargin{:});
+imOut = xyY2XYZ(imOut);
+imOut = XYZ2RGB(imOut, whitepoint);

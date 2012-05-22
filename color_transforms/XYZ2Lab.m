@@ -1,31 +1,34 @@
 function LAB = XYZ2Lab(XYZ, wtpoint)
 
-LAB = colorspace('XYZ->LAB', XYZ);
+if ((nargin < 2) || isempty(wtpoint)),
+	wtpoint = 'D65';
+end;
 
-% my implementation
-% if ((nargin < 2) || isempty(wtpoint)),
-% 	wtpoint = 'D65';
-% end;
-% 
-% WXYZ = whitepoint(wtpoint);
-% Xn = WXYZ(1);
-% Yn = WXYZ(2);
-% Zn = WXYZ(3);
-% 
-% LAB(:, :, 1) = 116 * f(XYZ(:, :, 2) / Yn) - 16;
-% LAB(:, :, 2) = 500 * (f(XYZ(:, :, 1) / Xn) - f(XYZ(:, :, 2) / Yn));
-% LAB(:, :, 3) = 200 * (f(XYZ(:, :, 2) / Yn) - f(XYZ(:, :, 3) / Zn));
-% 
-% end
-% 
-% function ft = f(t)
-% 
-% inds = t > (6 / 29) ^ 3;
-% ft = zeros(size(t));
-% ft(inds) = t(inds) .^ (1 / 3);
-% ft(~inds) = 1 / 3 * (29 / 6) ^ 2 * t(~inds) + 4 / 29;
-% 
-% end
+if (strcmpi(whitepoint, 'd65')),
+	LAB = colorspace('XYZ->LAB', XYZ);
+	return;
+else
+	WXYZ = whitepoint(wtpoint);
+	Xn = WXYZ(1);
+	Yn = WXYZ(2);
+	Zn = WXYZ(3);
+
+	LAB(:, :, 1) = 116 * f(XYZ(:, :, 2) / Yn) - 16;
+	LAB(:, :, 2) = 500 * (f(XYZ(:, :, 1) / Xn) - f(XYZ(:, :, 2) / Yn));
+	LAB(:, :, 3) = 200 * (f(XYZ(:, :, 2) / Yn) - f(XYZ(:, :, 3) / Zn));
+	return;
+end;
+
+end
+
+function ft = f(t)
+
+inds = t > (6 / 29) ^ 3;
+ft = zeros(size(t));
+ft(inds) = t(inds) .^ (1 / 3);
+ft(~inds) = 1 / 3 * (29 / 6) ^ 2 * t(~inds) + 4 / 29;
+
+end
 
 % implementation by matlab
 % function lab = XYZ2Lab(xyz)

@@ -1,17 +1,9 @@
-function imOut = tonemap_Lab(imIn, value, gammaCorrection)
+function imOut = tonemap_Lab(imIn, whitepoint, varargin)
 
-if ((nargin < 3) || isempty(gammaCorrection)),
-	gammaCorrection = 1;
+if ((nargin < 2) || isempty(whitepoint)),
+	whitepoint = 'D65';
 end;
 
-imInLab = RGB2Lab(imIn, 'D65');
-
-imOutLab = imInLab;
-imOutLab(:, :, 1) = tonemap_clipping(imInLab(:, :, 1), 'percentile', value);
-imOut = Lab2RGB(imOutLab, 'D65');
-
-if (ischar(gammaCorrection)),
-	imOut = feval(gammaCorrection, imOut);
-elseif (gammaCorrection ~= 1),
-	imOut = imOut .^ gammaCorrection;
-end;
+imOut = RGB2Lab(imIn, whitepoint);
+imOut(:, :, 1) = tonemap_clipping(imOut(:, :, 1), varargin{:});
+imOut = Lab2RGB(imOut, whitepoint);

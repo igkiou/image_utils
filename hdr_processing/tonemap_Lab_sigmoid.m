@@ -1,21 +1,9 @@
-function imOut = tonemap_Lab_sigmoid(imIn, gainType, gammaCorrection)
+function imOut = tonemap_Lab_sigmoid(imIn, whitepoint, varargin)
 
-if ((nargin < 2) || isempty(gainType)),
-	gainType = 'tanh';
+if ((nargin < 2) || isempty(whitepoint)),
+	whitepoint = 'D65';
 end;
 
-if ((nargin < 3) || isempty(gammaCorrection)),
-	gammaCorrection = 1;
-end;
-
-imInLab = RGB2Lab(imIn, 'D65');
-
-imOutLab = imInLab;
-imOutLab(:, :, 1) = tonemap_sigmoid_gain(imInLab(:, :, 1), gainType);
-imOut = Lab2RGB(imOutLab, 'D65');
-
-if (ischar(gammaCorrection)),
-	imOut = feval(gammaCorrection, imOut);
-elseif (gammaCorrection ~= 1),
-	imOut = imOut .^ gammaCorrection;
-end;
+imOut = RGB2Lab(imIn, whitepoint);
+imOut(:, :, 1) = tonemap_sigmoid_gain(imOut(:, :, 1), varargin{:});
+imOut = Lab2RGB(imOut, whitepoint);

@@ -8,7 +8,8 @@ function varargout = colorspace(Conversion,varargin)
 %   S tells the source and destination color spaces, S = 'dest<-src', or 
 %   alternatively, S = 'src->dest'.  Supported color spaces are
 %
-%     'RGB'              sRGB IEC 61966-2-1
+%     'sRGB'             sRGB IEC 61966-2-1
+%     'RGB'              linear RGB
 %     'YCbCr'            Luma + Chroma ("digitized" version of Y'PbPr)
 %     'JPEG-YCbCr'       Luma + Chroma space used in JFIF JPEG
 %     'YDbDr'            SECAM Y'DbDr Luma + Chroma
@@ -120,7 +121,7 @@ if ~ischar(SrcT) && ~ischar(DestT)
    Temp(:,:,3) = T(3)*Image(:,:,1) + T(6)*Image(:,:,2) + T(9)*Image(:,:,3) + T(12);
    Image = Temp;
 elseif ~ischar(DestT)
-   Image = rgb(Image,SrcSpace);
+   Image = srgb(Image,SrcSpace);
    Temp = zeros(size(Image));
    Temp(:,:,1) = DestT(1)*Image(:,:,1) + DestT(4)*Image(:,:,2) + DestT(7)*Image(:,:,3) + DestT(10);
    Temp(:,:,2) = DestT(2)*Image(:,:,1) + DestT(5)*Image(:,:,2) + DestT(8)*Image(:,:,3) + DestT(11);
@@ -176,7 +177,7 @@ function Space = alias(Space)
 Space = strrep(strrep(Space,'cie',''),' ','');
 
 if isempty(Space)
-   Space = 'rgb';
+   Space = 'srgb';
 end
 
 switch Space
@@ -186,7 +187,7 @@ case {'hsv','hsb'}
    Space = 'hsv';
 case {'hsl','hsi','hls'}
    Space = 'hsl';
-case {'rgb','yuv','yiq','ydbdr','ycbcr','jpegycbcr','xyz','xyy','lab','luv','lch'}
+case {'srgb','rgb','yuv','yiq','ydbdr','ycbcr','jpegycbcr','xyz','xyy','lab','luv','lch'}
    return;
 end
 return;
@@ -218,7 +219,7 @@ case 'ycbcr'
 case 'jpegycbcr'
    % Wikipedia: http://en.wikipedia.org/wiki/YCbCr
    T = [0.299,0.587,0.114,0;-0.168736,-0.331264,0.5,0.5;0.5,-0.418688,-0.081312,0.5]*255;
-case {'rgb','xyz','xyy','hsv','hsl','lab','luv','lch','cat02lms'}
+case {'srgb','rgb','xyz','xyy','hsv','hsl','lab','luv','lch','cat02lms'}
    T = Space;
 otherwise
    error(['Unknown color space, ''',Space,'''.']);
@@ -226,24 +227,28 @@ end
 return;
 
 
-function Image = rgb(Image,SrcSpace)
+function Image = srgb(Image,SrcSpace)
 % Convert to sRGB from 'SrcSpace'
 switch SrcSpace
-case 'rgb'
+case 'srgb'
    return;
+case 'rgb'
+   Image(:,:,1) = gammacorrection(Image(:,:,1));  % R'
+   Image(:,:,2) = gammacorrection(Image(:,:,2));  % G'
+   Image(:,:,3) = gammacorrection(Image(:,:,3));  % B'
 case 'hsv'
    % Convert HSV to sRGB
-   Image = huetorgb((1 - Image(:,:,2)).*Image(:,:,3),Image(:,:,3),Image(:,:,1));
+   Image = huetosrgb((1 - Image(:,:,2)).*Image(:,:,3),Image(:,:,3),Image(:,:,1));
 case 'hsl'
    % Convert HSL to sRGB
    L = Image(:,:,3);
    Delta = Image(:,:,2).*min(L,1-L);
-   Image = huetorgb(L-Delta,L+Delta,Image(:,:,1));
+   Image = huetosrgb(L-Delta,L+Delta,Image(:,:,1));
 case {'xyz','xyy','lab','luv','lch','cat02lms'}
    % Convert to CIE XYZ
    Image = xyz(Image,SrcSpace);
    % Convert XYZ to RGB
-   T = [3.2406, -1.5372, -0.4986; -0.9689, 1.8758, 0.0415; 0.0557, -0.2040, 1.057];
+   T = getXYZ2RGBTransform('d65');
    R = T(1)*Image(:,:,1) + T(4)*Image(:,:,2) + T(7)*Image(:,:,3);  % R
    G = T(2)*Image(:,:,1) + T(5)*Image(:,:,2) + T(8)*Image(:,:,3);  % G
    B = T(3)*Image(:,:,1) + T(6)*Image(:,:,2) + T(9)*Image(:,:,3);  % B
@@ -258,7 +263,7 @@ case {'xyz','xyy','lab','luv','lch','cat02lms'}
    Image(:,:,3) = gammacorrection(B);  % B'
 otherwise  % Conversion is through an affine transform
    T = gettransform(SrcSpace);
-   temp = inv(T(:,1:3));
+   temp = eye(3) / (T(:,1:3));
    T = [temp,-temp*T(:,4)];
    R = T(1)*Image(:,:,1) + T(4)*Image(:,:,2) + T(7)*Image(:,:,3) + T(10);
    G = T(2)*Image(:,:,1) + T(5)*Image(:,:,2) + T(8)*Image(:,:,3) + T(11);
@@ -273,6 +278,37 @@ end
 % Image = min(max(Image,0),1);
 return;
 
+function Image = rgb(Image,SrcSpace)
+% Convert to RGB from 'SrcSpace'
+switch SrcSpace
+case 'rgb'
+   return;
+case {'xyz','xyy','lab','luv','lch','cat02lms'}
+   % Convert to CIE XYZ
+   Image = xyz(Image,SrcSpace);
+   % Convert XYZ to RGB
+   T = getXYZ2RGBTransform('d65');
+   R = T(1)*Image(:,:,1) + T(4)*Image(:,:,2) + T(7)*Image(:,:,3);  % R
+   G = T(2)*Image(:,:,1) + T(5)*Image(:,:,2) + T(8)*Image(:,:,3);  % G
+   B = T(3)*Image(:,:,1) + T(6)*Image(:,:,2) + T(9)*Image(:,:,3);  % B
+   % Desaturate and rescale to constrain resulting RGB values to [0,1]   
+   AddWhite = -min(min(min(R,G),B),0);
+   Image(:,:,1) = R + AddWhite;
+   Image(:,:,2) = G + AddWhite;
+   Image(:,:,3) = B + AddWhite;
+	otherwise  % Convert from some gamma-corrected space
+   % Convert to sRGB
+	Image = srgb(Image,SrcSpace);
+   % Undo gamma correction
+   Image(:,:,1) = invgammacorrection(Image(:,:,1));
+   Image(:,:,2) = invgammacorrection(Image(:,:,2));
+   Image(:,:,3) = invgammacorrection(Image(:,:,3));
+end
+
+% NOTE: change by igkiou, commented this out.
+% Clip to [0,1]
+% Image = min(max(Image,0),1);
+return;
 
 function Image = xyz(Image,SrcSpace)
 % Convert to CIE XYZ from 'SrcSpace'
@@ -309,23 +345,32 @@ case {'lab','lch'}
    Image(:,:,2) = WhitePoint(2)*invf(fY);  % Y
    Image(:,:,3) = WhitePoint(3)*invf(fZ);  % Z
 case 'cat02lms'
-    % Convert CAT02 LMS to XYZ
-   T = inv([0.7328, 0.4296, -0.1624;-0.7036, 1.6975, 0.0061; 0.0030, 0.0136, 0.9834]);
+   % Convert CAT02 LMS to XYZ
+   T = eye(3) / ([0.7328, 0.4296, -0.1624;-0.7036, 1.6975, 0.0061; 0.0030, 0.0136, 0.9834]);
    L = Image(:,:,1);
    M = Image(:,:,2);
    S = Image(:,:,3);
    Image(:,:,1) = T(1)*L + T(4)*M + T(7)*S;  % X 
    Image(:,:,2) = T(2)*L + T(5)*M + T(8)*S;  % Y
    Image(:,:,3) = T(3)*L + T(6)*M + T(9)*S;  % Z
+case 'rgb'
+	% Convert RGB to XYZ
+   T = eye(3) / ([3.2406, -1.5372, -0.4986; -0.9689, 1.8758, 0.0415; 0.0557, -0.2040, 1.057]);
+   R = Image(:,:,1);
+   G = Image(:,:,2);
+   B = Image(:,:,3);
+   Image(:,:,1) = T(1)*R + T(4)*G + T(7)*B;  % X 
+   Image(:,:,2) = T(2)*R + T(5)*G + T(8)*B;  % Y
+   Image(:,:,3) = T(3)*R + T(6)*G + T(9)*B;  % Z
 otherwise   % Convert from some gamma-corrected space
    % Convert to sRGB
-   Image = rgb(Image,SrcSpace);
+   Image = srgb(Image,SrcSpace);
    % Undo gamma correction
    R = invgammacorrection(Image(:,:,1));
    G = invgammacorrection(Image(:,:,2));
    B = invgammacorrection(Image(:,:,3));
    % Convert RGB to XYZ
-   T = inv([3.2406, -1.5372, -0.4986; -0.9689, 1.8758, 0.0415; 0.0557, -0.2040, 1.057]);
+   T = eye(3) / getXYZ2RGBTransform('d65');
    Image(:,:,1) = T(1)*R + T(4)*G + T(7)*B;  % X 
    Image(:,:,2) = T(2)*R + T(5)*G + T(8)*B;  % Y
    Image(:,:,3) = T(3)*R + T(6)*G + T(9)*B;  % Z
@@ -333,7 +378,7 @@ end
 return;
 
 function xyY = xyy(Image,SrcSpace)
-% Convert to HSV
+% Convert to xyY
 Image = xyz(Image,SrcSpace);
 xyY = zeros(size(Image));
 xyY(:, :, 1) = Image(:, :, 1) ./ sum(Image, 3);
@@ -343,10 +388,10 @@ return;
 
 function Image = hsv(Image,SrcSpace)
 % Convert to HSV
-Image = rgb(Image,SrcSpace);
+Image = srgb(Image,SrcSpace);
 V = max(Image,[],3);
 S = (V - min(Image,[],3))./(V + (V == 0));
-Image(:,:,1) = rgbtohue(Image);
+Image(:,:,1) = srgbtohue(Image);
 Image(:,:,2) = S;
 Image(:,:,3) = V;
 return;
@@ -364,14 +409,14 @@ case 'hsv'
    Image(:,:,2) = 0.5*(MaxVal - MinVal)./(temp + (temp == 0));
    Image(:,:,3) = L;
 otherwise
-   Image = rgb(Image,SrcSpace);  % Convert to sRGB
+   Image = srgb(Image,SrcSpace);  % Convert to sRGB
    % Convert sRGB to HSL
    MinVal = min(Image,[],3);
    MaxVal = max(Image,[],3);
    L = 0.5*(MaxVal + MinVal);
    temp = min(L,1-L);
    S = 0.5*(MaxVal - MinVal)./(temp + (temp == 0));
-   Image(:,:,1) = rgbtohue(Image);
+   Image(:,:,1) = srgbtohue(Image);
    Image(:,:,2) = S;
    Image(:,:,3) = L;
 end
@@ -447,7 +492,7 @@ Image(:,:,3) = T(3)*X + T(6)*Y + T(9)*Z;  % S
 return;
 
 
-function Image = huetorgb(m0,m2,H)
+function Image = huetosrgb(m0,m2,H)
 % Convert HSV or HSL hue to RGB
 N = size(H);
 H = min(max(H(:),0),360)/60;
@@ -462,7 +507,7 @@ Image = reshape([M(j(k,1)+(1:Num).'),M(j(k,2)+(1:Num).'),M(j(k,3)+(1:Num).')],[N
 return;
 
 
-function H = rgbtohue(Image)
+function H = srgbtohue(Image)
 % Convert RGB to HSV or HSL hue
 [M,i] = sort(Image,3);
 i = i(:,:,3);
@@ -483,21 +528,22 @@ H(Delta == 0) = nan;
 return;
 
 
-function Rp = gammacorrection(R)
-Rp = zeros(size(R));
-i = (R <= 0.0031306684425005883);
-Rp(i) = 12.92*R(i);
-Rp(~i) = real(1.055*R(~i).^0.416666666666666667 - 0.055);
-return;
+% igkiou: replaced with stand-alone function
+% function Rp = gammacorrection(R)
+% Rp = zeros(size(R));
+% i = (R <= 0.0031306684425005883);
+% Rp(i) = 12.92*R(i);
+% Rp(~i) = real(1.055*R(~i).^0.416666666666666667 - 0.055);
+% return;
 
 
-function R = invgammacorrection(Rp)
-R = zeros(size(Rp));
-i = (Rp <= 0.0404482362771076);
-R(i) = Rp(i)/12.92;
-R(~i) = real(((Rp(~i) + 0.055)/1.055).^2.4);
-return;
-
+% igkiou: replaced with stand-alone function 
+% function R = invgammacorrection(Rp)
+% R = zeros(size(Rp));
+% i = (Rp <= 0.0404482362771076);
+% R(i) = Rp(i)/12.92;
+% R(~i) = real(((Rp(~i) + 0.055)/1.055).^2.4);
+% return;
 
 function fY = f(Y)
 fY = real(Y.^(1/3));
