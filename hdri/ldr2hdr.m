@@ -1,4 +1,4 @@
-function hdr = makehdr(filenames, relExposures)
+function hdr = ldr2hdr(filenames, relExposures)
 %MAKEHDR    Create high dynamic range image.
 %   HDR = MAKEHDR(FILES) creates the single-precision high dynamic range
 %   image HDR from the set of spatially registered low dynamic range
