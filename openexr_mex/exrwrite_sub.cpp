@@ -67,7 +67,7 @@ void writeScanLineXYZ(const char fileName[], \
 		int &width,
 		int &height) {
 	Header header(width, height);
-    Chromaticities c1(V2f(1.0, 0.0), V2f(0.0, 0.1), V2f(0.0, 0.0), V2f(1.0 / 3.0, 1.0 / 3.0));
+    Chromaticities c1(V2f(1.0, 0.0), V2f(0.0, 1.0), V2f(0.0, 0.0), V2f(1.0 / 3.0, 1.0 / 3.0));
     addChromaticities(header, c1);
 
 	header.channels().insert("R", Channel(USEDC));

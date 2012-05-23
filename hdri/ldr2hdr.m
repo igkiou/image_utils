@@ -1,4 +1,4 @@
-function hdr = ldr2hdr(filenames, relExposures)
+function hdr = ldr2hdr_matlab(filenames, varargin)
 %MAKEHDR    Create high dynamic range image.
 %   HDR = MAKEHDR(FILES) creates the single-precision high dynamic range
 %   image HDR from the set of spatially registered low dynamic range
@@ -74,8 +74,18 @@ function hdr = ldr2hdr(filenames, relExposures)
 %   Copyright 2007-2008 The MathWorks, Inc.
 %   $Revision: 1.1.6.2 $  $Date: 2008/02/07 16:30:47 $
 
-minclip = 5;
-maxclip = 4034;
+% Parse and check inputs.
+iptcheckinput(filenames, {'cell'}, {'nonempty'}, mfilename, 'files', 1);
+options = parseArgs(varargin{:});
+validateOptions(filenames, options);
+
+% Get the minimum exposure image from the user or make a first pass through
+% the images to find the lowest exposure image.
+if (~isempty(options.basefile))
+    [baseTime, baseFStop] = getExposure(options.basefile);
+elseif (isempty(options.relexp) && isempty(options.expvals))
+    [baseTime, baseFStop] = getAverageExposure(filenames);
+end
 
 % Create output variables for an accumulator and the number of LDR images
 % that contributed to each pixel.
@@ -91,14 +101,27 @@ someProperlyExposed = false(size(hdr));
 for p = 1:numel(filenames)
 
     fname = filenames{p};
-    relExposure = relExposures(p);
-    % Read the LDR image
-    ldr = imread(fname);
     
-    underExposed = ldr < minclip;
+    if (~isempty(options.expvals))
+        % Convert log2 EV equivalents to decimal values.
+        relExposure = 2 .^ options.expvals(p);
+    elseif (~isempty(options.relexp))
+        relExposure = options.relexp(p);
+    else
+		[this_ExposureTime, this_FNumber] = getExposure(fname);
+        relExposure = computeRelativeExposure(baseFStop, ...
+                                              baseTime, ...
+                                              this_FNumber, ...
+                                              this_ExposureTime);
+    end
+
+    % Read the LDR image
+    ldr = loadImage(fname, meta);
+    
+    underExposed = ldr < options.minclip;
     someUnderExposed = someUnderExposed | underExposed;
     
-    overExposed = ldr > maxclip;
+    overExposed = ldr > options.maxclip;
     someOverExposed = someOverExposed | overExposed;
     
     properlyExposed = ~(underExposed | overExposed);
@@ -108,11 +131,7 @@ for p = 1:numel(filenames)
     
     % Remove over- and under-exposed values.
     ldr(~properlyExposed) = 0;
-
-
-%     ldr(ldr < minclip) = minclip;
-% 	 ldr(ldr > maxclip) = maxclip;
-
+    
     % Bring the intensity of the LDR image into a common HDR domain by
     % "normalizing" using the relative exposure, and then add it to the
     % accumulator.
@@ -134,12 +153,123 @@ hdr(someUnderExposed & ~someOverExposed & ~someProperlyExposed) = min(hdr(somePr
 
 % For pixels that were sometimes underexposed, sometimes
 % overexposed, and never properly exposed, use roifill.
-% fillMask = imdilate(someUnderExposed & someOverExposed & ~someProperlyExposed, ones(3,3));
-% if any(fillMask(:))
-%     hdr(:,:,1) = roifill(hdr(:,:,1), fillMask(:,:,1));
-%     hdr(:,:,2) = roifill(hdr(:,:,2), fillMask(:,:,2));
-%     hdr(:,:,3) = roifill(hdr(:,:,3), fillMask(:,:,3));
-% end
+fillMask = imdilate(someUnderExposed & someOverExposed & ~someProperlyExposed, ones(3,3));
+if any(fillMask(:))
+    hdr(:,:,1) = roifill(hdr(:,:,1), fillMask(:,:,1));
+    hdr(:,:,2) = roifill(hdr(:,:,2), fillMask(:,:,2));
+    hdr(:,:,3) = roifill(hdr(:,:,3), fillMask(:,:,3));
+end
+
+function [baseTime, baseFStop] = getExposure(filename)
+% Extract the exposure values from a file containing EXIF metadata.
+
+exif = getExposureDataFromFile(filename);
+baseFStop = exif.FNumber;
+baseTime = exif.ExposureTime;
+
+
+function [baseTime, baseFStop] = getAverageExposure(filenames)
+% Extract the average exposure (assuming constant illumination) from a set
+% of files containing EXIF metadata.  The average exposure may not actually
+% correspond to the exposure of any particular image.
+
+minTime = 0;
+minFStop = 0;
+maxTime = 0;
+maxFStop = 0;
+
+% Look through all of the files and keep track of the least and greatest
+% exposure.
+for p = 1:numel(filenames)
+
+    exif = getExposureDataFromFile(filenames{p});
+    
+    if (p == 1)
+        
+        % First file.
+        minFStop = exif.FNumber;
+        minTime = exif.ExposureTime;
+        maxFStop = exif.FNumber;
+        maxTime = exif.ExposureTime;
+        
+    else
+        
+        % Nth file.
+        if (computeRelativeExposure(minFStop, ...
+                                    minTime, ...
+                                    exif.FNumber, ...
+                                    exif.ExposureTime) < 1)
+
+            % Image has least exposure so far.
+            minFStop = exif.FNumber;
+            minTime = exif.ExposureTime;
+            
+        elseif (computeRelativeExposure(maxFStop, ...
+                                        maxTime, ...
+                                        exif.FNumber, ...
+                                        exif.ExposureTime) > 1)
+            
+            % Image has most exposure so far.
+            maxFStop = exif.FNumber;
+            maxTime = exif.ExposureTime;
+            
+        end
+    
+    end
+    
+end
+
+% Determine the "middle" exposure value.  It's easier to manipulate
+% exposure time rather than f/stop.
+re = computeRelativeExposure(minFStop, minTime, ...
+                             maxFStop, maxTime);
+baseFStop = minFStop;
+baseTime  = minTime * log2(re);
+
+
+function exif = getExposureDataFromFile(filename)
+% Extract exposure metadata from a file containing EXIF.
+
+try
+
+    meta = imfinfo(filename);
+    if isfield(meta, 'DigitalCamera')
+        exif = meta.DigitalCamera;
+    else
+
+		error('Images:makehdr:exifFormat', ...
+			  'File %s does not have EXIF metadata.  %s', ...
+			  filename, ...
+              'Use the ''ExposureValues'' or ''RelativeExposure'' parameter to provide exposure information.');
+ 
+    end
+    
+catch ME
+
+    if (isequal(ME.identifier, 'MATLAB:imfinfo:fileOpen'))
+
+        error('Images:makehdr:fileNotFound', ...
+              'File %s does not exist.', filename);
+          
+    else
+        
+        % Unexpected error.
+        rethrow(ME)
+        
+    end
+end
+
+if (isempty(exif) || ...
+    ~isstruct(exif) || ...
+    ~isfield(exif, 'FNumber') || ...
+    ~isfield(exif, 'ExposureTime'))
+    
+    error('Images:makehdr:noExposureMetadata', ...
+          'File %s does not have exposure metadata.  Use the ''ExposureValues'' or ''RelativeExposure'' parameter to provide exposure information.', filename)
+      
+end
+
+
 
 function relExposure = computeRelativeExposure(f1, t1, f2, t2)
 
@@ -147,9 +277,76 @@ function relExposure = computeRelativeExposure(f1, t1, f2, t2)
 % square of the F-stop number. 
 relExposure = (f1 / f2)^2 * (t2 / t1);
 
+
+function options = parseArgs(varargin)
+% Parse the parameter-value pairs, getting default values.
+
+knownParams = {'BaseFile',         'basefile', '', {'char'},    {'vector'};
+               'ExposureValues',   'expvals',  [], {'numeric'}, {'vector', 'real', 'finite', 'nonnan'};
+               'RelativeExposure', 'relexp',   [], {'numeric'}, {'vector', 'real', 'finite', 'positive', 'nonzero'};
+               'MinimumLimit',     'minclip',   5, {'numeric'}, {'scalar', 'integer', 'real', 'nonnan', 'positive'};
+               'MaximumLimit',     'maxclip', 250, {'numeric'}, {'scalar', 'integer', 'real', 'nonnan', 'positive'}};
+           
+options = parseParameterValuePairs(mfilename, knownParams, varargin{:});
+
+
+function validateOptions(filenames, options)
+
+% Make sure that mutually exclusive options aren't provided.
+fieldCount = 0;
+
+if (~isempty(options.basefile))
+    fieldCount = fieldCount + 1;
+end
+if (~isempty(options.expvals))
+    fieldCount = fieldCount + 1;
+end
+if (~isempty(options.relexp))
+    fieldCount = fieldCount + 1;
+end
+
+if (fieldCount > 1)
+    
+    error('Images:makehdr:tooManyExposureParameters', ...
+          'Only one of the following parameters is allowed: ''BaseFile'', ''ExposureValues'', or ''RelativeExposure''.')
+    
+end
+
+% Make sure that the correct number of exposure-related values are given.
+if (~isempty(options.expvals) && (numel(options.expvals) ~= numel(filenames)))
+    
+    error('Images:makehdr:wrongExposureValuesCount', ...
+          'The number of ''ExposureValues'' elements must match the number of files.')
+    
+elseif (~isempty(options.relexp) && (numel(options.relexp) ~= numel(filenames)))
+    
+    error('Images:makehdr:wrongRelativeExposureCount', ...
+          'The number of ''RelativeExposure'' elements must match the number of files.')
+    
+end
+
+
 function [hdr, counts] = makeContainers(meta)
 % Create a floating point accumulator for the final HDR image and a counter
 % for the number of contributing images.
 
-hdr = zeros(meta.Height, meta.Width, 1, 'single');
-counts = zeros(meta.Height, meta.Width, 1, 'single');
+if (~isequal(meta.ColorType, 'truecolor'))
+    error('Images:makehdr:notRGB', ...
+          'Low dynamic range images must be RGB.')
+end
+
+hdr = zeros(meta.Height, meta.Width, 3, 'single');
+counts = zeros(meta.Height, meta.Width, 3, 'single');
+
+
+function ldr = loadImage(fname, meta)
+
+ldr = imread(fname);
+
+if (~isequal(size(ldr), [meta.Height, meta.Width, 3]))
+
+    error('Images:makehdr:imageDimensions', ...
+        'Low dynamic range image dimensions must agree.  File ''%s'' does not match.', ...
+        fname);
+
+end
