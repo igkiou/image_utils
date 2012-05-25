@@ -1,22 +1,11 @@
-#include "ImathBox.h"
-#include "ImfRgba.h"
-#include "ImfRgbaFile.h"
-#include "ImfInputFile.h"
-#include "ImfHeader.h"
-#include "ImfArray.h"
-#include "ImfChannelList.h"
-#include "ImfPixelType.h"
-#include "Iex.h"
+/*
+ * exrread.cpp
+ *
+ *  Created on: Jun 14, 2011
+ *      Author: igkiou
+ */
 
-#include "mex.h"
-#include "matrix.h"
-
-using namespace Imf;
-using namespace Imath;
-using namespace Iex;
-
-#define USED float
-#define USEDC FLOAT
+#include "openexr_mex.h"
 
 void readScanLine(const char fileName[], \
 		Array2D<USED> &rPixels, bool &rFlag, \
@@ -96,7 +85,7 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[]) {
 	bool rFlag, gFlag, bFlag, aFlag;
 	int width;
 	int height;
-	int length = mxGetNumberOfElements(prhs[0]) + 1;
+	const int length = mxGetNumberOfElements(prhs[0]) + 1;
 	char fileName[length];
 	mxGetString(prhs[0], fileName, length);
 	readScanLine(fileName, rPixels, rFlag, gPixels, gFlag, bPixels, bFlag, \

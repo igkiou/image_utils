@@ -26,6 +26,7 @@
 								<option id="gnu.cpp.compiler.option.include.paths.669501770" name="Include paths (-I)" superClass="gnu.cpp.compiler.option.include.paths" valueType="includePath">
 									<listOptionValue builtIn="false" value="/usr/include/OpenEXR"/>
 									<listOptionValue builtIn="false" value="/usr/local/matlabR2010a/extern/include"/>
+									<listOptionValue builtIn="false" value="/home/igkiou/openexr-1.6.1/IlmImf"/>
 								</option>
 								<inputType id="cdt.managedbuild.tool.gnu.cpp.compiler.input.990606469" superClass="cdt.managedbuild.tool.gnu.cpp.compiler.input"/>
 							</tool>
@@ -33,6 +34,7 @@
 								<option id="gnu.c.compiler.option.include.paths.1639393331" name="Include paths (-I)" superClass="gnu.c.compiler.option.include.paths" valueType="includePath">
 									<listOptionValue builtIn="false" value="/usr/local/matlabR2010a/extern/include"/>
 									<listOptionValue builtIn="false" value="/usr/include/OpenEXR"/>
+									<listOptionValue builtIn="false" value="/home/igkiou/openexr-1.6.1/IlmImf"/>
 								</option>
 								<inputType id="cdt.managedbuild.tool.gnu.c.compiler.input.1156872256" superClass="cdt.managedbuild.tool.gnu.c.compiler.input"/>
 							</tool>
@@ -48,6 +50,10 @@
 							</tool>
 						</toolChain>
 					</folderInfo>
+					<sourceEntries>
+						<entry excluding="openexr_source" flags="VALUE_WORKSPACE_PATH|RESOLVED" kind="sourcePath" name=""/>
+						<entry flags="VALUE_WORKSPACE_PATH|RESOLVED" kind="sourcePath" name="openexr_source"/>
+					</sourceEntries>
 				</configuration>
 			</storageModule>
 			<storageModule moduleId="org.eclipse.cdt.core.externalSettings"/>

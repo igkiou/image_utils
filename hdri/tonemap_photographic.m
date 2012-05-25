@@ -19,3 +19,4 @@ end;
 mask = repmat(mask, [1 1 size(imIn, 3)]);
 imOut = key / meanlogv(imIn(mask)) * imIn;
 imOut = imOut .* (1 + imOut / (burn * maxv(imOut)) ^ 2) ./ (1 + imOut);
+% imOut = imOut ./ (1 + imOut);

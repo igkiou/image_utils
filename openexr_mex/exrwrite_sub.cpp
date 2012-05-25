@@ -1,31 +1,11 @@
 /*
- * writeexr.cpp
+ * exrwrite_sub.cpp
  *
  *  Created on: Jun 14, 2011
  *      Author: igkiou
  */
 
-#include "ImathBox.h"
-#include "ImfRgba.h"
-#include "ImfRgbaFile.h"
-#include "ImfInputFile.h"
-#include "ImfOutputFile.h"
-#include "ImfHeader.h"
-#include "ImfArray.h"
-#include "ImfChannelList.h"
-#include "ImfPixelType.h"
-#include "ImfStandardAttributes.h"
-#include "Iex.h"
-
-#include "mex.h"
-#include "matrix.h"
-
-using namespace Imf;
-using namespace Imath;
-using namespace Iex;
-
-#define USED float
-#define USEDC FLOAT
+#include "openexr_mex.h"
 
 void writeScanLineRGB(const char fileName[], \
 		const USED *rPixels, \
@@ -143,7 +123,7 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[]) {
 	if (!mxIsChar(prhs[2])) {
 		mexErrMsgTxt("Third argument must be a string.");
 	}
-	int length = mxGetNumberOfElements(prhs[2]) + 1;
+	const int length = mxGetNumberOfElements(prhs[2]) + 1;
 	char fileName[length];
 	mxGetString(prhs[2], fileName, length);
 
