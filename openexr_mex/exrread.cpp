@@ -85,13 +85,13 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[]) {
 	bool rFlag, gFlag, bFlag, aFlag;
 	int width;
 	int height;
-	const int length = mxGetNumberOfElements(prhs[0]) + 1;
-	char fileName[length];
-	mxGetString(prhs[0], fileName, length);
+	const int lengthFileName = mxGetNumberOfElements(prhs[0]) + 1;
+	char* fileName = (char *) mxMalloc(lengthFileName * sizeof(char));
+	mxGetString(prhs[0], fileName, lengthFileName);
 	readScanLine(fileName, rPixels, rFlag, gPixels, gFlag, bPixels, bFlag, \
 			aPixels, aFlag, width, height);
 
-	const int dims[3] = {height, width, 3};
+	const mwSize dims[3] = {height, width, 3};
 	plhs[0] = mxCreateNumericArray(3, dims, mxSINGLE_CLASS, mxREAL); /* x */
 	float *r = (float *) mxGetData(plhs[0]);
 	float *g = &r[width * height];
@@ -124,4 +124,6 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[]) {
 			}
 		}
 	}
+
+	mxFree(fileName);
 }

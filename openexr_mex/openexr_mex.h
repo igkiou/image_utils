@@ -21,13 +21,11 @@
 #include "ImfChannelList.h"
 #include "ImfAttribute.h"
 #include "ImfStandardAttributes.h"
-#include "ImfChromaticitiesAttribute.h"
-#include "ImfVectorAttribute.h"
-#include "ImfStandardAttributes.h"
+#include "ImfExtraAttributes.h"
 #include "ImfPixelType.h"
 #include "Iex.h"
-#include <string>
 #include <vector>
+#include <string>
 
 #include "mex.h"
 #include "matrix.h"
@@ -60,6 +58,58 @@ enum ATTR_TYPE {
 	ATTR_INT,
 	ATTR_UNKNOWN = 18
 };
+
+inline ATTR_TYPE attrNameToAttrType(const char * query) {
+	if (!strcmp(query, "gain")) {
+		return ATTR_FLOAT;
+	} else if (!strcmp(query, "wavelength")) {
+		return ATTR_FLOAT;
+	} else if (!strcmp(query, "extTube")) {
+		return ATTR_STRING;
+	} else if (!strcmp(query, "lens")) {
+		return ATTR_STRING;
+	} else if (!strcmp(query, "material")) {
+		return ATTR_STRING;
+	} else if (!strcmp(query, "chromaticities")) {
+		return ATTR_CHROMATICITIES;
+	} else if (!strcmp(query, "whiteLuminance")) {
+		return ATTR_FLOAT;
+	} else if (!strcmp(query, "adoptedNeutral")) {
+		return ATTR_V2F;
+	} else if (!strcmp(query, "renderingTransform")) {
+		return ATTR_STRING;
+	} else if (!strcmp(query, "lookModTransform")) {
+		return ATTR_STRING;
+	} else if (!strcmp(query, "xDensity")) {
+		return ATTR_FLOAT;
+	} else if (!strcmp(query, "owner")) {
+		return ATTR_STRING;
+	} else if (!strcmp(query, "comments")) {
+		return ATTR_STRING;
+	} else if (!strcmp(query, "capDate")) {
+		return ATTR_STRING;
+	} else if (!strcmp(query, "utcOffset")) {
+		return ATTR_FLOAT;
+	} else if (!strcmp(query, "longitude")) {
+		return ATTR_FLOAT;
+	} else if (!strcmp(query, "latitude")) {
+		return ATTR_FLOAT;
+	} else if (!strcmp(query, "altitude")) {
+		return ATTR_FLOAT;
+	} else if (!strcmp(query, "focus")) {
+		return ATTR_FLOAT;
+	} else if (!strcmp(query, "expTime")) {
+		return ATTR_FLOAT;
+	} else if (!strcmp(query, "aperture")) {
+		return ATTR_FLOAT;
+	} else if (!strcmp(query, "isoSpeed")) {
+		return ATTR_FLOAT;
+	} else if (!strcmp(query, "envmap")) {
+		return ATTR_ENVMAP;
+	} else {
+		mexErrMsgTxt("Setting this attribute not implemented.");
+	}
+}
 
 inline ATTR_TYPE stringToAttrType(const char * query) {
 	if (!strcmp("chlist", query)) {
@@ -124,7 +174,8 @@ inline const char * attrTypeToString(ATTR_TYPE attrType) {
 		case ATTR_DOUBLE: { return std::string("double").c_str(); }
 		case ATTR_FLOAT: { return std::string("float").c_str(); }
 		case ATTR_INT: { return std::string("int").c_str(); }
-		case ATTR_UNKNOWN: { return std::string("unknown").c_str(); }
+		case ATTR_UNKNOWN:
+		default: { return std::string("unknown").c_str(); }
 	}
 }
 
@@ -159,7 +210,8 @@ inline const char * compressionTypeToString(Compression compressionType) {
 		case PXR24_COMPRESSION: { return std::string("pxr24").c_str(); }
 		case B44_COMPRESSION: { return std::string("b44").c_str(); }
 		case B44A_COMPRESSION: { return std::string("b44a").c_str(); }
-		case NUM_COMPRESSION_METHODS: { return std::string("unknown").c_str(); }
+		case NUM_COMPRESSION_METHODS:
+		default: { return std::string("unknown").c_str(); }
 	}
 }
 
@@ -196,7 +248,8 @@ inline const char * envmapTypeToString(Envmap envmapType) {
 	switch (envmapType) {
 		case ENVMAP_LATLONG: { return std::string("latlong").c_str(); }
 		case ENVMAP_CUBE: { return std::string("cube").c_str(); }
-		case NUM_ENVMAPTYPES: { return std::string("unknown").c_str(); }
+		case NUM_ENVMAPTYPES:
+		default: { return std::string("unknown").c_str(); }
 	}
 }
 

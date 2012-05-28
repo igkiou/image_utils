@@ -97,7 +97,7 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[]) {
 		r = (float *) mxGetData(prhs[0]);
 		g = r; b = r;
 	} else if (numDims == 3) {
-		const int *dims = mxGetDimensions(prhs[0]);
+		const mwSize *dims = mxGetDimensions(prhs[0]);
 		width = dims[0];
 		height = dims[1];
 		r = (float *) mxGetData(prhs[0]);
@@ -123,9 +123,9 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[]) {
 	if (!mxIsChar(prhs[2])) {
 		mexErrMsgTxt("Third argument must be a string.");
 	}
-	const int length = mxGetNumberOfElements(prhs[2]) + 1;
-	char fileName[length];
-	mxGetString(prhs[2], fileName, length);
+	const int lengthFileName = mxGetNumberOfElements(prhs[2]) + 1;
+	char* fileName = (char *) mxMalloc(lengthFileName * sizeof(char));
+	mxGetString(prhs[2], fileName, lengthFileName);
 
 	char writeFormat;
 	if (nrhs >= 4) {
@@ -144,4 +144,6 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[]) {
 	} else {
 		mexErrMsgTxt("Unknown option for fourth argument.");
 	}
+
+	mxFree(fileName);
 }

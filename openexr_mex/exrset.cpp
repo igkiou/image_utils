@@ -7,228 +7,212 @@
 
 #include "openexr_mex.h"
 
-/* TODO: Replace TypedAttribute<type> with named TypedAttribute types. */
-const Attribute & mxArrayToAttribute(const mxArray* mxarr) {
-	if (mxIsChar(mxarr)) {
+void setSingleAttribute(Header& head, const char attrName[], const mxArray* mxarr) {
+
+	if (!strcmp(attrName, "gain")) {
+		if (!(mxIsSingle(mxarr) && (mxGetNumberOfElements(mxarr) == 1))) {
+			mexErrMsgTxt("For setting attribute 'gain', a single array with 1 element must be provided.");
+		}
+		const float value = * (float *) mxGetData(mxarr);
+		addGain(head, value);
+	} else if (!strcmp(attrName, "wavelength")) {
+		if (!(mxIsSingle(mxarr) && (mxGetNumberOfElements(mxarr) == 1))) {
+			mexErrMsgTxt("For setting attribute 'wavelength', a single array with 1 element must be provided.");
+		}
+		const float value = * (float *) mxGetData(mxarr);
+		addWavelength(head, value);
+	} else if (!strcmp(attrName, "extTube")) {
+		if (!mxIsChar(mxarr)) {
+			mexErrMsgTxt("For setting attribute 'extTube', a string array must be provided.");
+		}
 		const int lengthStringValue = mxGetNumberOfElements(mxarr) + 1;
-		char stringValue[lengthStringValue];
+		char *stringValue = (char *) mxMalloc(lengthStringValue * sizeof(char));
 		mxGetString(mxarr, stringValue, lengthStringValue);
-		return TypedAttribute<std::string>(std::string(stringValue));
-	} else if (mxIsInt32(mxarr)) {
-		int* data = (int *) mxGetData(mxarr);
-		const int length = mxGetNumberOfElements(mxarr);
-		if (length == 1) {
-			return TypedAttribute<int>(*data);
-		} else if (length == 2) {
-			return TypedAttribute<V2i>(V2i(data[0], data[1]));
-		} else if (length == 3) {
-			return TypedAttribute<V3i>(V3i(data[0], data[1], data[2]));
-		} else {
-			return TypedAttribute<std::vector<int> >(std::vector<int>(data, data + length));
+		addExtTube(head, std::string(stringValue));
+		mxFree(stringValue);
+	} else if (!strcmp(attrName, "lens")) {
+		if (!mxIsChar(mxarr)) {
+			mexErrMsgTxt("For setting attribute 'lens', a string array must be provided.");
 		}
-	} else if (mxIsSingle(mxarr)) {
-		float* data = (float *) mxGetData(mxarr);
-		const int length = mxGetNumberOfElements(mxarr);
-		if (length == 1) {
-			return TypedAttribute<float>(*data);
-		} else if (length == 2) {
-			return TypedAttribute<V2f>(V2f(data[0], data[1]));
-		} else if (length == 3) {
-			return TypedAttribute<V3f>(V3f(data[0], data[1], data[2]));
-		} else {
-			return TypedAttribute<std::vector<float> >(std::vector<float>(data, data + length));
+		const int lengthStringValue = mxGetNumberOfElements(mxarr) + 1;
+		char *stringValue = (char *) mxMalloc(lengthStringValue * sizeof(char));
+		mxGetString(mxarr, stringValue, lengthStringValue);
+		addLens(head, std::string(stringValue));
+		mxFree(stringValue);
+	} else if (!strcmp(attrName, "material")) {
+		if (!mxIsChar(mxarr)) {
+			mexErrMsgTxt("For setting attribute 'material', a string array must be provided.");
 		}
-	} else if (mxIsDouble(mxarr)) {
-		double* data = (double *) mxGetData(mxarr);
-		const int length = mxGetNumberOfElements(mxarr);
-		if (length == 1) {
-			return TypedAttribute<double>(*data);
-//		} else if (length == 2) {
-//			return TypedAttribute<V2d>(V2d(data[0], data[1]));
-//		} else if (length == 3) {
-//			return TypedAttribute<V3d>(V3d(data[0], data[1], data[2]));
-		} else {
-			return TypedAttribute<std::vector<double> >(std::vector<double>(data, data + length));
+		const int lengthStringValue = mxGetNumberOfElements(mxarr) + 1;
+		char *stringValue = (char *) mxMalloc(lengthStringValue * sizeof(char));
+		mxGetString(mxarr, stringValue, lengthStringValue);
+		addMaterial(head, std::string(stringValue));
+		mxFree(stringValue);
+	} /* else if (!strcmp(attrName, "chromaticities")) {
+
+		if (!mxIsChar(mxarr)) {
+			mexErrMsgTxt("For setting attribute 'material', a string array must be provided.");
 		}
+		const int lengthStringValue = mxGetNumberOfElements(mxarr) + 1;
+		char *stringValue = (char *) mxMalloc(lengthStringValue * sizeof(char));
+		mxGetString(mxarr, stringValue, lengthStringValue);
+		addMaterial(head, std::string(stringValue));
+		mxFree(stringValue);
+	}*/ else if (!strcmp(attrName, "whiteLuminance")) {
+		if (!(mxIsSingle(mxarr) && (mxGetNumberOfElements(mxarr) == 1))) {
+			mexErrMsgTxt("For setting attribute 'whiteLuminance', a single array with 1 element must be provided.");
+		}
+		const float value = * (float *) mxGetData(mxarr);
+		addWhiteLuminance(head, value);
+	} else if (!strcmp(attrName, "adoptedNeutral")) {
+		if (!(mxIsSingle(mxarr) && (mxGetNumberOfElements(mxarr) == 2))) {
+			mexErrMsgTxt("For setting attribute 'adoptedNeutral', a single array with 2 elements must be provided.");
+		}
+		const float *value = (float *) mxGetData(mxarr);
+		addAdoptedNeutral(head, V2f(value[0], value[1]));
+	} else if (!strcmp(attrName, "renderingTransform")) {
+		if (!mxIsChar(mxarr)) {
+			mexErrMsgTxt("For setting attribute 'renderingTransform', a string array must be provided.");
+		}
+		const int lengthStringValue = mxGetNumberOfElements(mxarr) + 1;
+		char *stringValue = (char *) mxMalloc(lengthStringValue * sizeof(char));
+		mxGetString(mxarr, stringValue, lengthStringValue);
+		addRenderingTransform(head, std::string(stringValue));
+		mxFree(stringValue);
+	} else if (!strcmp(attrName, "lookModTransform")) {
+		if (!mxIsChar(mxarr)) {
+			mexErrMsgTxt("For setting attribute 'lookModTransform', a string array must be provided.");
+		}
+		const int lengthStringValue = mxGetNumberOfElements(mxarr) + 1;
+		char *stringValue = (char *) mxMalloc(lengthStringValue * sizeof(char));
+		mxGetString(mxarr, stringValue, lengthStringValue);
+		addLookModTransform(head, std::string(stringValue));
+		mxFree(stringValue);
+	} else if (!strcmp(attrName, "xDensity")) {
+		if (!(mxIsSingle(mxarr) && (mxGetNumberOfElements(mxarr) == 1))) {
+			mexErrMsgTxt("For setting attribute 'xDensity', a single array with 1 element must be provided.");
+		}
+		const float value = * (float *) mxGetData(mxarr);
+		addXDensity(head, value);
+	} else if (!strcmp(attrName, "owner")) {
+		if (!mxIsChar(mxarr)) {
+			mexErrMsgTxt("For setting attribute 'owner', a string array must be provided.");
+		}
+		const int lengthStringValue = mxGetNumberOfElements(mxarr) + 1;
+		char *stringValue = (char *) mxMalloc(lengthStringValue * sizeof(char));
+		mxGetString(mxarr, stringValue, lengthStringValue);
+		addOwner(head, std::string(stringValue));
+		mxFree(stringValue);
+	} else if (!strcmp(attrName, "comments")) {
+		if (!mxIsChar(mxarr)) {
+			mexErrMsgTxt("For setting attribute 'comments', a string array must be provided.");
+		}
+		const int lengthStringValue = mxGetNumberOfElements(mxarr) + 1;
+		char *stringValue = (char *) mxMalloc(lengthStringValue * sizeof(char));
+		mxGetString(mxarr, stringValue, lengthStringValue);
+		addComments(head, std::string(stringValue));
+		mxFree(stringValue);
+	} else if (!strcmp(attrName, "capDate")) {
+		if (!mxIsChar(mxarr)) {
+			mexErrMsgTxt("For setting attribute 'capDate', a string array must be provided.");
+		}
+		const int lengthStringValue = mxGetNumberOfElements(mxarr) + 1;
+		char *stringValue = (char *) mxMalloc(lengthStringValue * sizeof(char));
+		mxGetString(mxarr, stringValue, lengthStringValue);
+		addCapDate(head, std::string(stringValue));
+		mxFree(stringValue);
+	} else if (!strcmp(attrName, "utcOffset")) {
+		if (!(mxIsSingle(mxarr) && (mxGetNumberOfElements(mxarr) == 1))) {
+			mexErrMsgTxt("For setting attribute 'utcOffset', a single array with 1 element must be provided.");
+		}
+		const float value = * (float *) mxGetData(mxarr);
+		addUtcOffset(head, value);
+	} else if (!strcmp(attrName, "longitude")) {
+		if (!(mxIsSingle(mxarr) && (mxGetNumberOfElements(mxarr) == 1))) {
+			mexErrMsgTxt("For setting attribute 'longitude', a single array with 1 element must be provided.");
+		}
+		const float value = * (float *) mxGetData(mxarr);
+		addLongitude(head, value);
+	} else if (!strcmp(attrName, "latitude")) {
+		if (!(mxIsSingle(mxarr) && (mxGetNumberOfElements(mxarr) == 1))) {
+			mexErrMsgTxt("For setting attribute 'latitude', a single array with 1 element must be provided.");
+		}
+		const float value = * (float *) mxGetData(mxarr);
+		addLatitude(head, value);
+	} else if (!strcmp(attrName, "altitude")) {
+		if (!(mxIsSingle(mxarr) && (mxGetNumberOfElements(mxarr) == 1))) {
+			mexErrMsgTxt("For setting attribute 'altitude', a single array with 1 element must be provided.");
+		}
+		const float value = * (float *) mxGetData(mxarr);
+		addAltitude(head, value);
+	} else if (!strcmp(attrName, "focus")) {
+		if (!(mxIsSingle(mxarr) && (mxGetNumberOfElements(mxarr) == 1))) {
+			mexErrMsgTxt("For setting attribute 'focus', a single array with 1 element must be provided.");
+		}
+		const float value = * (float *) mxGetData(mxarr);
+		addFocus(head, value);
+	} else if (!strcmp(attrName, "expTime")) {
+		if (!(mxIsSingle(mxarr) && (mxGetNumberOfElements(mxarr) == 1))) {
+			mexErrMsgTxt("For setting attribute 'expTime', a single array with 1 element must be provided.");
+		}
+		const float value = * (float *) mxGetData(mxarr);
+		addExpTime(head, value);
+	} else if (!strcmp(attrName, "aperture")) {
+		if (!(mxIsSingle(mxarr) && (mxGetNumberOfElements(mxarr) == 1))) {
+			mexErrMsgTxt("For setting attribute 'aperture', a single array with 1 element must be provided.");
+		}
+		const float value = * (float *) mxGetData(mxarr);
+		addAperture(head, value);
+	} else if (!strcmp(attrName, "isoSpeed")) {
+		if (!(mxIsSingle(mxarr) && (mxGetNumberOfElements(mxarr) == 1))) {
+			mexErrMsgTxt("For setting attribute 'isoSpeed', a single array with 1 element must be provided.");
+		}
+		const float value = * (float *) mxGetData(mxarr);
+		addIsoSpeed(head, value);
+	} else if (!strcmp(attrName, "envmap")) {
+		if (!mxIsChar(mxarr)) {
+			mexErrMsgTxt("For setting attribute 'envmap', a string array must be provided.");
+		}
+		const int lengthStringValue = mxGetNumberOfElements(mxarr) + 1;
+		char *stringValue = (char *) mxMalloc(lengthStringValue * sizeof(char));
+		mxGetString(mxarr, stringValue, lengthStringValue);
+		addEnvmap(head, stringToEnvmapType(stringValue));
+		mxFree(stringValue);
 	} else {
-		mexErrMsgTxt("Direct inference of attribute type is only implemented for arrays of type char, int32, single, and double.");
+		mexErrMsgTxt("Setting this attribute not implemented.");
 	}
 }
 
-const Attribute & mxArrayToAttribute(const mxArray* mxarr, const char* typeName) {
-	switch (stringToAttrType(typeName)) {
-		case ATTR_ENVMAP:
-		{
-			if (mxIsChar(mxarr)) {
-				const int lengthStringValue = mxGetNumberOfElements(mxarr) + 1;
-				char stringValue[lengthStringValue];
-				mxGetString(mxarr, stringValue, lengthStringValue);
-				return TypedAttribute<Envmap>(stringToEnvmapType(std::string(stringValue).c_str()));
-			} else {
-				mexErrMsgTxt("For attribute of type 'envmap', a string array must be provided.");
-			}
-		}
-		/*case ATTR_CHROMATICITIES:
-		{
-			const TypedAttribute<Chromaticities>& chromaAttr = static_cast<const TypedAttribute<Chromaticities>& >(attr);
-			int dims[2] = {4, 2};
-			mxArray* temp = mxCreateCellArray(2, dims);
-			mxSetCell(temp, 0, mxCreateString("red"));
-			mxSetCell(temp, 1, mxCreateString("green"));
-			mxSetCell(temp, 2, mxCreateString("blue"));
-			mxSetCell(temp, 3, mxCreateString("white"));
-			mxArray* point;
-			float *pointData;
-			point = mxCreateNumericMatrix(1, 2, mxSINGLE_CLASS, mxREAL);
-			pointData = (float *) mxGetData(point);
-			pointData[0] = chromaAttr.value().red.x;
-			pointData[1] = chromaAttr.value().red.y;
-			mxSetCell(temp, 4, point);
-			point = mxCreateNumericMatrix(1, 2, mxSINGLE_CLASS, mxREAL);
-			pointData = (float *) mxGetData(point);
-			pointData[0] = chromaAttr.value().green.x;
-			pointData[1] = chromaAttr.value().green.y;
-			mxSetCell(temp, 5, point);
-			point = mxCreateNumericMatrix(1, 2, mxSINGLE_CLASS, mxREAL);
-			pointData = (float *) mxGetData(point);
-			pointData[0] = chromaAttr.value().blue.x;
-			pointData[1] = chromaAttr.value().blue.y;
-			mxSetCell(temp, 6, point);
-			point = mxCreateNumericMatrix(1, 2, mxSINGLE_CLASS, mxREAL);
-			pointData = (float *) mxGetData(point);
-			pointData[0] = chromaAttr.value().white.x;
-			pointData[1] = chromaAttr.value().white.y;
-			mxSetCell(temp, 7, point);
-			return temp;
-		}*/
-		case ATTR_STRING:
-		{
-			if (mxIsChar(mxarr)) {
-				const int lengthStringValue = mxGetNumberOfElements(mxarr) + 1;
-				char stringValue[lengthStringValue];
-				mxGetString(mxarr, stringValue, lengthStringValue);
-				return TypedAttribute<std::string>(std::string(stringValue));
-			} else {
-				mexErrMsgTxt("For attribute of type 'string', a string array must be provided.");
-			}
-		}
-//		case ATTR_V2D:
-//		{
-//			if (mxIsDouble(mxarr) && (mxGetNumberOfElements(mxarr) == 2)) {
-//				double* data = (double *) mxGetData(mxarr);
-//				return TypedAttribute<V2d>(V2d(data[0], data[1]));
-//			} else {
-//				mexErrMsgTxt("For attribute of type 'v2d', a double array with 2 elements must be provided.");
-//			}
-//		}
-		case ATTR_V2F:
-		{
-			if (mxIsSingle(mxarr) && (mxGetNumberOfElements(mxarr) == 2)) {
-				float* data = (float *) mxGetData(mxarr);
-				return TypedAttribute<V2f>(V2f(data[0], data[1]));
-			} else {
-				mexErrMsgTxt("For attribute of type 'v2f', a single array with 2 elements must be provided.");
-			}
-		}
-		case ATTR_V2I:
-		{
-			if (mxIsInt32(mxarr) && (mxGetNumberOfElements(mxarr) == 2)) {
-				int* data = (int *) mxGetData(mxarr);
-				return TypedAttribute<V2i>(V2d(data[0], data[1]));
-			} else {
-				mexErrMsgTxt("For attribute of type 'v2i', an integer array with 2 elements must be provided.");
-			}
-		}
-		case ATTR_VD:
-		{
-			if (mxIsDouble(mxarr)) {
-				double* data = (double *) mxGetData(mxarr);
-				const int length = mxGetNumberOfElements(mxarr);
-				return TypedAttribute<std::vector<double> >(std::vector<double>(data, data + length));
-			} else {
-				mexErrMsgTxt("For attribute of type 'vd', a double array must be provided.");
-			}
-		}
-		case ATTR_VF:
-		{
-			if (mxIsSingle(mxarr)) {
-				float* data = (float *) mxGetData(mxarr);
-				const int length = mxGetNumberOfElements(mxarr);
-				return TypedAttribute<std::vector<float> >(std::vector<float>(data, data + length));
-			} else {
-				mexErrMsgTxt("For attribute of type 'vf', a single array must be provided.");
-			}
-		}
-		case ATTR_VI:
-		{
-			if (mxIsInt32(mxarr)) {
-				int* data = (int *) mxGetData(mxarr);
-				const int length = mxGetNumberOfElements(mxarr);
-				return TypedAttribute<std::vector<int> >(std::vector<int>(data, data + length));
-			} else {
-				mexErrMsgTxt("For attribute of type 'vi', an integer array must be provided.");
-			}
-		}
-		case ATTR_DOUBLE:
-		{
-			if (mxIsDouble(mxarr) && (mxGetNumberOfElements(mxarr) == 1)) {
-				double* data = (double *) mxGetData(mxarr);
-				return TypedAttribute<double>(*data);
-			} else {
-				mexErrMsgTxt("For attribute of type 'double', a double array with 1 element must be provided.");
-			}
-		}
-		case ATTR_FLOAT:
-		{
-			if (mxIsSingle(mxarr) && (mxGetNumberOfElements(mxarr) == 1)) {
-				float* data = (float *) mxGetData(mxarr);
-				return TypedAttribute<float>(*data);
-			} else {
-				mexErrMsgTxt("For attribute of type 'double', a single array with 1 element must be provided.");
-			}
-		}
-		case ATTR_INT:
-		{
-			if (mxIsInt32(mxarr) && (mxGetNumberOfElements(mxarr) == 1)) {
-				int* data = (int *) mxGetData(mxarr);
-				return TypedAttribute<int>(*data);
-			} else {
-				mexErrMsgTxt("For attribute of type 'int', an integer array with 1 element must be provided.");
-			}
-		}
-		default:
-			mexErrMsgTxt("Setting attribute of this type not implemented.");
+void setMultipleAttributes(Header& head, mxArray* mxstruct) {
+
+	mxArray* matStruct;
+	int numAttributes = 0;
+	for (Header::ConstIterator attIt = head.begin(); attIt != head.end(); \
+		++attIt, ++numAttributes);
+
+	const char **attributeNames = (const char **) mxMalloc(numAttributes * sizeof(*attributeNames));
+	int iterField = 0;
+	for (Header::ConstIterator attIt = head.begin(); attIt != head.end(); ++attIt, ++iterField) {
+//		std::cout << attIt.name() << ": " << attIt.attribute().typeName() << ", " << getAttrTypeIndex(attIt.attribute().typeName()) << std::endl;
+		attributeNames[iterField] = attIt.name();
 	}
+	matStruct = mxCreateStructMatrix(1, 1, numAttributes, attributeNames);
+	mxFree((void *) attributeNames);
+	iterField = 0;
+	for (Header::ConstIterator attIt = head.begin(); attIt != head.end(); ++attIt, ++iterField) {
+		mxSetFieldByNumber(matStruct, 0, iterField, const_cast<mxArray*>(attributeToMxArray(attIt.attribute())));
+	}
+	return matStruct;
 }
 
-void setAttribute(const char inFileName[], const char outFileName[], const char attrName[], const mxArray* mxarr) {
-	InputFile in(inFileName);
-
-	Header head = in.header();
-	const Attribute& attr = mxArrayToAttribute(mxarr);
-//	addFocus(head, 10);
-	head.insert(attrName, attr);
-//	head.insert(attrName, mxArrayToAttribute(mxarr));
-	OutputFile out(outFileName, head);
-	out.copyPixels(in);
-}
-
-void setAttribute(const char inFileName[], const char outFileName[], const char attrName[], const mxArray* mxarr, const char attrTypeName[]) {
-	InputFile in(inFileName);
-
-	Header head = in.header();
-	head.insert(attrName, mxArrayToAttribute(mxarr, attrTypeName));
-	OutputFile out(outFileName, head);
-	out.copyPixels(in);
-}
 
 void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[]) {
 
 	/* Check number of input arguments */
-	if (nrhs < 4) {
-		mexErrMsgTxt("At least four input arguments are required.");
-	} else if (nrhs > 5) {
-		mexErrMsgTxt("Fewer than five input arguments are required.");
+	if (nrhs < 3) {
+		mexErrMsgTxt("At least three input arguments are required.");
+	} else if (nrhs > 4) {
+		mexErrMsgTxt("Four or fewer input arguments are required.");
 	}
 
 	/* Check number of output arguments */
@@ -240,7 +224,7 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[]) {
 		mexErrMsgTxt("First argument must be a string.");
 	}
 	const int lengthInFileName = mxGetNumberOfElements(prhs[0]) + 1;
-	char inFileName[lengthInFileName];
+	char* inFileName = (char *) mxMalloc(lengthInFileName * sizeof(char));
 	mxGetString(prhs[0], inFileName, lengthInFileName);
 
 	char *outFileName;
@@ -255,25 +239,26 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[]) {
 		outFileName = inFileName;
 	}
 
-	if (!mxIsChar(prhs[2])) {
-		mexErrMsgTxt("Third argument must be a string.");
-	}
-	const int lengthAttributeName = mxGetNumberOfElements(prhs[2]) + 1;
-	char attributeName[lengthAttributeName];
-	mxGetString(prhs[2], attributeName, lengthAttributeName);
+	InputFile in(inFileName);
+	Header head = in.header();
 
-	if (nrhs < 5) {
-		setAttribute(inFileName, outFileName, attributeName, prhs[3]);
-	} else if (nrhs >= 5) {
-		if (!mxIsChar(prhs[4])) {
-			mexErrMsgTxt("Fifth argument must be a string.");
+	if (nrhs == 4) {
+		if (!mxIsChar(prhs[2])) {
+			mexErrMsgTxt("Third argument must be a string.");
 		}
-		const int lengthAttributeTypeName = mxGetNumberOfElements(prhs[4]) + 1;
-		char attributeTypeName[lengthAttributeTypeName];
-		mxGetString(prhs[4], attributeTypeName, lengthAttributeTypeName);
-		setAttribute(inFileName, outFileName, attributeName, prhs[3], attributeTypeName);
+		const int lengthAttributeName = mxGetNumberOfElements(prhs[2]) + 1;
+		char* attributeName = (char *) mxMalloc(lengthAttributeName * sizeof(char));
+		mxGetString(prhs[2], attributeName, lengthAttributeName);
+		setAttribute(head, attributeName, prhs[3]);
+	} else {
+		if (!mxIsStruct(prhs[2])) {
+			mexErrMsgTxt("Third argument must be a struct.");
+		}
+		setMultipleAttributes(head, prhs[3]);
 	}
-
+	OutputFile out(outFileName, head);
+	out.copyPixels(in);
+	mxFree(inFileName);
 	if (!mxIsEmpty(prhs[1])) {
 		mxFree(outFileName);
 	}

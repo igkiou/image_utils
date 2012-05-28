@@ -7,13 +7,12 @@
 
 #include "openexr_mex.h"
 
-/* TODO: Replace TypedAttribute<type> with named TypedAttribute types. */
 const mxArray * attributeToMxArray(const Attribute & attr) {
 	switch (stringToAttrType(attr.typeName())) {
 		case ATTR_CHLIST:
 		{
 			const TypedAttribute<ChannelList>& chlistAttr = static_cast<const TypedAttribute<ChannelList>& >(attr);
-			int numChannels = 0;
+			mwSize numChannels = 0;
 			for (ChannelList::ConstIterator chIt = chlistAttr.value().begin(); \
 				chIt != chlistAttr.value().end(); ++chIt, ++numChannels);
 			mxArray* temp = mxCreateCellArray(1, &numChannels);
@@ -37,7 +36,7 @@ const mxArray * attributeToMxArray(const Attribute & attr) {
 		case ATTR_CHROMATICITIES:
 		{
 			const TypedAttribute<Chromaticities>& chromaAttr = static_cast<const TypedAttribute<Chromaticities>& >(attr);
-			int dims[2] = {4, 2};
+			const mwSize dims[2] = {4, 2};
 			mxArray* temp = mxCreateCellArray(2, dims);
 			mxSetCell(temp, 0, mxCreateString("red"));
 			mxSetCell(temp, 1, mxCreateString("green"));
@@ -77,29 +76,10 @@ const mxArray * attributeToMxArray(const Attribute & attr) {
 			const TypedAttribute<std::string>& stringAttr = static_cast<const TypedAttribute<std::string>& >(attr);
 			return mxCreateString(stringAttr.value().c_str());
 		}
-		case ATTR_BOX2D:
-		{
-			const TypedAttribute<Box2d>& box2dAttr = static_cast<const TypedAttribute<Box2d>& >(attr);
-			int numPoints = 2;
-			mxArray* temp = mxCreateCellArray(1, &numPoints);
-			mxArray* point;
-			double *pointData;
-			point = mxCreateNumericMatrix(2, 1, mxDOUBLE_CLASS, mxREAL);
-			pointData = (double *) mxGetData(point);
-			pointData[0] = box2dAttr.value().min.x;
-			pointData[1] = box2dAttr.value().min.y;
-			mxSetCell(temp, 0, point);
-			point = mxCreateNumericMatrix(2, 1, mxDOUBLE_CLASS, mxREAL);
-			pointData = (double *) mxGetData(point);
-			pointData[0] = box2dAttr.value().max.x;
-			pointData[1] = box2dAttr.value().max.y;
-			mxSetCell(temp, 1, point);
-			return temp;
-		}
 		case ATTR_BOX2F:
 		{
 			const TypedAttribute<Box2f>& box2fAttr = static_cast<const TypedAttribute<Box2f>& >(attr);
-			int numPoints = 2;
+			const mwSize numPoints = 2;
 			mxArray* temp = mxCreateCellArray(1, &numPoints);
 			mxArray* point;
 			float *pointData;
@@ -118,7 +98,7 @@ const mxArray * attributeToMxArray(const Attribute & attr) {
 		case ATTR_BOX2I:
 		{
 			const TypedAttribute<Box2i>& box2iAttr = static_cast<const TypedAttribute<Box2i>& >(attr);
-			int numPoints = 2;
+			const mwSize numPoints = 2;
 			mxArray* temp = mxCreateCellArray(1, &numPoints);
 			mxArray* point;
 			int *pointData;
@@ -132,15 +112,6 @@ const mxArray * attributeToMxArray(const Attribute & attr) {
 			pointData[0] = box2iAttr.value().max.x;
 			pointData[1] = box2iAttr.value().max.y;
 			mxSetCell(temp, 1, point);
-			return temp;
-		}
-		case ATTR_V2D:
-		{
-			const TypedAttribute<V2d>& v2dAttr = static_cast<const TypedAttribute<V2d>& >(attr);
-			mxArray* temp = mxCreateNumericMatrix(2, 1, mxDOUBLE_CLASS, mxREAL);
-			double *data = (double *) mxGetData(temp);
-			data[0] = v2dAttr.value().x;
-			data[1] = v2dAttr.value().y;
 			return temp;
 		}
 		case ATTR_V2F:
@@ -159,17 +130,6 @@ const mxArray * attributeToMxArray(const Attribute & attr) {
 			int *data = (int *) mxGetData(temp);
 			data[0] = v2iAttr.value().x;
 			data[1] = v2iAttr.value().y;
-			return temp;
-		}
-		case ATTR_VD:
-		{
-			const TypedAttribute<std::vector<double> >& vdAttr = static_cast<const TypedAttribute<std::vector<double> >& >(attr);
-			int vecLength = vdAttr.value().size();
-			mxArray* temp = mxCreateNumericMatrix(vecLength, 1, mxDOUBLE_CLASS, mxREAL);
-			double *data = (double *) mxGetData(temp);
-			for (int iterVec = 0; iterVec < vecLength; ++iterVec) {
-				data[iterVec] = vdAttr.value()[iterVec];
-			}
 			return temp;
 		}
 		case ATTR_VF:
@@ -194,14 +154,6 @@ const mxArray * attributeToMxArray(const Attribute & attr) {
 			}
 			return temp;
 		}
-		case ATTR_DOUBLE:
-		{
-			const TypedAttribute<double>& doubleAttr = static_cast<const TypedAttribute<double>& >(attr);
-			mxArray *temp = mxCreateNumericMatrix(1, 1, mxDOUBLE_CLASS, mxREAL);
-			double *val = (double *) mxGetData(temp);
-			*val = doubleAttr.value();
-			return temp;
-		}
 		case ATTR_FLOAT:
 		{
 			const TypedAttribute<float>& floatAttr = static_cast<const TypedAttribute<float>& >(attr);
@@ -223,35 +175,30 @@ const mxArray * attributeToMxArray(const Attribute & attr) {
 	}
 }
 
-mxArray* getAllAttributes(const char fileName[]) {
-	InputFile in(fileName);
+mxArray* getAllAttributes(const Header& head) {
 
 	mxArray* matStruct;
-	Header head = in.header();
 	int numAttributes = 0;
-	for (Header::Iterator attIt = head.begin(); attIt != head.end(); \
+	for (Header::ConstIterator attIt = head.begin(); attIt != head.end(); \
 		++attIt, ++numAttributes);
 
 	const char **attributeNames = (const char **) mxMalloc(numAttributes * sizeof(*attributeNames));
 	int iterField = 0;
-	for (Header::Iterator attIt = head.begin(); attIt != head.end(); ++attIt, ++iterField) {
+	for (Header::ConstIterator attIt = head.begin(); attIt != head.end(); ++attIt, ++iterField) {
 //		std::cout << attIt.name() << ": " << attIt.attribute().typeName() << ", " << getAttrTypeIndex(attIt.attribute().typeName()) << std::endl;
 		attributeNames[iterField] = attIt.name();
 	}
 	matStruct = mxCreateStructMatrix(1, 1, numAttributes, attributeNames);
 	mxFree((void *) attributeNames);
 	iterField = 0;
-	for (Header::Iterator attIt = head.begin(); attIt != head.end(); ++attIt, ++iterField) {
+	for (Header::ConstIterator attIt = head.begin(); attIt != head.end(); ++attIt, ++iterField) {
 		mxSetFieldByNumber(matStruct, 0, iterField, const_cast<mxArray*>(attributeToMxArray(attIt.attribute())));
 	}
 	return matStruct;
 }
 
-mxArray* getSingleAttribute(const char fileName[], const char attributeName[]) {
-	InputFile in(fileName);
-
-	Header head = in.header();
-	Attribute& attr = head[attributeName];
+mxArray* getSingleAttribute(const Header& head, const char attributeName[]) {
+	const Attribute& attr = head[attributeName];
 	return const_cast<mxArray *>(attributeToMxArray(attr));
 }
 
@@ -273,18 +220,23 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[]) {
 		mexErrMsgTxt("First argument must be a string.");
 	}
 	const int lengthFileName = mxGetNumberOfElements(prhs[0]) + 1;
-	char fileName[lengthFileName];
+	char* fileName = (char *) mxMalloc(lengthFileName * sizeof(char));
 	mxGetString(prhs[0], fileName, lengthFileName);
+	InputFile in(fileName);
+	Header head = in.header();
 
 	if (nrhs >= 2) {
 		if (!mxIsChar(prhs[1])) {
 			mexErrMsgTxt("Second argument must be a string.");
 		}
 		const int lengthAttributeName = mxGetNumberOfElements(prhs[1]) + 1;
-		char attributeName[lengthAttributeName];
+		char* attributeName = (char *) mxMalloc(lengthAttributeName * sizeof(char));
 		mxGetString(prhs[1], attributeName, lengthAttributeName);
-		plhs[0] = getSingleAttribute(fileName, attributeName);
+		plhs[0] = getSingleAttribute(head, attributeName);
+		mxFree(attributeName);
 	} else {
-		plhs[0] = getAllAttributes(fileName);
+		plhs[0] = getAllAttributes(head);
 	}
+
+	mxFree(fileName);
 }

@@ -4,13 +4,17 @@ if ((nargin < 2) || isempty(gainType)),
 	gainType = 'tanh';
 end;
 
+if ((nargin < 3) || isempty(linthresh)),
+	linthresh = 0;
+end;
+
 imOut = tonemap_sigmoid_thresh_gain(imIn, gainType, linthresh);
 
 end
 
 function Y = tonemap_sigmoid_thresh_gain(X, gainType, linthresh)
 
-inds = X <= linthresh;
+inds = X < linthresh;
 Y = zeros(size(X));
 Y(inds) = X(inds);
 Y(~inds) = tonemap_sigmoid_gain(X(~inds), gainType);
