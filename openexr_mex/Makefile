@@ -14,21 +14,15 @@ read: exrread.$(MEXEXT)
 set: exrset.$(MEXEXT)
 write: exrwrite_sub.$(MEXEXT)
 
-## test mex executable 
-exrset.$(MEXEXT): exrset.cpp ImfExtraAttributes.cpp openexr_mex.h ImfExtraAttributes.h
-	$(CC) $(LDFLAGS) $(INCLUDES) $(LIBS) $(CFLAGS) -o $@ exrset.cpp ImfExtraAttributes.cpp  
 
-%.$(MEXEXT): %.cpp openexr_mex.h
-	$(CC) $(LDFLAGS) $(INCLUDES) $(LIBS) $(CFLAGS) -o $@ $<
+%.$(MEXEXT): %.o ImfExtraAttributes.o ImfVectorAttribute.o openexr_mex.o
+	$(CC) $(LDFLAGS) $(INCLUDES) $(LIBS) $(CFLAGS) -o $@ $^
 
+%.o: %.cpp openexr_mex.h ImfExtraAttributes.h ImfVectorAttribute.h
+	$(CC) $(INCLUDES) $(CFLAGS) -c -o $@ $<
+	
 clean:
 	rm -rf *.o *~
-	rm -rf $(MEXDIR)/*.o $(MEXDIR)/*~
-	rm -rf $(SRCDIR)/*.o $(SRCDIR)/*~
-	rm -rf $(LIBDIR)/*.o $(LIBDIR)/*~
 
 distclean:	
-	rm -rf *.o *~
-	rm -rf $(MEXDIR)/*.o $(MEXDIR)/*.$(MEXEXT) $(MEXDIR)/*~
-	rm -rf $(SRCDIR)/*.o $(SRCDIR)/*~
-	rm -rf $(LIBDIR)/*.o $(LIBDIR)/*~ $(LIBDIR)/*.so*
+	rm -rf *.o *~ *.$(MEXEXT)

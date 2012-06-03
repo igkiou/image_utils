@@ -7,70 +7,6 @@
 
 #include "openexr_mex.h"
 
-void writeScanLineRGB(const char fileName[], \
-		const USED *rPixels, \
-		const USED *gPixels, \
-		const USED *bPixels, \
-		const USED *aPixels, \
-		int &width,
-		int &height) {
-	Header header(width, height);
-    Chromaticities c1(V2f(0.6400, 0.3300), V2f(0.3000, 0.6000), V2f(0.1500, 0.0600), V2f(0.3127, 0.3290));
-    addChromaticities(header, c1);
-
-	header.channels().insert("R", Channel(USEDC));
-	header.channels().insert("G", Channel(USEDC));
-	header.channels().insert("B", Channel(USEDC));
-	header.channels().insert("A", Channel(USEDC));
-
-	OutputFile file(fileName, header);
-	FrameBuffer frameBuffer;
-	frameBuffer.insert("R", Slice(USEDC, (char *) rPixels, \
-			sizeof(*rPixels) * 1, sizeof(*rPixels) * width));
-	frameBuffer.insert("G", Slice(USEDC, (char *) gPixels, \
-			sizeof(*gPixels) * 1, sizeof(*gPixels) * width));
-	frameBuffer.insert("B", Slice(USEDC, (char *) bPixels, \
-			sizeof(*bPixels) * 1, sizeof(*bPixels) * width));
-	if (aPixels != NULL) {
-		frameBuffer.insert("A", Slice(USEDC, (char *) aPixels, \
-			sizeof(*aPixels) * 1, sizeof(*aPixels) * width));
-	}
-	file.setFrameBuffer(frameBuffer);
-	file.writePixels(height);
-}
-
-void writeScanLineXYZ(const char fileName[], \
-		const USED *rPixels, \
-		const USED *gPixels, \
-		const USED *bPixels, \
-		const USED *aPixels, \
-		int &width,
-		int &height) {
-	Header header(width, height);
-    Chromaticities c1(V2f(1.0, 0.0), V2f(0.0, 1.0), V2f(0.0, 0.0), V2f(1.0 / 3.0, 1.0 / 3.0));
-    addChromaticities(header, c1);
-
-	header.channels().insert("R", Channel(USEDC));
-	header.channels().insert("G", Channel(USEDC));
-	header.channels().insert("B", Channel(USEDC));
-	header.channels().insert("A", Channel(USEDC));
-
-	OutputFile file(fileName, header);
-	FrameBuffer frameBuffer;
-	frameBuffer.insert("R", Slice(USEDC, (char *) rPixels, \
-			sizeof(*rPixels) * 1, sizeof(*rPixels) * width));
-	frameBuffer.insert("G", Slice(USEDC, (char *) gPixels, \
-			sizeof(*gPixels) * 1, sizeof(*gPixels) * width));
-	frameBuffer.insert("B", Slice(USEDC, (char *) bPixels, \
-			sizeof(*bPixels) * 1, sizeof(*bPixels) * width));
-	if (aPixels != NULL) {
-		frameBuffer.insert("A", Slice(USEDC, (char *) aPixels, \
-			sizeof(*aPixels) * 1, sizeof(*aPixels) * width));
-	}
-	file.setFrameBuffer(frameBuffer);
-	file.writePixels(height);
-}
-
 void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[]) {
 
 	/* Check number of input arguments */
@@ -89,7 +25,7 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[]) {
 		mexErrMsgTxt("First argument must be of type single.");
 	}
 	float *r, *g, *b;
-	int width, height;
+	size_t width, height;
 	const int numDims = mxGetNumberOfDimensions(prhs[0]);
 	if (numDims == 2) {
 		width = mxGetN(prhs[0]);
@@ -127,23 +63,18 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[]) {
 	char* fileName = (char *) mxMalloc(lengthFileName * sizeof(char));
 	mxGetString(prhs[2], fileName, lengthFileName);
 
-	char writeFormat;
+	Header head(width, height);
+	head.channels().insert("R", Channel(USEDC));
+	head.channels().insert("G", Channel(USEDC));
+	head.channels().insert("B", Channel(USEDC));
+	head.channels().insert("A", Channel(USEDC));
+
 	if (nrhs >= 4) {
-		if ((!mxIsChar(prhs[3])) || (mxGetNumberOfElements(prhs[3]) != 1)) {
-			mexErrMsgTxt("Fourth argument must be a single character.");
-		}
-		writeFormat = (char)*(char*) mxGetData(prhs[3]);
-	} else {
-		writeFormat = 'r';
+		setMultipleAttributes(head, prhs[3]);
 	}
 
-	if ((writeFormat == 'r') || (writeFormat == 'R')) {
-		writeScanLineRGB(fileName, r, g, b, a, width, height);
-	} else if ((writeFormat == 'x') || (writeFormat == 'X')) {
-		writeScanLineXYZ(fileName, r, g, b, a, width, height);
-	} else {
-		mexErrMsgTxt("Unknown option for fourth argument.");
-	}
+	OutputFile file(fileName, head);
+	writeScanLine(file, r, g, b, a, width, height);
 
 	mxFree(fileName);
 }

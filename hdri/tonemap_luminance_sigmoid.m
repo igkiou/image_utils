@@ -6,6 +6,6 @@ end;
 
 imOut = RGB2XYZ(imIn, whitepoint);
 imOut = XYZ2xyY(imOut);
-imOut(:, :, 3) = tonemap_sigmoid_gain(imOut(:, :, 3), varargin{:});
+imOut(:, :, 3) = tonemap_sigmoid(imOut(:, :, 3), varargin{:});
 imOut = xyY2XYZ(imOut);
 imOut = XYZ2RGB(imOut, whitepoint);

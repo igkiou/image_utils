@@ -104,6 +104,14 @@ inline ATTR_TYPE attrNameToAttrType(const char * query) {
 		return ATTR_FLOAT;
 	} else if (!strcmp(query, "isoSpeed")) {
 		return ATTR_FLOAT;
+	} else if (!strcmp(query, "multExpTimes")) {
+		return ATTR_VF;
+	} else if (!strcmp(query, "multApertures")) {
+		return ATTR_VF;
+	} else if (!strcmp(query, "multIsoSpeeds")) {
+		return ATTR_VF;
+	} else if (!strcmp(query, "multGains")) {
+		return ATTR_VF;
 	} else if (!strcmp(query, "envmap")) {
 		return ATTR_ENVMAP;
 	} else {
@@ -241,6 +249,8 @@ inline Envmap stringToEnvmapType(const char * query) {
 		return ENVMAP_LATLONG;
 	} else if (!strcmp("cube", query)) {
 		return ENVMAP_CUBE;
+	} else {
+		mexErrMsgTxt("Unknown envmap string.");
 	}
 }
 
@@ -252,6 +262,26 @@ inline const char * envmapTypeToString(Envmap envmapType) {
 		default: { return std::string("unknown").c_str(); }
 	}
 }
+
+const mxArray * attributeToMxArray(const Attribute & attr);
+mxArray* getAllAttributes(const Header& head);
+mxArray* getSingleAttribute(const Header& head, const char attributeName[]);
+void setSingleAttribute(Header& head, const char attrName[], const mxArray* mxarr);
+void setMultipleAttributes(Header& head, const mxArray* mxstruct);
+const Header createHeader(size_t width, size_t height, mxArray* mxstruct);
+const Header createHeader(size_t width, size_t height);
+void writeScanLine(OutputFile& file, \
+		const USED *rPixels, \
+		const USED *gPixels, \
+		const USED *bPixels, \
+		const USED *aPixels, \
+		const size_t width, const size_t height);
+void readScanLine(InputFile& file, \
+		Array2D<USED> &rPixels, bool &rFlag, \
+		Array2D<USED> &gPixels, bool &gFlag, \
+		Array2D<USED> &bPixels, bool &bFlag, \
+		Array2D<USED> &aPixels, bool &aFlag, \
+		size_t& width, size_t& height);
 
 /* TODO: Implement these using std::map types. */
 /*

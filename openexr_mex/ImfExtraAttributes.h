@@ -17,7 +17,7 @@
 #include <ImfTimeCodeAttribute.h>
 #include <ImfRationalAttribute.h>
 #include <ImfVecAttribute.h>
-//#include <ImfVectorAttribute.h>
+#include "ImfVectorAttribute.h"
 
 #define IMF_EXTRA_ATTRIBUTE_DEF(name,suffix,type)				      \
 									      \
@@ -28,19 +28,28 @@
     const type &		 name (const Header &header);		      \
     type &			 name (Header &header);
 
+#define IMF_EXTRA_VEC_ATTRIBUTE_DEF(name,suffix,type)				      \
+									      \
+    void			 add##suffix (Header &header, const std::vector<type> &v); \
+    bool			 has##suffix (const Header &header);	      \
+    const VectorAttribute<type> & name##Attribute (const Header &header);      \
+    VectorAttribute<type> &	 name##Attribute (Header &header);	      \
+    const std::vector<type> &		 name (const Header &header);		      \
+    std::vector<type> &			 name (Header &header);
 
 namespace Imf {
 
 IMF_EXTRA_ATTRIBUTE_DEF (gain, Gain, float)
 IMF_EXTRA_ATTRIBUTE_DEF (wavelength, Wavelength, float)
 
-//IMF_EXTRA_ATTRIBUTE_DEF (apertures, Apertures, std::vector<float>)
-//IMF_EXTRA_ATTRIBUTE_DEF (expTimes, ExpTimes, std::vector<float>)
-//IMF_EXTRA_ATTRIBUTE_DEF (gains, Gains, std::vector<float>)
-
 IMF_EXTRA_ATTRIBUTE_DEF (extTube, ExtTube, std::string)
 IMF_EXTRA_ATTRIBUTE_DEF (lens, Lens, std::string)
 IMF_EXTRA_ATTRIBUTE_DEF (material, Material, std::string)
+
+IMF_EXTRA_VEC_ATTRIBUTE_DEF (multApertures, MultApertures, float)
+IMF_EXTRA_VEC_ATTRIBUTE_DEF (multExpTimes, MultExpTimes, float)
+IMF_EXTRA_VEC_ATTRIBUTE_DEF (multIsoSpeeds, MultIsoSpeeds, float)
+IMF_EXTRA_VEC_ATTRIBUTE_DEF (multGains, MultGains, float)
 
 } // namespace Imf
 
