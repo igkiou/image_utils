@@ -1,0 +1,8 @@
+Images Copyright © 2008-2012 Francesco Banterle:
+- Bottles_Small.pfm
+- Oxford_Church.pfm
+- Venice01.png
+- CS_Warwick.pfm (captured using Spheron camera by WMG, Warwick, UK)
+
+If you would like to use these images in pubblications, demos, or for other
+purposes please contact Francesco Banterle at support@advancedhdrbook.com
