@@ -1,49 +1,58 @@
-% writePFM write an a matrix to a Portable Float Map Image.
+function ret = pfmwrite(img,filename)
+% TODO: Handle color properly
 %
-% [] = writePFM( image, filename, scale )
+%       ret = write_pfm(img,filename)
 %
-% When image is height x width x 3, the image is considered RGB.
-% When image is height x width, the image is considered grayscale.
-% scale must be a positive value indicating the overall intensity scale.
+%
+%        Input:
+%           -img: the image to write on the hard disk
+%           -filename: the name of the image to write
+%
+%        Output:
+%           -ret: a boolean value, it is set to 1 if the write succeed, 0 otherwise
+%
+%     Copyright (C) 2011  Francesco Banterle
+% 
+%     This program is free software: you can redistribute it and/or modify
+%     it under the terms of the GNU General Public License as published by
+%     the Free Software Foundation, either version 3 of the License, or
+%     (at your option) any later version.
+% 
+%     This program is distributed in the hope that it will be useful,
+%     but WITHOUT ANY WARRANTY; without even the implied warranty of
+%     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+%     GNU General Public License for more details.
+% 
+%     You should have received a copy of the GNU General Public License
+%     along with this program.  If not, see <http://www.gnu.org/licenses/>.
+%
 
-function [] = pfmwrite( image, filename, scale )
+ret = 0;
+%open the file
+fid = fopen(filename,'w');
 
-if exist( 'scale', 'var' ),
-    if scale <= 0,
-        error( 'scale must be positive' );
-    end
-else
-    scale = 1;
+[n,m,c]=size(img);
+
+fprintf(fid,'PF%c%d %d%c-1.000000%c',10,m,n,10,10);
+
+tot = n*m;
+data=zeros(tot*3,1);
+
+img = img(end:-1:1, :);
+img = img';
+
+for i=1:c
+    indx = i:3:(tot*3);
+    data(indx) = reshape(img(:,:,i),tot,1);
 end
 
-if size( image, 3 ) == 3
-    
-    % RGB
-    fid = fopen( filename, 'wb' );
-    fprintf( fid, 'PF\n' );
-    fprintf( fid, '%d %d\n', size( image,2 ), size( image, 1 ) );
-    fprintf( fid, '%f\n', -scale );
-    
-    tmp( :, :, 1 ) = image( :, :, 1 )';
-    tmp( :, :, 2 ) = image( :, :, 2 )';
-    tmp( :, :, 3 ) = image( :, :, 3 )';
-    
-    fwrite( fid, shiftdim( tmp, 2 ), 'float32' );
-    fclose( fid );
+for i=c:3
+    indx = i:3:(tot*3);
+    data(indx) = reshape(img(:,:,c),tot,1);
+end
 
-elseif size( image, 3 ) == 1
-    
-    % Greyscale
-    fid = fopen( filename, 'wb' );
-    fprintf( fid, 'Pf\n' );
-    fprintf( fid, '%d %d\n', size( image,2 ), size( image, 1 ) );
-    fprintf( fid, '%f\n', -scale );
-    
-    fwrite( fid, image', 'float32' );
-    fclose( fid );
-    
-else
-    
-    error( 'Image must be RGB ( height x width x 3 ) or Grayscale (height x width)' );
-    
+fwrite(fid,data,'float');
+
+fclose(fid);
+
 end

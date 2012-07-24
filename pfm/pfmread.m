@@ -1,54 +1,46 @@
-% read_pfm
+function img = pfmread(filename)
+% TODO: Handle color properly
 %
-% read_pfm( filename )
-% Reads a Portable Float Map (PFM) from file located in filename
-% A greyscale PFM (header: 'Pf') is returned as a ( height x width )
-% matrix
-% An RGB color PFM (header: 'PF') is returned as a ( height x width x 3 )
-% matrix
-function image = pfmread( filename )
+%
+%       img = read_pfm(filename)
+%
+%        Input:
+%           -filename: the name of the file to open
+%
+%        Output:
+%           -img: the opened image
+%
+%     Copyright (C) 2011  Francesco Banterle
+% 
+%     This program is free software: you can redistribute it and/or modify
+%     it under the terms of the GNU General Public License as published by
+%     the Free Software Foundation, either version 3 of the License, or
+%     (at your option) any later version.
+% 
+%     This program is distributed in the hope that it will be useful,
+%     but WITHOUT ANY WARRANTY; without even the implied warranty of
+%     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+%     GNU General Public License for more details.
+% 
+%     You should have received a copy of the GNU General Public License
+%     along with this program.  If not, see <http://www.gnu.org/licenses/>.
+%
+fid = fopen(filename, 'r');
 
-fid = fopen( filename );
-% read header
-id = fgetl( fid );
-dimline = fgetl( fid );
-% TODO: deal with the stupid whitespace issue
-dim = sscanf( dimline, '%d' );
-scale = fgetl( fid );
-scale = sscanf( scale, '%f' ); % TODO: deal with endianness
-scale = abs( scale );
+%reading the header
+fscanf(fid, '%c', 3);
+m = fscanf(fid, '%d', 1);
+fscanf(fid, '%c', 1);
+n = fscanf(fid, '%d', 1);
+fscanf(fid, '%c', 1);
+fscanf(fid, '%f', 1);
+fscanf(fid, '%c', 1);
 
-data = fread( fid, inf, 'float32' );
-fclose( fid );
+% img = zeros(m, n);
+img = fread(fid, n * m, 'float');
+img = reshape(img, [m n]);
+img = img';
+img = img(end:-1:1, :);
 
-if strcmp( id, 'PF' ),
-    % RGB
-    
-    % check size
-    if size( data, 1 ) == 3 * prod( dim ),
-        
-        redIndices = 1 : 3 : size( data, 1 );
-        red = data( redIndices );
-        green = data( redIndices + 1 );
-        blue = data( redIndices + 2 );
-        
-        % transpose image
-        image = zeros( dim(2), dim(1), 3 );
-        image( :, :, 1 ) = reshape( red, dim(1), dim(2) )';
-        image( :, :, 2 ) = reshape( green, dim(1), dim(2) )';
-        image( :, :, 3 ) = reshape( blue, dim(1), dim(2) )';
-    else
-        error( 'File size and image dimensions mismatched!' );
-    end
-elseif strcmp( id, 'Pf' ),
-    % grey
-    
-    % check size
-    if size( data, 1 ) == prod( dim )   
-        image( :, : ) = reshape( data, dim(1), dim(2) )';
-    else
-        error( 'File size and image dimensions mismatched!' );
-    end
-else
-    error( 'Invalid file header!' );
-end
+fclose(fid);
+
