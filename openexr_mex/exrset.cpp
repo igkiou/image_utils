@@ -31,7 +31,7 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[]) {
 	char *outFileName;
 	if (!mxIsEmpty(prhs[1])) {
 		if (!mxIsChar(prhs[1])) {
-			mexErrMsgTxt("First argument must be a string.");
+			mexErrMsgTxt("Second argument must be a string.");
 		}
 		const int lengthOutFileName = mxGetNumberOfElements(prhs[1]) + 1;
 		outFileName = (char *) mxMalloc(lengthOutFileName * sizeof(char));
@@ -51,6 +51,7 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[]) {
 		char* attributeName = (char *) mxMalloc(lengthAttributeName * sizeof(char));
 		mxGetString(prhs[2], attributeName, lengthAttributeName);
 		setSingleAttribute(head, attributeName, prhs[3]);
+		mxFree(attributeName);
 	} else {
 		setMultipleAttributes(head, prhs[2]);
 	}
