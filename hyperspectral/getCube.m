@@ -15,11 +15,11 @@ end;
 numWavelength = length(wavelengthInds);
 I = imread(sprintf('%s_%d.%s', name, wavelengthInds(1), EXT));
 [M N K] = size(I);
-cube = zeros(M, N, numWavelength);
+cube = zeros(M, N, numWavelength, class(I));
 
 for iter = 1:numWavelength,
 	I = imread(sprintf('%s_%d.%s', name, wavelengthInds(iter), EXT));
-	I = double(I);
+% 	I = double(I);
 	if (flipFlag == 1),
 		I = imflip(I);
 	end;

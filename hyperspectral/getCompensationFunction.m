@@ -1,5 +1,9 @@
 function compensation_function = getCompensationFunction(compensation, white_balance_type)
 
+if (nargin < 1),
+	compensation = 'sensitivity';
+end;
+
 if (nargin < 2),
 	white_balance_type = 'free_strong';
 end;
