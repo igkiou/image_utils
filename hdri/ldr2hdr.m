@@ -1,4 +1,4 @@
-function hdr = ldr2hdr(ldrIms, exposureVec, minLimit, maxLimit, baseFile)
+function hdr = ldr2hdr(ldrIms, exposures, minLimit, maxLimit, baseExposure)
 %LDR2HDR    Create high dynamic range image.
 %   HDR = LDR2HDR(LDR, EXPOSURE, MINLIMIT, MAXLIMIT, BASEFILE) creates the
 %   single-precision high dynamic range image HDR from the set of spatially
@@ -11,8 +11,8 @@ function hdr = ldr2hdr(ldrIms, exposureVec, minLimit, maxLimit, baseFile)
 %   pixels, the sensor response curve is linear. LDR images should be
 %   prealigned. 
 
-[numPixels numFiles] = size(ldrIms);
-if (length(exposureVec) ~= numFiles),
+[M N numIms] = size(ldrIms);
+if (length(exposures) ~= numIms),
 	error('Number of exposure values must be equal to number of LDR images.');
 end;
 
@@ -21,30 +21,30 @@ if ((nargin < 3) || (isempty(minLimit))),
 end;
 
 if ((nargin < 4) || (isempty(maxLimit))),
-	minLimit = 250;
+	maxLimit = 250;
 end;
 
+numPixels = M * N;
+ldrIms = reshape(ldrIms, [numPixels, numIms]);
 hdr = zeros(numPixels, 1, 'single');
 properlyExposedCount = zeros(size(hdr));
 someUnderExposed = false(size(hdr));
 someOverExposed = false(size(hdr));
 someProperlyExposed = false(size(hdr));
 
-if ((nargin < 5) || (isempty(baseFile))),
-	if (isempty(find(exposureVec == 1, 1)))
-		baseExposure = median(exposureVec);
+if ((nargin < 5) || (isempty(baseExposure))),
+	if (isempty(find(exposures == 1, 1)))
+		baseExposure = median(exposures);
 	else
 		baseExposure = 1;
 	end;
-else
-	baseExposure = exposureVec(baseFile);
 end;
 	
 % Construct the HDR image by iterating over the LDR images.
-for iterFile = 1:numFiles,
+for iterIm = 1:numIms,
 
-	ldr = ldrIms(:, iterFile);
-	relExposure = exposureVec(iterFile) / baseExposure;
+	ldr = ldrIms(:, iterIm);
+	relExposure = exposures(iterIm) / baseExposure;
 
 	underExposed = ldr < minLimit;
 	someUnderExposed = someUnderExposed | underExposed;
@@ -87,3 +87,5 @@ if any(fillMask(:))
 	hdr(:,:,2) = roifill(hdr(:,:,2), fillMask(:,:,2));
 	hdr(:,:,3) = roifill(hdr(:,:,3), fillMask(:,:,3));
 end;
+
+hdr = reshape(hdr, [M N]);

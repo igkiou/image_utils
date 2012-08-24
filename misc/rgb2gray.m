@@ -1,4 +1,4 @@
-function grayImage = safeRgb2gray(inputImage)
+function grayImage = rgb2gray(inputImage)
 
 [M N P] = size(inputImage);
 

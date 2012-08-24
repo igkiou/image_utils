@@ -1,21 +1,23 @@
-function compensation_function = getCompensationFunction(compensation, white_balance_type)
+function compensation_function = getCompensationFunction(compensation, wavelengths)
+% compensation_function is the amount by which to divide.
 
-if (nargin < 1),
-	compensation = 'sensitivity';
+if ((nargin < 1) || isempty(compensation)),
+	compensation = 'nuance_sensitivity';
 end;
 
-if (nargin < 2),
-	white_balance_type = 'free_strong';
+if ((nargin < 2) || isempty(wavelengths)),
+	wavelengths = 420:10:720;
 end;
 
+numWavelengths = length(wavelengths);
 if (strcmp(compensation, 'none')),
-	v = load('-ascii','calib.txt'); v = v(:);
-	compensation_function = ones(size(v));
-elseif (strcmp(compensation, 'sensitivity')),
-	v = load('-ascii','calib.txt'); v = v(:);
-	compensation_function = v;
-elseif (strcmp(compensation, 'white_balance')),
-	load('/home/igkiou/MATLAB/translucency/acquisition/white_balance_compensation.mat',...
-	sprintf('%s_compensation', white_balance_type));
-	eval(sprintf('compensation_function = %s_compensation;', white_balance_type));
+	compensation_function = ones(numWavelengths);
+elseif (strcmp(compensation, 'nuance_sensitivity')),
+	l = load('-ascii','nuance_sensitivity.txt');
+	[foundWavelengths indsFunc] = intersect(l(:, 1), wavelengths);
+	numFoundWavelengths = length(foundWavelengths);
+	if (numFoundWavelengths ~= numWavelengths),
+		warning('Not all wavelengths in the original vector found in nuance sensitivity file.');
+	end;
+	compensation_function = l(indsFunc, 2);
 end;

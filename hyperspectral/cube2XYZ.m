@@ -10,7 +10,7 @@ if ((nargin < 3) || isempty(compensation_function)),
 end;
 
 l = load('-ascii','CMF_CIE_1931_2_degree.txt');
-[foundWavelengths indsCIE indsOrig] = intersect(l(:,1), wavelengths);
+[foundWavelengths indsCIE indsOrig] = intersect(l(:, 1), wavelengths);
 numFoundWavelengths = length(foundWavelengths);
 if (numFoundWavelengths ~= numWavelengths),
 	warning('Not all wavelengths in the original vector found in CIE CMF file.');
