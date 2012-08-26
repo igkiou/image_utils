@@ -37,6 +37,10 @@ using namespace Iex;
 #define USED float
 #define USEDC FLOAT
 
+/*
+ * C++-ize, as also done in nuancefx_mex.
+ */
+
 enum ATTR_TYPE {
 	ATTR_CHLIST,
 	ATTR_COMPRESSION,
