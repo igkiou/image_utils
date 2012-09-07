@@ -4,7 +4,7 @@ if ((nargin < 2) || isempty(wtpoint)),
 	wtpoint = 'D65';
 end;
 
-if (strcmpi(whitepoint, 'd65')),
+if (strcmpi(wtpoint, 'd65')),
 	LAB = colorspace('XYZ->LAB', XYZ);
 	return;
 else
