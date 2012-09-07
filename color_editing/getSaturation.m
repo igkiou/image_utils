@@ -1,4 +1,4 @@
-function L = getL(imIn, colorSpace, whitepoint)
+function sat = getSaturation(imIn, colorSpace, whitepoint)
 
 if ((nargin < 2) || isempty(colorSpace)),
 	colorSpace = 'sRGB';
@@ -14,5 +14,4 @@ elseif (~strcmpi(colorSpace, 'RGB')),
 	error('Invalid color space');
 end;
 
-imLab = RGB2Lab(imIn, whitepoint);
-L = imLab(:, :, 1);
+[~. sat] = RGB2Lch(imIn, whitepoint);

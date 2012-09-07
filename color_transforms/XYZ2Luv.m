@@ -1,7 +1,36 @@
-function [LUV c s h] = XYZ2Luv(XYZ)
+function [LUV c s h] = XYZ2Luv(XYZ, wtpoint)
 
-LUV = colorspace('XYZ->LUV', XYZ);
-c = hypot(LUV(:, :, 2), LUV(:, :, 3));
-s = c ./ LUV(:, :, 1);
-h = atan2(LUV(:, :, 3), LUV(:, :, 2));
-h = h * 180 / pi + 360 * (h < 0);
+if ((nargin < 2) || isempty(wtpoint)),
+	wtpoint = 'D65';
+end;
+
+if (strcmpi(wtpoint, 'd65')),
+	LUV = colorspace('XYZ->LUV', XYZ);
+	return;
+else
+	WXYZ = getWhitepoint(wtpoint);
+	Xn = WXYZ(1);
+	Yn = WXYZ(2);
+	Zn = WXYZ(3);
+	un = 4 * Xn / (Xn + 15 * Yn + 3 * Zn);
+	vn = 4 * Yn / (Xn + 15 * Yn + 3 * Zn);
+	
+	denom = XYZ(:, :, 1) + 15 * XYZ(:, :, 2) + 3 * XYZ(:, :, 3);
+	LUV = zeros(size(XYZ));
+	LUV(:, :, 1) = 116 * f(XYZ(:, :, 2) / Yn) - 16;
+	LUV(:, :, 2) = (4 * XYZ(:, :, 1)) ./ (Denom + (Denom == 0));
+	LUV(:, :, 2) = 13 * LUV(:, :, 1) .* (LUV(:, :, 2) - un);
+	LUV(:, :, 3) = (9 * XYZ(:, :, 2)) ./ (Denom + (Denom == 0));
+	LUV(:, :, 3) = 13 * LUV(:, :, 1) .* (LUV(:, :, 3) - vn);
+end;
+	
+end
+
+function ft = f(t)
+
+inds = t > (6 / 29) ^ 3;
+ft = zeros(size(t));
+ft(inds) = t(inds) .^ (1 / 3);
+ft(~inds) = 1 / 3 * (29 / 6) ^ 2 * t(~inds) + 4 / 29;
+
+end

@@ -1,4 +1,4 @@
-function L = getL(imIn, colorSpace, whitepoint)
+function chromauv = getChromaUv(imIn, colorSpace, whitepoint)
 
 if ((nargin < 2) || isempty(colorSpace)),
 	colorSpace = 'sRGB';
@@ -14,5 +14,5 @@ elseif (~strcmpi(colorSpace, 'RGB')),
 	error('Invalid color space');
 end;
 
-imLab = RGB2Lab(imIn, whitepoint);
-L = imLab(:, :, 1);
+imLchuv = RGB2Lchuv(imIn, whitepoint);
+chromauv = imLchuv(:, :, 2);

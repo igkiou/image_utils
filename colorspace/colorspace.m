@@ -23,7 +23,7 @@ function varargout = colorspace(Conversion,varargin)
 %     'xyY'              CIE 1931 xyY
 %     'Lab'              CIE 1976 L*a*b* (CIELAB)
 %     'Luv'              CIE L*u*v* (CIELUV)
-%     'LCH'              CIE L*C*H* (CIELCH)
+%     'LCH'              CIE L*C*H* (CIELCH for a,b-C and a,b-H)
 %     'CAT02 LMS'        CIE CAT02 LMS
 %
 %  All conversions assume 2 degree observer and D65 illuminant.
@@ -82,6 +82,8 @@ function varargout = colorspace(Conversion,varargin)
 %  response of the three types of cones in the human eye, where L, M, S,
 %  correspond respectively to red ("long"), green ("medium"), and blue
 %  ("short").
+%
+%	TODO: Add support for CIELCH with u,v-C and u,v-H.
 
 % Pascal Getreuer 2005-2010
 

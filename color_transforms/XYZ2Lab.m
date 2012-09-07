@@ -8,7 +8,7 @@ if (strcmpi(wtpoint, 'd65')),
 	LAB = colorspace('XYZ->LAB', XYZ);
 	return;
 else
-	WXYZ = whitepoint(wtpoint);
+	WXYZ = getWhitepoint(wtpoint);
 	Xn = WXYZ(1);
 	Yn = WXYZ(2);
 	Zn = WXYZ(3);
