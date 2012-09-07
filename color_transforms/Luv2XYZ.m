@@ -13,7 +13,7 @@ else
 	Yn = WXYZ(2);
 	Zn = WXYZ(3);
 	un = 4 * Xn / (Xn + 15 * Yn + 3 * Zn);
-	vn = 4 * Yn / (Xn + 15 * Yn + 3 * Zn);
+	vn = 9 * Yn / (Xn + 15 * Yn + 3 * Zn);
 	
 	XYZ = zeros(size(LUV));
 	XYZ(:, :, 2) = (LUV(:, :, 1) + 16) / 116;

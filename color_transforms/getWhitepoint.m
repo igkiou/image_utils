@@ -5,9 +5,11 @@ if (nargin < 2),
 		error('When a single argument is provided, it must be a string.');
 	end;
 	
-	switch spec
+	switch lower(spec)
 		case 'flat'
 			xyz = [1.000081049323616 1.0 1.000339540500596];
+		case 'd65'
+			xyz = [0.950456, 1, 1.088754];
 		otherwise
 			xyz = whitepoint(spec);
 	end;

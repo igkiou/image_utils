@@ -1,4 +1,4 @@
-function [LCHuv s] = cube2Lchuv(img, wavelengths, wtpoint, varargin)
+function [LCHuv suv] = cube2Lchuv(img, wavelengths, wtpoint, varargin)
 
 if ((nargin < 3) || isempty(wtpoint)),
 	wtpoint = 'D65';
