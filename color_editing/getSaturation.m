@@ -14,4 +14,4 @@ elseif (~strcmpi(colorSpace, 'RGB')),
 	error('Invalid color space');
 end;
 
-[~. sat] = RGB2Lch(imIn, whitepoint);
+[~, sat] = RGB2Lch(imIn, whitepoint);

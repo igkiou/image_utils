@@ -14,4 +14,4 @@ elseif (~strcmpi(colorSpace, 'RGB')),
 	error('Invalid color space');
 end;
 
-[~. satuv] = RGB2Lchuv(imIn, whitepoint);
+[~, satuv] = RGB2Lchuv(imIn, whitepoint);
