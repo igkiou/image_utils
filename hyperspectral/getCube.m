@@ -18,25 +18,41 @@ end;
 
 numWavelengths = length(wavelengths);
 if (isempty(exposures)),
-	I = imread(sprintf('%s_%d.%s', name, wavelengths(1), EXT));
+	if (strcmp(EXT, 'exr')),
+		I = exrread(sprintf('%s_%d.%s', name, wavelengths(1), EXT));
+	else
+		I = imread(sprintf('%s_%d.%s', name, wavelengths(1), EXT));
+	end;
 	[M N K] = size(I);
 	cube = zeros(M, N, numWavelengths, class(I));
 
 	for iter = 1:numWavelengths,
-		I = imread(sprintf('%s_%d.%s', name, wavelengths(iter), EXT));
-	% 	I = double(I);
+		if (strcmp(EXT, 'exr')),
+			I = exrread(sprintf('%s_%d.%s', name, wavelengths(iter), EXT));
+		else
+			I = imread(sprintf('%s_%d.%s', name, wavelengths(iter), EXT));
+		end;
+		% 	I = double(I);
 		if (flipFlag == 1),
 			I = imflip(I);
 		end;
 		cube(:, :, iter) = I(:, :, 1);
 	end;
 elseif (numel(exposures) == numWavelengths),
-	I = imread(sprintf('%s_exp%gms_%d.%s', name, exposures(1), wavelengths(1), EXT));
+	if (strcmp(EXT, 'exr')),
+		I = exrread(sprintf('%s_exp%gms_%d.%s', name, exposures(1), wavelengths(1), EXT));
+	else
+		I = imread(sprintf('%s_exp%gms_%d.%s', name, exposures(1), wavelengths(1), EXT));
+	end;
 	[M N K] = size(I);
 	cube = zeros(M, N, numWavelengths, class(I));
 
 	for iter = 1:numWavelengths,
-		I = imread(sprintf('%s_exp%gms_%d.%s', name, exposures(1), wavelengths(iter), EXT));
+		if (strcmp(EXT, 'exr')),
+			I = exrread(sprintf('%s_exp%gms_%d.%s', name, exposures(1), wavelengths(iter), EXT));
+		else
+			I = imread(sprintf('%s_exp%gms_%d.%s', name, exposures(1), wavelengths(iter), EXT));
+		end;
 	% 	I = double(I);
 		if (flipFlag == 1),
 			I = imflip(I);
@@ -48,12 +64,21 @@ else
 		warning('Number of exposures provided different than number of wavelengths and larger than one. Only first exposure will be used.');
 		exposures = exposures(1);
 	end;
+	if (strcmp(EXT, 'exr')),
+		I = exrread(sprintf('%s_exp%gms_%d.%s', name, exposures, wavelengths(1), EXT));
+	else
+		I = imread(sprintf('%s_exp%gms_%d.%s', name, exposures, wavelengths(1), EXT));
+	end;
 	I = imread(sprintf('%s_exp%gms_%d.%s', name, exposures, wavelengths(1), EXT));
 	[M N K] = size(I);
 	cube = zeros(M, N, numWavelengths, class(I));
 
 	for iter = 1:numWavelengths,
-		I = imread(sprintf('%s_exp%gms_%d.%s', name, exposures, wavelengths(iter), EXT));
+		if (strcmp(EXT, 'exr')),
+			I = exrread(sprintf('%s_exp%gms_%d.%s', name, exposures, wavelengths(iter), EXT));
+		else
+			I = imread(sprintf('%s_exp%gms_%d.%s', name, exposures, wavelengths(iter), EXT));
+		end;
 	% 	I = double(I);
 		if (flipFlag == 1),
 			I = imflip(I);
