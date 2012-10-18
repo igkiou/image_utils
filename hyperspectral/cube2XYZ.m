@@ -17,8 +17,8 @@ if (numFoundWavelengths ~= numWavelengths),
 	warning('Not all wavelengths in the original vector found in CIE CMF file.');
 end;
 
-cmf = l(indsCIE, 2:4); %color matching
-% l = l / max(l(:));
+cmf = l(indsCIE, 2:4); 
+cmf = cmf / max(sum(cmf, 1));
 XYZ = zeros(size(img, 1), size(img, 2), 3);
   
 for iterChannel = 1:3,

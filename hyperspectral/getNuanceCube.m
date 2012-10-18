@@ -1,5 +1,5 @@
 function cube = getNuanceCube(name, varargin)
 
 EXT = 'tif';
-wavelengths = 420:10:720;
+wavelengths = getNuanceWavelengths;
 cube = getCube(name, EXT, wavelengths, varargin{:});
