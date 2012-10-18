@@ -1,31 +1,36 @@
-function XYZ = cube2XYZ(img, wavelengths, compensation_function)
+function XYZ = cube2XYZ(cube, wavelengths, compensation_function, formulary)
 
 if ((nargin < 2) || isempty(wavelengths)),
-	wavelengths = 420:10:720;
+	wavelengths = getDefaultWavelengths;
 end;
 numWavelengths = length(wavelengths);
 
 if ((nargin < 3) || isempty(compensation_function)),
-	compensation_function = ones(numWavelengths, 1);
+	compensation_function = getCompensationFunction([], wavelengths);
 end;
 
-% l = load('-ascii','CMF_CIE_1931_2_degree.txt');
-[l(:, 1) l(:, 2) l(:, 3) l(:, 4)] = colorMatchFcn('CIE_1931');
-[foundWavelengths indsCIE indsOrig] = intersect(l(:, 1), wavelengths);
+if ((nargin < 4) || isempty(formulary)),
+	formulary = 'CIE_1931';
+end;
+
+if (length(compensation_function) ~= numWavelengths),
+	error('Length of wavelengths and compensation functions must be equal.');
+end;
+
+if (size(cube, 3) ~= numWavelengths)
+	error('Number of channels in the cube and length of wavelenghts must be equal.');
+end;
+
+[CMF foundWavelengths indsOrig] = getCMF(formulary, wavelengths);
 numFoundWavelengths = length(foundWavelengths);
-if (numFoundWavelengths ~= numWavelengths),
-	warning('Not all wavelengths in the original vector found in CIE CMF file.');
-end;
-
-cmf = l(indsCIE, 2:4); 
-cmf = cmf / max(sum(cmf, 1));
-XYZ = zeros(size(img, 1), size(img, 2), 3);
+CMF = CMF / sum(CMF(:, 2), 1);
+XYZ = zeros(size(cube, 1), size(cube, 2), 3);
   
 for iterChannel = 1:3,
 	for iterWavelength = 1:numFoundWavelengths,
 		XYZ(:, :, iterChannel) = XYZ(:, :, iterChannel) ...
-						+ cmf(iterWavelength, iterChannel) ...
-						* img(:, :, indsOrig(iterWavelength)) ...
+						+ CMF(iterWavelength, iterChannel) ...
+						* cube(:, :, indsOrig(iterWavelength)) ...
 						/ compensation_function(indsOrig(iterWavelength));
 	end;
 end;

@@ -1,20 +1,22 @@
-function compensation_function = getCompensationFunction(compensation, wavelengths)
+function [compensation_function foundWavelengths indsOrig] = getCompensationFunction(compensation, wavelengths)
 % compensation_function is the amount by which to divide.
 
 if ((nargin < 1) || isempty(compensation)),
-	compensation = 'nuance_sensitivity';
+	compensation = 'flat';
 end;
 
 if ((nargin < 2) || isempty(wavelengths)),
-	wavelengths = 420:10:720;
+	wavelengths = getDefaultWavelengths;
 end;
 
 numWavelengths = length(wavelengths);
-if (strcmp(compensation, 'none')),
-	compensation_function = ones(numWavelengths);
+if (strcmp(compensation, 'flat')),
+	compensation_function = ones(size(wavelengths));
+	foundWavelengths = wavelengths;
+	indsOrig = 1:numWavelengths;
 elseif (strcmp(compensation, 'nuance_sensitivity')),
 	l = load('-ascii','nuance_sensitivity.txt');
-	[foundWavelengths indsFunc] = intersect(l(:, 1), wavelengths);
+	[foundWavelengths indsFunc indsOrig] = intersect(l(:, 1), wavelengths);
 	numFoundWavelengths = length(foundWavelengths);
 	if (numFoundWavelengths ~= numWavelengths),
 		warning('Not all wavelengths in the original vector found in nuance sensitivity file.');

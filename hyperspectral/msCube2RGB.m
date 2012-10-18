@@ -1,4 +1,4 @@
-function RGB = msCube2RGB(img, varargin)
+function RGB = msCube2RGB(cube, varargin)
 
-XYZ = msCube2XYZ(img, varargin{:});
+XYZ = msCube2XYZ(cube, varargin{:});
 RGB = XYZ2RGB(XYZ);

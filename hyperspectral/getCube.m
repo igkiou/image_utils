@@ -5,7 +5,7 @@ if ((nargin < 2) || (isempty(EXT))),
 end;
 
 if ((nargin < 3) || (isempty(wavelengths))),
-	wavelengths = 420:10:720;
+	wavelengths = getDefaultWavelengths;
 end;
 
 if ((nargin < 4) || (isempty(exposures))),

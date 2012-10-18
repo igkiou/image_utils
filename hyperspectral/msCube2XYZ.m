@@ -1,4 +1,4 @@
-function XYZ = msCube2XYZ(img, varargin)
+function XYZ = msCube2XYZ(cube, varargin)
 
-wavelengths = 400:10:700;
-XYZ = cube2XYZ(img, wavelengths, varargin{:});
+wavelengths = getMsWavelengths;
+XYZ = cube2XYZ(cube, wavelengths, varargin{:});

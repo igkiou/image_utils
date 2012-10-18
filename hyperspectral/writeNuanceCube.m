@@ -1,5 +1,5 @@
 function writeNuanceCube(cube, name, varargin)
 
 EXT = 'tif';
-wavelengths = 420:10:720;
+wavelengths = getNuanceWavelengths;
 writeCube(cube, name, EXT, wavelengths, varargin{:});

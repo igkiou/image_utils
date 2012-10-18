@@ -15,7 +15,7 @@ if (nargin < 2),
 	end;
 else
 	if (numel(spec) ~= numel(wavelengths)),
-		error('When two argumetns are provided, they must be of equal size.');
+		error('When two arguments are provided, they must be of equal size.');
 	end;
 	xyz = cube2XYZ(spectrum2cube(spec), wavelengths);
 	xyz = xyz / xyz(2);

@@ -1,4 +1,4 @@
-function sRGB = msCube2sRGB(img, varargin)
+function sRGB = msCube2sRGB(cube, varargin)
 
-RGB = msCube2RGB(img, varargin{:});
+RGB = msCube2RGB(cube, varargin{:});
 sRGB = RGB2sRGB(RGB);

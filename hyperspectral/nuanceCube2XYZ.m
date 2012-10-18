@@ -1,4 +1,4 @@
-function XYZ = nuanceCube2XYZ(img, varargin)
+function XYZ = nuanceCube2XYZ(cube, varargin)
 
 wavelengths = getNuanceWavelengths;
-XYZ = cube2XYZ(img, wavelengths, varargin{:});
+XYZ = cube2XYZ(cube, wavelengths, varargin{:});
