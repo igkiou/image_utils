@@ -23,3 +23,5 @@ elseif (strcmp(compensation, 'nuance_sensitivity')),
 	end;
 	compensation_function = l(indsFunc, 2);
 end;
+
+compensation_function = compensation_function / sum(compensation_function);

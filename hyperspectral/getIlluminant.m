@@ -20,5 +20,5 @@ else
 	if (numFoundWavelengths ~= numWavelengths),
 		warning('Not all wavelengths in the original vector found in illuminant file.');
 	end;
-	illum = illum(indsIllum);
+	illum = illum(indsIllum)';
 end;

@@ -5,7 +5,7 @@ if ((nargin < 2) || isempty(wavelengths)),
 end;
 numWavelengths = length(wavelengths);
 
-if ((nargin < 3) || isempty(illumname)),
+if ((nargin < 3) || isempty(illumName)),
 	illumName = 'd65';
 end;
 
@@ -17,4 +17,5 @@ end;
 numFoundWavelengths = length(foundWavelengths);
 
 comp_func = mean(reshape(cube(:, :, indsOrig), [size(cube, 1) * size(cube, 2), numFoundWavelengths]), 1);
-comp_func = comp_func ./ illum';
+comp_func = comp_func ./ illum;
+comp_func = comp_func / sum(comp_func);
