@@ -1,6 +1,0 @@
-Add properties for writing exif data
-Add namespace for openexr
-Changes names and have script for adding to MATLAB imformats
-Test alpha channel support
-Fix problems with channels
-

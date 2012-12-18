@@ -1,0 +1,16 @@
+-OpenEXR
+--Add properties for writing exif data
+--Add namespace for openexr
+--Changes names and have script for adding to MATLAB imformats
+--Test alpha channel support
+--Fix problems with channels
+
+-color_transforms
+--Make equivalents of Lab for Luv
+--Make chroma, saturation, and hue variants for Luv
+
+-pfm
+--Get both write and read to work properly
+
+-hdri
+--Write GUI-viewer for HDR with various tonemapping
