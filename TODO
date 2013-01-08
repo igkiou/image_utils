@@ -4,6 +4,7 @@
 --Changes names and have script for adding to MATLAB imformats
 --Test alpha channel support
 --Fix problems with channels
+--Add proper support for variable channels
 
 -color_transforms
 --Make equivalents of Lab for Luv

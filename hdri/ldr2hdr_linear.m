@@ -1,5 +1,17 @@
 function hdr = ldr2hdr_linear(ldrIms, exposures, minLimit, maxLimit, maxVal)
-% Combine different exposures assuming a linear camera response.
+%	Combine different exposures assuming a linear camera response. Note that
+%	this assumes that images are taken under the same aperture and
+%	sensitivity (ISO) setting. 
+%
+%	The default parameters assume 8-bit LDR images.
+%
+%	Input:
+%	ldrIms		-	M x N x S exposure stack of S LDR images, where M x N the
+%						size of each image, and S the number of exposures.
+%	exposures	-	S x 1 vector of exposure times.
+%	minLimit		-	Underexposure value, in gray tones (default 5).
+%	maxLimit		-	Overexposure value, in gray tones (default 250).
+%	maxVal		-	Maximum gray tone of original LDR images (default 255).
 
 [M N numIms] = size(ldrIms);
 if (length(exposures) ~= numIms),
@@ -15,7 +27,7 @@ if ((nargin < 4) || (isempty(maxLimit))),
 end;
 
 if ((nargin < 5) || (isempty(maxVal))),
-	maxVal = 1;
+	maxVal = 255;
 end;
 
 numPixels = M * N;
