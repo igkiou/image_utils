@@ -1,6 +1,6 @@
 MATLABDIR = /usr/local/matlabR2010a
 
-MATLABARCH = glnxa64
+MATLABARCH = glnx86
 MEXEXT = $(shell $(MATLABDIR)/bin/mexext)
 MAPFILE = mexFunction.map
 

@@ -27,7 +27,7 @@ private:
 
 public:
 	MxClassID();
-	MxClassID(const MxClassID<T> mxClass) {
+	MxClassID(const MxClassID& mxClass) {
 		m_class = mxClass();
 	}
 
@@ -39,36 +39,41 @@ public:
 		return m_class;
 	}
 
+	inline const mxClassID operator()() const {
+		return m_class;
+	}
+
+	inline mxClassID operator()() const {
+		return m_class;
+	}
+
+	inline operator const mxClassID() const {
+		return m_class;
+	}
+
+	inline operator mxClassID() const {
+		return m_class;
+	}
 };
 
-MxClassID<int>::MxClassID() : m_class(mxINT32_CLASS) {	};
+MxClassID<unsigned char>::MxClassID() : m_class(mxUINT8_CLASS) {	}
+MxClassID<char>::MxClassID() : m_class(mxINT8_CLASS) {	}
+MxClassID<short>::MxClassID() : m_class(mxINT16_CLASS) {	}
+MxClassID<unsigned short>::MxClassID() : m_class(mxUINT16_CLASS) {	}
+MxClassID<int>::MxClassID() : m_class(mxINT32_CLASS) {	}
+MxClassID<unsigned int>::MxClassID() : m_class(mxUINT32_CLASS) {	}
+MxClassID<long>::MxClassID() : m_class(mxINT64_CLASS) {	}
+MxClassID<unsigned long>::MxClassID() : m_class(mxUINT64_CLASS) {	}
 MxClassID<float>::MxClassID() : m_class(mxSINGLE_CLASS) {	}
 MxClassID<double>::MxClassID() : m_class(mxDOUBLE_CLASS) {	}
-MxClassID<char>::MxClassID() : m_class(mxCHAR_CLASS) {	}
+MxClassID<bool>::MxClassID() : m_class(mxLOGICAL_CLASS) {	}
 
-
-
-//		mxCELL_CLASS,
+//			mxCELL_CLASS,
 //		    mxSTRUCT_CLASS,
-//		    mxLOGICAL_CLASS,
-//		    mxCHAR_CLASS,
 //		    mxVOID_CLASS,
-//		    mxINT8_CLASS,
-//		    mxUINT8_CLASS,
-//		    mxINT16_CLASS,
-//		    mxUINT16_CLASS,
-//		    mxINT32_CLASS,
-//		    mxUINT32_CLASS,
-//		    mxINT64_CLASS,
-//		    mxUINT64_CLASS,
 //		    mxFUNCTION_CLASS,
 //		    mxOPAQUE_CLASS,
 //		    mxOBJECT_CLASS, /* keep the last real item in the list */
-//		#if defined(_LP64) || defined(_WIN64)
-//		    mxINDEX_CLASS = mxUINT64_CLASS,
-//		#else
-//		    mxINDEX_CLASS = mxUINT32_CLASS,
-//		#endif
 
 struct MxArrayCreator {
 private:
@@ -83,30 +88,64 @@ public:
 		m_mxArray = mxCreateString(cStringVar);
 	}
 
-
-
-	MxArrayCreator(const int intVar) {
-		m_mxArray = mxCreateNumericMatrix(1, 1, mxINT32_CLASS, mxREAL);
-		int *val = (int *) mxGetData(m_mxArray);
-		*val = (int) intVar;
+	template <typename T>
+	MxArrayCreator(const T scalarVar) {
+		m_mxArray = mxCreateNumericMatrix(1, 1, MxClassID<T>(), mxREAL);
+		T *val = (T *) mxGetData(m_mxArray);
+		*val = (T) scalarVar;
 	}
 
-	MxArrayCreator(const std::vector<int>& intVec) {
-		m_mxArray = mxCreateNumericMatrix(intVec.size(), 1, mxINT32_CLASS, mxREAL);
-		int *val = (int *) mxGetData(m_mxArray);
-		std::copy(intVec.begin(), intVec.end(), val);
+	template <typename T>
+	MxArrayCreator(const std::vector<T>& vecVar) {
+		m_mxArray = mxCreateNumericMatrix(vecVar.size(), 1, MxClassID<T>(), mxREAL);
+		T *val = (T *) mxGetData(m_mxArray);
+		std::copy(vecVar.begin(), vecVar.end(), val);
 	}
 
-	MxArrayCreator(const int* intArr, const int numRows, const int numColumns) {
-		m_mxArray = mxCreateNumericMatrix(numRows, numColumns, mxINT32_CLASS, mxREAL);
-		int *val = (int *) mxGetData(m_mxArray);
-		memcpy(val, intArr, numRows * numColumns * sizeof(int));
+	template <typename T>
+	MxArrayCreator(const T* arrVar, const int numRows, const int numColumns = 1) {
+		m_mxArray = mxCreateNumericMatrix(numRows, numColumns, MxClassID<T>(), mxREAL);
+		T *val = (T *) mxGetData(m_mxArray);
+		memcpy(val, arrVar, numRows * numColumns * sizeof(T));
+	}
+
+	template <typename T>
+	MxArrayCreator(const T* arrVar, const int numDims, const int *dims) {
+		m_mxArray = mxCreateNumericArray(numDims, dims, MxClassID<T>(), mxREAL);
+		T *val = (T *) mxGetData(m_mxArray);
+		int numElements = 1;
+		for (int iter = 0; iter < numDims; ++iter) {
+			numElements *= dims[iter];
+		}
+		memcpy(val, arrVar, numElements * sizeof(T));
+	}
+
+	inline const mxArray* mxArray() const {
+		return m_mxArray;
+	}
+
+	inline mxArray* mxArray() const {
+		return m_mxArray;
+	}
+
+	inline const mxArray* operator()() const {
+		return m_mxArray;
+	}
+
+	inline mxArray* operator()() const {
+		return m_mxArray;
+	}
+
+	inline operator const mxArray*() const {
+		return m_mxArray;
+	}
+
+	inline operator mxArray*() const {
+		return m_mxArray;
 	}
 
 };
 
-
 }	/* name space mex */
-
 
 #endif /* MEX_UTILS_H_ */
