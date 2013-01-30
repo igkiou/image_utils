@@ -7,6 +7,8 @@
 
 #include "openexr_mex.h"
 
+namespace exr {
+
 const mxArray * attributeToMxArray(const Attribute & attr) {
 	switch (stringToAttrType(attr.typeName())) {
 		case ATTR_CHLIST:
@@ -26,12 +28,16 @@ const mxArray * attributeToMxArray(const Attribute & attr) {
 		case ATTR_COMPRESSION:
 		{
 			const TypedAttribute<Compression>& comprAttr = static_cast<const TypedAttribute<Compression>& >(attr);
-			return mxCreateString(compressionTypeToString(comprAttr.value()));
+			char compression[EXR_MAX_STRING_LENGTH];
+			compressionTypeToString(comprAttr.value(), compression);
+			return mxCreateString(compression);
 		}
 		case ATTR_LINEORDER:
 		{
 			const TypedAttribute<LineOrder>& linOrdAttr = static_cast<const TypedAttribute<LineOrder>& >(attr);
-			return mxCreateString(lineOrderTypeToString(linOrdAttr.value()));
+			char lineOrder[EXR_MAX_STRING_LENGTH];
+			lineOrderTypeToString(linOrdAttr.value(), lineOrder);
+			return mxCreateString(lineOrder);
 		}
 		case ATTR_CHROMATICITIES:
 		{
@@ -69,7 +75,9 @@ const mxArray * attributeToMxArray(const Attribute & attr) {
 		case ATTR_ENVMAP:
 		{
 			const TypedAttribute<Envmap>& envmapAttr = static_cast<const TypedAttribute<Envmap>& >(attr);
-			return mxCreateString(envmapTypeToString(envmapAttr.value()));
+			char envmap[EXR_MAX_STRING_LENGTH];
+			envmapTypeToString(envmapAttr.value(), envmap);
+			return mxCreateString(envmap);
 		}
 		case ATTR_STRING:
 		{
@@ -177,7 +185,7 @@ const mxArray * attributeToMxArray(const Attribute & attr) {
 	}
 }
 
-mxArray* getAllAttributes(const Header& head) {
+mxArray* getAttribute(const Header& head) {
 
 	mxArray* matStruct;
 	int numAttributes = 0;
@@ -198,12 +206,12 @@ mxArray* getAllAttributes(const Header& head) {
 	return matStruct;
 }
 
-mxArray* getSingleAttribute(const Header& head, const char attributeName[]) {
+mxArray* getAttribute(const Header& head, const char attributeName[]) {
 	const Attribute& attr = head[attributeName];
 	return const_cast<mxArray *>(attributeToMxArray(attr));
 }
 
-void setSingleAttribute(Header& head, const char attrName[], const mxArray* mxarr) {
+void setAttribute(Header& head, const char attrName[], const mxArray* mxarr) {
 
 	if (!strcmp(attrName, "gain")) {
 		if (!(mxIsSingle(mxarr) && (mxGetNumberOfElements(mxarr) == 1))) {
@@ -414,12 +422,12 @@ void setSingleAttribute(Header& head, const char attrName[], const mxArray* mxar
 	}
 }
 
-void setMultipleAttributes(Header& head, const mxArray* mxstruct) {
+void setAttribute(Header& head, const mxArray* mxstruct) {
 
 	if (mxIsStruct(mxstruct)) {
 		int numAttributes = mxGetNumberOfFields(mxstruct);
 		for (int iterAttr = 0; iterAttr < numAttributes; ++iterAttr) {
-			setSingleAttribute(head, mxGetFieldNameByNumber(mxstruct, iterAttr), \
+			setAttribute(head, mxGetFieldNameByNumber(mxstruct, iterAttr), \
 							mxGetFieldByNumber(mxstruct, 0, iterAttr));
 		}
 	} else if (!mxIsEmpty(mxstruct)) {
@@ -444,6 +452,37 @@ void writeScanLine(OutputFile& file, \
 	if (aPixels != NULL) {
 		frameBuffer.insert("A", Slice(USEDC, (char *) aPixels, \
 			sizeof(*aPixels) * 1, sizeof(*aPixels) * width));
+	}
+	file.setFrameBuffer(frameBuffer);
+	file.writePixels(height);
+}
+
+void writeScanLine(OutputFile& file, \
+		const USED *yPixels, \
+		const USED *aPixels, \
+		const size_t width,
+		const size_t height) {
+	FrameBuffer frameBuffer;
+	frameBuffer.insert("Y", Slice(USEDC, (char *) yPixels, \
+			sizeof(*yPixels) * 1, sizeof(*yPixels) * width));
+	if (aPixels != NULL) {
+		frameBuffer.insert("A", Slice(USEDC, (char *) aPixels, \
+			sizeof(*aPixels) * 1, sizeof(*aPixels) * width));
+	}
+	file.setFrameBuffer(frameBuffer);
+	file.writePixels(height);
+}
+
+void writeScanLine(OutputFile& file, \
+		const std::vector<USED *>& cPixels, \
+		const char **cNames, \
+		const size_t width, \
+		const size_t height) {
+	FrameBuffer frameBuffer;
+	size_t channels = cPixels.size();
+	for (size_t iterChannel = 0; iterChannel < channels; ++iterChannel) {
+		frameBuffer.insert(cNames[iterChannel], Slice(USEDC, (char *) cPixels[iterChannel], \
+				sizeof(*cPixels[iterChannel]) * 1, sizeof(*cPixels[iterChannel]) * width));
 	}
 	file.setFrameBuffer(frameBuffer);
 	file.writePixels(height);
@@ -502,3 +541,71 @@ void readScanLine(InputFile& file, \
 	file.setFrameBuffer(frameBuffer);
 	file.readPixels(dw.min.y, dw.max.y);
 }
+
+void readScanLine(InputFile& file, \
+		Array2D<USED> &yPixels, bool &yFlag, \
+		Array2D<USED> &aPixels, bool &aFlag, \
+		size_t& width,
+		size_t& height) {
+
+	Box2i dw = file.header().dataWindow();
+	width = dw.max.x - dw.min.x + 1;
+	height = dw.max.y - dw.min.y + 1;
+
+	FrameBuffer frameBuffer;
+
+	if (file.header().channels().findChannel("Y")) {
+		yFlag = true;
+		yPixels.resizeErase(height, width);
+		frameBuffer.insert("Y", Slice(USEDC, (char *) (&yPixels[0][0] - dw.min.x - dw.min.y * width), \
+		sizeof(yPixels[0][0]) * 1, sizeof(yPixels[0][0]) * width, 1, 1, FLT_MAX));
+	} else {
+		yFlag = false;
+	}
+
+	if (file.header().channels().findChannel("A")) {
+		aFlag = true;
+		aPixels.resizeErase(height, width);
+		frameBuffer.insert("A", Slice(USEDC, (char *) (&aPixels[0][0] - dw.min.x - dw.min.y * width), \
+		sizeof(yPixels[0][0]) * 1, sizeof(yPixels[0][0]) * width, 1, 1, FLT_MAX));
+	} else {
+		aFlag = false;
+	}
+
+	file.setFrameBuffer(frameBuffer);
+	file.readPixels(dw.min.y, dw.max.y);
+}
+
+void readScanLine(InputFile& file, \
+		std::vector<Array2D<USED>* >& cPixels,
+		std::vector<char *>& cNames, \
+		size_t& width, \
+		size_t& height) {
+
+	Box2i dw = file.header().dataWindow();
+	width = dw.max.x - dw.min.x + 1;
+	height = dw.max.y - dw.min.y + 1;
+	cPixels.resize(0);
+	FrameBuffer frameBuffer;
+	size_t channels = 0;
+
+	for (Imf::ChannelList::ConstIterator channelIter = file.header().channels().begin(), \
+		channelEnd = file.header().channels().end(); \
+		channelIter != channelEnd; \
+		++channelIter) {
+
+		Array2D<USED> cPixelsTemp(height, width);
+		cPixels.push_back(&cPixelsTemp);
+		char *cNameTemp = (char *) malloc(EXR_MAX_STRING_LENGTH * sizeof(char));
+		cNames.push_back(cNameTemp);
+		strcpy(cNameTemp, channelIter.name());
+		frameBuffer.insert(cNameTemp, Slice(USEDC, (char *) (&cPixelsTemp[0][0] - dw.min.x - dw.min.y * width), \
+		sizeof(cPixelsTemp[0][0]) * 1, sizeof(cPixelsTemp[0][0]) * width, 1, 1, FLT_MAX));
+		++channels;
+	}
+
+	file.setFrameBuffer(frameBuffer);
+	file.readPixels(dw.min.y, dw.max.y);
+}
+
+}	/* namespace nuance */

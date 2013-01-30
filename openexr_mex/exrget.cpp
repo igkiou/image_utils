@@ -37,10 +37,10 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[]) {
 		const int lengthAttributeName = mxGetNumberOfElements(prhs[1]) + 1;
 		char* attributeName = (char *) mxMalloc(lengthAttributeName * sizeof(char));
 		mxGetString(prhs[1], attributeName, lengthAttributeName);
-		plhs[0] = getSingleAttribute(head, attributeName);
+		plhs[0] = exr::getAttribute(head, attributeName);
 		mxFree(attributeName);
 	} else {
-		plhs[0] = getAllAttributes(head);
+		plhs[0] = exr::getAttribute(head);
 	}
 
 	mxFree(fileName);

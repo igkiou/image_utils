@@ -70,11 +70,11 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[]) {
 	head.channels().insert("A", Channel(USEDC));
 
 	if (nrhs >= 4) {
-		setMultipleAttributes(head, prhs[3]);
+		exr::setAttribute(head, prhs[3]);
 	}
 
 	OutputFile file(fileName, head);
-	writeScanLine(file, r, g, b, a, width, height);
+	exr::writeScanLine(file, r, g, b, a, width, height);
 
 	mxFree(fileName);
 }

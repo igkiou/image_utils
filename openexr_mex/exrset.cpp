@@ -50,10 +50,10 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[]) {
 		const int lengthAttributeName = mxGetNumberOfElements(prhs[2]) + 1;
 		char* attributeName = (char *) mxMalloc(lengthAttributeName * sizeof(char));
 		mxGetString(prhs[2], attributeName, lengthAttributeName);
-		setSingleAttribute(head, attributeName, prhs[3]);
+		exr::setAttribute(head, attributeName, prhs[3]);
 		mxFree(attributeName);
 	} else {
-		setMultipleAttributes(head, prhs[2]);
+		exr::setAttribute(head, prhs[2]);
 	}
 	OutputFile out(outFileName, head);
 	out.copyPixels(in);
