@@ -32,9 +32,9 @@
 #include "mex.h"
 #include "matrix.h"
 
-using namespace Imf;
-using namespace Imath;
-using namespace Iex;
+//using namespace Imf;
+//using namespace Imath;
+//using namespace Iex;
 
 // Inspired by mitsuba-0.4.1
 // TODO: Add mitsuba copyright.
@@ -214,6 +214,7 @@ inline void attrTypeToString(const ATTR_TYPE property, \
 		case ATTR_DOUBLE: { strcpy(propertyName, "double"); return; }
 		case ATTR_FLOAT: { strcpy(propertyName, "float"); return; }
 		case ATTR_INT: { strcpy(propertyName, "int"); return; }
+		case ATTR_TYPE_INVALID:
 		default: { strcpy(propertyName, "unknown"); return; }
 	}
 }

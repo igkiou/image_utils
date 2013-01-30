@@ -32,7 +32,7 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[]) {
 	const int lengthFileName = mxGetNumberOfElements(prhs[0]) + 1;
 	char* fileName = (char *) mxMalloc(lengthFileName * sizeof(char));
 	mxGetString(prhs[0], fileName, lengthFileName);
-	InputFile file(fileName);
+	Imf::InputFile file(fileName);
 	exr::readScanLine(file, rPixels, rFlag, gPixels, gFlag, bPixels, bFlag, \
 			aPixels, aFlag, width, height);
 
