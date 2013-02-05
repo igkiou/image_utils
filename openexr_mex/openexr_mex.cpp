@@ -9,17 +9,17 @@
 
 namespace exr {
 
-const mxArray * attributeToMxArray(const Attribute & attr) {
+const mxArray * attributeToMxArray(const Imf::Attribute & attr) {
 	switch (stringToAttrType(attr.typeName())) {
 		case ATTR_CHLIST:
 		{
-			const TypedAttribute<ChannelList>& chlistAttr = static_cast<const TypedAttribute<ChannelList>& >(attr);
+			const Imf::TypedAttribute<Imf::ChannelList>& chlistAttr = static_cast<const Imf::TypedAttribute<Imf::ChannelList>& >(attr);
 			mwSize numChannels = 0;
-			for (ChannelList::ConstIterator chIt = chlistAttr.value().begin(); \
+			for (Imf::ChannelList::ConstIterator chIt = chlistAttr.value().begin(); \
 				chIt != chlistAttr.value().end(); ++chIt, ++numChannels);
 			mxArray* temp = mxCreateCellArray(1, &numChannels);
 			int iterCh = 0;
-			for (ChannelList::ConstIterator chIt = chlistAttr.value().begin(); \
+			for (Imf::ChannelList::ConstIterator chIt = chlistAttr.value().begin(); \
 				chIt != chlistAttr.value().end(); ++chIt, ++iterCh) {
 				mxSetCell(temp, iterCh, mxCreateString(chIt.name()));
 			}
@@ -27,21 +27,21 @@ const mxArray * attributeToMxArray(const Attribute & attr) {
 		}
 		case ATTR_COMPRESSION:
 		{
-			const TypedAttribute<Compression>& comprAttr = static_cast<const TypedAttribute<Compression>& >(attr);
+			const Imf::TypedAttribute<Imf::Compression>& comprAttr = static_cast<const Imf::TypedAttribute<Imf::Compression>& >(attr);
 			char compression[EXR_MAX_STRING_LENGTH];
 			compressionTypeToString(comprAttr.value(), compression);
 			return mxCreateString(compression);
 		}
 		case ATTR_LINEORDER:
 		{
-			const TypedAttribute<LineOrder>& linOrdAttr = static_cast<const TypedAttribute<LineOrder>& >(attr);
+			const Imf::TypedAttribute<Imf::LineOrder>& linOrdAttr = static_cast<const Imf::TypedAttribute<Imf::LineOrder>& >(attr);
 			char lineOrder[EXR_MAX_STRING_LENGTH];
 			lineOrderTypeToString(linOrdAttr.value(), lineOrder);
 			return mxCreateString(lineOrder);
 		}
 		case ATTR_CHROMATICITIES:
 		{
-			const TypedAttribute<Chromaticities>& chromaAttr = static_cast<const TypedAttribute<Chromaticities>& >(attr);
+			const Imf::TypedAttribute<Imf::Chromaticities>& chromaAttr = static_cast<const Imf::TypedAttribute<Imf::Chromaticities>& >(attr);
 			const mwSize dims[2] = {4, 2};
 			mxArray* temp = mxCreateCellArray(2, dims);
 			mxSetCell(temp, 0, mxCreateString("red"));
@@ -74,19 +74,19 @@ const mxArray * attributeToMxArray(const Attribute & attr) {
 		}
 		case ATTR_ENVMAP:
 		{
-			const TypedAttribute<Envmap>& envmapAttr = static_cast<const TypedAttribute<Envmap>& >(attr);
+			const Imf::TypedAttribute<Imf::Envmap>& envmapAttr = static_cast<const Imf::TypedAttribute<Imf::Envmap>& >(attr);
 			char envmap[EXR_MAX_STRING_LENGTH];
 			envmapTypeToString(envmapAttr.value(), envmap);
 			return mxCreateString(envmap);
 		}
 		case ATTR_STRING:
 		{
-			const TypedAttribute<std::string>& stringAttr = static_cast<const TypedAttribute<std::string>& >(attr);
+			const Imf::TypedAttribute<std::string>& stringAttr = static_cast<const Imf::TypedAttribute<std::string>& >(attr);
 			return mxCreateString(stringAttr.value().c_str());
 		}
 		case ATTR_BOX2F:
 		{
-			const TypedAttribute<Box2f>& box2fAttr = static_cast<const TypedAttribute<Box2f>& >(attr);
+			const Imf::TypedAttribute<Imath::Box2f>& box2fAttr = static_cast<const Imf::TypedAttribute<Imath::Box2f>& >(attr);
 			const mwSize numPoints = 2;
 			mxArray* temp = mxCreateCellArray(1, &numPoints);
 			mxArray* point;
@@ -105,7 +105,7 @@ const mxArray * attributeToMxArray(const Attribute & attr) {
 		}
 		case ATTR_BOX2I:
 		{
-			const TypedAttribute<Box2i>& box2iAttr = static_cast<const TypedAttribute<Box2i>& >(attr);
+			const Imf::TypedAttribute<Box2i>& box2iAttr = static_cast<const Imf::TypedAttribute<Box2i>& >(attr);
 			const mwSize numPoints = 2;
 			mxArray* temp = mxCreateCellArray(1, &numPoints);
 			mxArray* point;
@@ -124,7 +124,7 @@ const mxArray * attributeToMxArray(const Attribute & attr) {
 		}
 		case ATTR_V2F:
 		{
-			const TypedAttribute<V2f>& v2fAttr = static_cast<const TypedAttribute<V2f>& >(attr);
+			const Imf::TypedAttribute<V2f>& v2fAttr = static_cast<const Imf::TypedAttribute<V2f>& >(attr);
 			mxArray* temp = mxCreateNumericMatrix(2, 1, mxSINGLE_CLASS, mxREAL);
 			float *data = (float *) mxGetData(temp);
 			data[0] = v2fAttr.value().x;
@@ -133,7 +133,7 @@ const mxArray * attributeToMxArray(const Attribute & attr) {
 		}
 		case ATTR_V2I:
 		{
-			const TypedAttribute<V2i>& v2iAttr = static_cast<const TypedAttribute<V2i>& >(attr);
+			const Imf::TypedAttribute<V2i>& v2iAttr = static_cast<const Imf::TypedAttribute<V2i>& >(attr);
 			mxArray* temp = mxCreateNumericMatrix(2, 1, mxINT32_CLASS, mxREAL);
 			int *data = (int *) mxGetData(temp);
 			data[0] = v2iAttr.value().x;
@@ -142,7 +142,7 @@ const mxArray * attributeToMxArray(const Attribute & attr) {
 		}
 		case ATTR_VF:
 		{
-			const VectorAttribute<float>& vfAttr = static_cast<const VectorAttribute<float>& >(attr);
+			const Imf::VectorAttribute<float>& vfAttr = static_cast<const Imf::VectorAttribute<float>& >(attr);
 			const size_t vecLength = vfAttr.value().size();
 			mexPrintf("%d\n", (int) vecLength);
 //			std::cout << vecLength << std:endl;
@@ -155,7 +155,7 @@ const mxArray * attributeToMxArray(const Attribute & attr) {
 		}
 		case ATTR_VI:
 		{
-			const VectorAttribute<int>& vfAttr = static_cast<const VectorAttribute<int>& >(attr);
+			const Imf::VectorAttribute<int>& vfAttr = static_cast<const Imf::VectorAttribute<int>& >(attr);
 			const size_t vecLength = vfAttr.value().size();
 			mxArray* temp = mxCreateNumericMatrix(vecLength, 1, mxINT32_CLASS, mxREAL);
 			int *data = (int *) mxGetData(temp);
@@ -166,7 +166,7 @@ const mxArray * attributeToMxArray(const Attribute & attr) {
 		}
 		case ATTR_FLOAT:
 		{
-			const TypedAttribute<float>& floatAttr = static_cast<const TypedAttribute<float>& >(attr);
+			const Imf::TypedAttribute<float>& floatAttr = static_cast<const Imf::TypedAttribute<float>& >(attr);
 			mxArray *temp = mxCreateNumericMatrix(1, 1, mxSINGLE_CLASS, mxREAL);
 			float *val = (float *) mxGetData(temp);
 			*val = floatAttr.value();
@@ -174,7 +174,7 @@ const mxArray * attributeToMxArray(const Attribute & attr) {
 		}
 		case ATTR_INT:
 		{
-			const TypedAttribute<int>& intAttr = static_cast<const TypedAttribute<int>& >(attr);
+			const Imf::TypedAttribute<int>& intAttr = static_cast<const Imf::TypedAttribute<int>& >(attr);
 			mxArray *temp = mxCreateNumericMatrix(1, 1, mxINT32_CLASS, mxREAL);
 			int *val = (int *) mxGetData(temp);
 			*val = (int) intAttr.value();
@@ -185,46 +185,46 @@ const mxArray * attributeToMxArray(const Attribute & attr) {
 	}
 }
 
-mxArray* getAttribute(const Header& head) {
+mxArray* getAttribute(const Imf::Header& head) {
 
 	mxArray* matStruct;
 	int numAttributes = 0;
-	for (Header::ConstIterator attIt = head.begin(); attIt != head.end(); \
+	for (Imf::Header::ConstIterator attIt = head.begin(); attIt != head.end(); \
 		++attIt, ++numAttributes);
 
 	const char **attributeNames = (const char **) mxMalloc(numAttributes * sizeof(*attributeNames));
 	int iterField = 0;
-	for (Header::ConstIterator attIt = head.begin(); attIt != head.end(); ++attIt, ++iterField) {
+	for (Imf::Header::ConstIterator attIt = head.begin(); attIt != head.end(); ++attIt, ++iterField) {
 		attributeNames[iterField] = attIt.name();
 	}
 	matStruct = mxCreateStructMatrix(1, 1, numAttributes, attributeNames);
 	mxFree((void *) attributeNames);
 	iterField = 0;
-	for (Header::ConstIterator attIt = head.begin(); attIt != head.end(); ++attIt, ++iterField) {
+	for (Imf::Header::ConstIterator attIt = head.begin(); attIt != head.end(); ++attIt, ++iterField) {
 		mxSetFieldByNumber(matStruct, 0, iterField, const_cast<mxArray*>(attributeToMxArray(attIt.attribute())));
 	}
 	return matStruct;
 }
 
-mxArray* getAttribute(const Header& head, const char attributeName[]) {
-	const Attribute& attr = head[attributeName];
+mxArray* getAttribute(const Imf::Header& head, const char attributeName[]) {
+	const Imf::Attribute& attr = head[attributeName];
 	return const_cast<mxArray *>(attributeToMxArray(attr));
 }
 
-void setAttribute(Header& head, const char attrName[], const mxArray* mxarr) {
+void setAttribute(Imf::Header& head, const char attrName[], const mxArray* mxarr) {
 
 	if (!strcmp(attrName, "gain")) {
 		if (!(mxIsSingle(mxarr) && (mxGetNumberOfElements(mxarr) == 1))) {
 			mexErrMsgTxt("For setting attribute 'gain', a single array with 1 element must be provided.");
 		}
 		const float value = * (float *) mxGetData(mxarr);
-		addGain(head, value);
+		Imf::addGain(head, value);
 	} else if (!strcmp(attrName, "wavelength")) {
 		if (!(mxIsSingle(mxarr) && (mxGetNumberOfElements(mxarr) == 1))) {
 			mexErrMsgTxt("For setting attribute 'wavelength', a single array with 1 element must be provided.");
 		}
 		const float value = * (float *) mxGetData(mxarr);
-		addWavelength(head, value);
+		Imf::addWavelength(head, value);
 	} else if (!strcmp(attrName, "extTube")) {
 		if (!mxIsChar(mxarr)) {
 			mexErrMsgTxt("For setting attribute 'extTube', a string array must be provided.");
@@ -232,7 +232,7 @@ void setAttribute(Header& head, const char attrName[], const mxArray* mxarr) {
 		const int lengthStringValue = mxGetNumberOfElements(mxarr) + 1;
 		char *stringValue = (char *) mxMalloc(lengthStringValue * sizeof(char));
 		mxGetString(mxarr, stringValue, lengthStringValue);
-		addExtTube(head, std::string(stringValue));
+		Imf::addExtTube(head, std::string(stringValue));
 		mxFree(stringValue);
 	} else if (!strcmp(attrName, "lens")) {
 		if (!mxIsChar(mxarr)) {
@@ -241,7 +241,7 @@ void setAttribute(Header& head, const char attrName[], const mxArray* mxarr) {
 		const int lengthStringValue = mxGetNumberOfElements(mxarr) + 1;
 		char *stringValue = (char *) mxMalloc(lengthStringValue * sizeof(char));
 		mxGetString(mxarr, stringValue, lengthStringValue);
-		addLens(head, std::string(stringValue));
+		Imf::addLens(head, std::string(stringValue));
 		mxFree(stringValue);
 	} else if (!strcmp(attrName, "material")) {
 		if (!mxIsChar(mxarr)) {
@@ -250,7 +250,7 @@ void setAttribute(Header& head, const char attrName[], const mxArray* mxarr) {
 		const int lengthStringValue = mxGetNumberOfElements(mxarr) + 1;
 		char *stringValue = (char *) mxMalloc(lengthStringValue * sizeof(char));
 		mxGetString(mxarr, stringValue, lengthStringValue);
-		addMaterial(head, std::string(stringValue));
+		Imf::addMaterial(head, std::string(stringValue));
 		mxFree(stringValue);
 	} /* else if (!strcmp(attrName, "chromaticities")) {
 
@@ -267,13 +267,13 @@ void setAttribute(Header& head, const char attrName[], const mxArray* mxarr) {
 			mexErrMsgTxt("For setting attribute 'whiteLuminance', a single array with 1 element must be provided.");
 		}
 		const float value = * (float *) mxGetData(mxarr);
-		addWhiteLuminance(head, value);
+		Imf::addWhiteLuminance(head, value);
 	} else if (!strcmp(attrName, "adoptedNeutral")) {
 		if (!(mxIsSingle(mxarr) && (mxGetNumberOfElements(mxarr) == 2))) {
 			mexErrMsgTxt("For setting attribute 'adoptedNeutral', a single array with 2 elements must be provided.");
 		}
 		const float *value = (float *) mxGetData(mxarr);
-		addAdoptedNeutral(head, V2f(value[0], value[1]));
+		Imf::addAdoptedNeutral(head, V2f(value[0], value[1]));
 	} else if (!strcmp(attrName, "renderingTransform")) {
 		if (!mxIsChar(mxarr)) {
 			mexErrMsgTxt("For setting attribute 'renderingTransform', a string array must be provided.");
@@ -281,7 +281,7 @@ void setAttribute(Header& head, const char attrName[], const mxArray* mxarr) {
 		const int lengthStringValue = mxGetNumberOfElements(mxarr) + 1;
 		char *stringValue = (char *) mxMalloc(lengthStringValue * sizeof(char));
 		mxGetString(mxarr, stringValue, lengthStringValue);
-		addRenderingTransform(head, std::string(stringValue));
+		Imf::addRenderingTransform(head, std::string(stringValue));
 		mxFree(stringValue);
 	} else if (!strcmp(attrName, "lookModTransform")) {
 		if (!mxIsChar(mxarr)) {
@@ -290,14 +290,14 @@ void setAttribute(Header& head, const char attrName[], const mxArray* mxarr) {
 		const int lengthStringValue = mxGetNumberOfElements(mxarr) + 1;
 		char *stringValue = (char *) mxMalloc(lengthStringValue * sizeof(char));
 		mxGetString(mxarr, stringValue, lengthStringValue);
-		addLookModTransform(head, std::string(stringValue));
+		Imf::addLookModTransform(head, std::string(stringValue));
 		mxFree(stringValue);
 	} else if (!strcmp(attrName, "xDensity")) {
 		if (!(mxIsSingle(mxarr) && (mxGetNumberOfElements(mxarr) == 1))) {
 			mexErrMsgTxt("For setting attribute 'xDensity', a single array with 1 element must be provided.");
 		}
 		const float value = * (float *) mxGetData(mxarr);
-		addXDensity(head, value);
+		Imf::addXDensity(head, value);
 	} else if (!strcmp(attrName, "owner")) {
 		if (!mxIsChar(mxarr)) {
 			mexErrMsgTxt("For setting attribute 'owner', a string array must be provided.");
@@ -305,7 +305,7 @@ void setAttribute(Header& head, const char attrName[], const mxArray* mxarr) {
 		const int lengthStringValue = mxGetNumberOfElements(mxarr) + 1;
 		char *stringValue = (char *) mxMalloc(lengthStringValue * sizeof(char));
 		mxGetString(mxarr, stringValue, lengthStringValue);
-		addOwner(head, std::string(stringValue));
+		Imf::addOwner(head, std::string(stringValue));
 		mxFree(stringValue);
 	} else if (!strcmp(attrName, "comments")) {
 		if (!mxIsChar(mxarr)) {
@@ -314,7 +314,7 @@ void setAttribute(Header& head, const char attrName[], const mxArray* mxarr) {
 		const int lengthStringValue = mxGetNumberOfElements(mxarr) + 1;
 		char *stringValue = (char *) mxMalloc(lengthStringValue * sizeof(char));
 		mxGetString(mxarr, stringValue, lengthStringValue);
-		addComments(head, std::string(stringValue));
+		Imf::addComments(head, std::string(stringValue));
 		mxFree(stringValue);
 	} else if (!strcmp(attrName, "capDate")) {
 		if (!mxIsChar(mxarr)) {
@@ -323,56 +323,56 @@ void setAttribute(Header& head, const char attrName[], const mxArray* mxarr) {
 		const int lengthStringValue = mxGetNumberOfElements(mxarr) + 1;
 		char *stringValue = (char *) mxMalloc(lengthStringValue * sizeof(char));
 		mxGetString(mxarr, stringValue, lengthStringValue);
-		addCapDate(head, std::string(stringValue));
+		Imf::addCapDate(head, std::string(stringValue));
 		mxFree(stringValue);
 	} else if (!strcmp(attrName, "utcOffset")) {
 		if (!(mxIsSingle(mxarr) && (mxGetNumberOfElements(mxarr) == 1))) {
 			mexErrMsgTxt("For setting attribute 'utcOffset', a single array with 1 element must be provided.");
 		}
 		const float value = * (float *) mxGetData(mxarr);
-		addUtcOffset(head, value);
+		Imf::addUtcOffset(head, value);
 	} else if (!strcmp(attrName, "longitude")) {
 		if (!(mxIsSingle(mxarr) && (mxGetNumberOfElements(mxarr) == 1))) {
 			mexErrMsgTxt("For setting attribute 'longitude', a single array with 1 element must be provided.");
 		}
 		const float value = * (float *) mxGetData(mxarr);
-		addLongitude(head, value);
+		Imf::addLongitude(head, value);
 	} else if (!strcmp(attrName, "latitude")) {
 		if (!(mxIsSingle(mxarr) && (mxGetNumberOfElements(mxarr) == 1))) {
 			mexErrMsgTxt("For setting attribute 'latitude', a single array with 1 element must be provided.");
 		}
 		const float value = * (float *) mxGetData(mxarr);
-		addLatitude(head, value);
+		Imf::addLatitude(head, value);
 	} else if (!strcmp(attrName, "altitude")) {
 		if (!(mxIsSingle(mxarr) && (mxGetNumberOfElements(mxarr) == 1))) {
 			mexErrMsgTxt("For setting attribute 'altitude', a single array with 1 element must be provided.");
 		}
 		const float value = * (float *) mxGetData(mxarr);
-		addAltitude(head, value);
+		Imf::addAltitude(head, value);
 	} else if (!strcmp(attrName, "focus")) {
 		if (!(mxIsSingle(mxarr) && (mxGetNumberOfElements(mxarr) == 1))) {
 			mexErrMsgTxt("For setting attribute 'focus', a single array with 1 element must be provided.");
 		}
 		const float value = * (float *) mxGetData(mxarr);
-		addFocus(head, value);
+		Imf::addFocus(head, value);
 	} else if (!strcmp(attrName, "expTime")) {
 		if (!(mxIsSingle(mxarr) && (mxGetNumberOfElements(mxarr) == 1))) {
 			mexErrMsgTxt("For setting attribute 'expTime', a single array with 1 element must be provided.");
 		}
 		const float value = * (float *) mxGetData(mxarr);
-		addExpTime(head, value);
+		Imf::addExpTime(head, value);
 	} else if (!strcmp(attrName, "aperture")) {
 		if (!(mxIsSingle(mxarr) && (mxGetNumberOfElements(mxarr) == 1))) {
 			mexErrMsgTxt("For setting attribute 'aperture', a single array with 1 element must be provided.");
 		}
 		const float value = * (float *) mxGetData(mxarr);
-		addAperture(head, value);
+		Imf::addAperture(head, value);
 	} else if (!strcmp(attrName, "isoSpeed")) {
 		if (!(mxIsSingle(mxarr) && (mxGetNumberOfElements(mxarr) == 1))) {
 			mexErrMsgTxt("For setting attribute 'isoSpeed', a single array with 1 element must be provided.");
 		}
 		const float value = * (float *) mxGetData(mxarr);
-		addIsoSpeed(head, value);
+		Imf::addIsoSpeed(head, value);
 	} else if (!strcmp(attrName, "envmap")) {
 		if (!mxIsChar(mxarr)) {
 			mexErrMsgTxt("For setting attribute 'envmap', a string array must be provided.");
@@ -380,7 +380,7 @@ void setAttribute(Header& head, const char attrName[], const mxArray* mxarr) {
 		const int lengthStringValue = mxGetNumberOfElements(mxarr) + 1;
 		char *stringValue = (char *) mxMalloc(lengthStringValue * sizeof(char));
 		mxGetString(mxarr, stringValue, lengthStringValue);
-		addEnvmap(head, stringToEnvmapType(stringValue));
+		Imf::addEnvmap(head, stringToEnvmapType(stringValue));
 		mxFree(stringValue);
 	} else if (!strcmp(attrName, "multApertures")) {
 		if (!mxIsSingle(mxarr)) {
@@ -389,7 +389,7 @@ void setAttribute(Header& head, const char attrName[], const mxArray* mxarr) {
 		const size_t lengthVector = mxGetNumberOfElements(mxarr);
 		float *vecData = (float *) mxGetData(mxarr);
 		std::vector<float> value(vecData, vecData + lengthVector);
-		addMultApertures(head, value);
+		Imf::addMultApertures(head, value);
 	} else if (!strcmp(attrName, "multExpTimes")) {
 		if (!mxIsSingle(mxarr)) {
 			mexErrMsgTxt("For setting attribute 'multExpTimes', a single array must be provided.");
@@ -400,7 +400,7 @@ void setAttribute(Header& head, const char attrName[], const mxArray* mxarr) {
 		for (size_t iter = 0; iter < lengthVector; ++iter) {
 			value[iter] = vecData[iter];
 		}
-		addMultExpTimes(head, value);
+		Imf::addMultExpTimes(head, value);
 	} else if (!strcmp(attrName, "multIsoSpeeds")) {
 		if (!mxIsSingle(mxarr)) {
 			mexErrMsgTxt("For setting attribute 'multIsoSpeeds', a single array must be provided.");
@@ -408,7 +408,7 @@ void setAttribute(Header& head, const char attrName[], const mxArray* mxarr) {
 		const size_t lengthVector = mxGetNumberOfElements(mxarr);
 		float *vecData = (float *) mxGetData(mxarr);
 		std::vector<float> value(vecData, vecData + lengthVector);
-		addMultIsoSpeeds(head, value);
+		Imf::addMultIsoSpeeds(head, value);
 	} else if (!strcmp(attrName, "multGains")) {
 		if (!mxIsSingle(mxarr)) {
 			mexErrMsgTxt("For setting attribute 'multGains', a single array must be provided.");
@@ -416,13 +416,13 @@ void setAttribute(Header& head, const char attrName[], const mxArray* mxarr) {
 		const size_t lengthVector = mxGetNumberOfElements(mxarr);
 		float *vecData = (float *) mxGetData(mxarr);
 		std::vector<float> value(vecData, vecData + lengthVector);
-		addMultGains(head, value);
+		Imf::addMultGains(head, value);
 	} else {
 		mexErrMsgTxt("Setting this attribute not implemented.");
 	}
 }
 
-void setAttribute(Header& head, const mxArray* mxstruct) {
+void setAttribute(Imf::Header& head, const mxArray* mxstruct) {
 
 	if (mxIsStruct(mxstruct)) {
 		int numAttributes = mxGetNumberOfFields(mxstruct);
@@ -435,19 +435,19 @@ void setAttribute(Header& head, const mxArray* mxstruct) {
 	}
 }
 
-void writeScanLine(OutputFile& file, \
+void writeScanLine(Imf::OutputFile& file, \
 		const USED *rPixels, \
 		const USED *gPixels, \
 		const USED *bPixels, \
 		const USED *aPixels, \
 		const size_t width,
 		const size_t height) {
-	FrameBuffer frameBuffer;
-	frameBuffer.insert("R", Slice(USEDC, (char *) rPixels, \
+	Imf::FrameBuffer frameBuffer;
+	frameBuffer.insert("R", Imf::Slice(USEDC, (char *) rPixels, \
 			sizeof(*rPixels) * 1, sizeof(*rPixels) * width));
-	frameBuffer.insert("G", Slice(USEDC, (char *) gPixels, \
+	frameBuffer.insert("G", Imf::Slice(USEDC, (char *) gPixels, \
 			sizeof(*gPixels) * 1, sizeof(*gPixels) * width));
-	frameBuffer.insert("B", Slice(USEDC, (char *) bPixels, \
+	frameBuffer.insert("B", Imf::Slice(USEDC, (char *) bPixels, \
 			sizeof(*bPixels) * 1, sizeof(*bPixels) * width));
 	if (aPixels != NULL) {
 		frameBuffer.insert("A", Slice(USEDC, (char *) aPixels, \
@@ -457,42 +457,42 @@ void writeScanLine(OutputFile& file, \
 	file.writePixels(height);
 }
 
-void writeScanLine(OutputFile& file, \
+void writeScanLine(Imf::OutputFile& file, \
 		const USED *yPixels, \
 		const USED *aPixels, \
 		const size_t width,
 		const size_t height) {
-	FrameBuffer frameBuffer;
-	frameBuffer.insert("Y", Slice(USEDC, (char *) yPixels, \
+	Imf::FrameBuffer frameBuffer;
+	frameBuffer.insert("Y", Imf::Slice(USEDC, (char *) yPixels, \
 			sizeof(*yPixels) * 1, sizeof(*yPixels) * width));
 	if (aPixels != NULL) {
-		frameBuffer.insert("A", Slice(USEDC, (char *) aPixels, \
+		frameBuffer.insert("A", Imf::Slice(USEDC, (char *) aPixels, \
 			sizeof(*aPixels) * 1, sizeof(*aPixels) * width));
 	}
 	file.setFrameBuffer(frameBuffer);
 	file.writePixels(height);
 }
 
-void writeScanLine(OutputFile& file, \
+void writeScanLine(Imf::OutputFile& file, \
 		const std::vector<USED *>& cPixels, \
 		const char **cNames, \
 		const size_t width, \
 		const size_t height) {
-	FrameBuffer frameBuffer;
+	Imf::FrameBuffer frameBuffer;
 	size_t channels = cPixels.size();
 	for (size_t iterChannel = 0; iterChannel < channels; ++iterChannel) {
-		frameBuffer.insert(cNames[iterChannel], Slice(USEDC, (char *) cPixels[iterChannel], \
+		frameBuffer.insert(cNames[iterChannel], Imf::Slice(USEDC, (char *) cPixels[iterChannel], \
 				sizeof(*cPixels[iterChannel]) * 1, sizeof(*cPixels[iterChannel]) * width));
 	}
 	file.setFrameBuffer(frameBuffer);
 	file.writePixels(height);
 }
 
-void readScanLine(InputFile& file, \
-		Array2D<USED> &rPixels, bool &rFlag, \
-		Array2D<USED> &gPixels, bool &gFlag, \
-		Array2D<USED> &bPixels, bool &bFlag, \
-		Array2D<USED> &aPixels, bool &aFlag, \
+void readScanLine(Imf::InputFile& file, \
+		Imf::Array2D<USED> &rPixels, bool &rFlag, \
+		Imf::Array2D<USED> &gPixels, bool &gFlag, \
+		Imf::Array2D<USED> &bPixels, bool &bFlag, \
+		Imf::Array2D<USED> &aPixels, bool &aFlag, \
 		size_t& width,
 		size_t& height) {
 
@@ -500,12 +500,12 @@ void readScanLine(InputFile& file, \
 	width = dw.max.x - dw.min.x + 1;
 	height = dw.max.y - dw.min.y + 1;
 
-	FrameBuffer frameBuffer;
+	Imf::FrameBuffer frameBuffer;
 
 	if (file.header().channels().findChannel("R")) {
 		rFlag = true;
 		rPixels.resizeErase(height, width);
-		frameBuffer.insert("R", Slice(USEDC, (char *) (&rPixels[0][0] - dw.min.x - dw.min.y * width), \
+		frameBuffer.insert("R", Imf::Slice(USEDC, (char *) (&rPixels[0][0] - dw.min.x - dw.min.y * width), \
 		sizeof(rPixels[0][0]) * 1, sizeof(rPixels[0][0]) * width, 1, 1, FLT_MAX));
 	} else {
 		rFlag = false;
@@ -514,7 +514,7 @@ void readScanLine(InputFile& file, \
 	if (file.header().channels().findChannel("G")) {
 		gFlag = true;
 		gPixels.resizeErase(height, width);
-		frameBuffer.insert("G", Slice(USEDC, (char *) (&gPixels[0][0] - dw.min.x - dw.min.y * width), \
+		frameBuffer.insert("G", Imf::Slice(USEDC, (char *) (&gPixels[0][0] - dw.min.x - dw.min.y * width), \
 		sizeof(rPixels[0][0]) * 1, sizeof(rPixels[0][0]) * width, 1, 1, FLT_MAX));
 	} else {
 		gFlag = false;
@@ -523,7 +523,7 @@ void readScanLine(InputFile& file, \
 	if (file.header().channels().findChannel("B")) {
 		bFlag = true;
 		bPixels.resizeErase(height, width);
-		frameBuffer.insert("B", Slice(USEDC, (char *) (&bPixels[0][0] - dw.min.x - dw.min.y * width), \
+		frameBuffer.insert("B", Imf::Slice(USEDC, (char *) (&bPixels[0][0] - dw.min.x - dw.min.y * width), \
 		sizeof(rPixels[0][0]) * 1, sizeof(rPixels[0][0]) * width, 1, 1, FLT_MAX));
 	} else {
 		bFlag = false;
@@ -532,7 +532,7 @@ void readScanLine(InputFile& file, \
 	if (file.header().channels().findChannel("A")) {
 		aFlag = true;
 		aPixels.resizeErase(height, width);
-		frameBuffer.insert("A", Slice(USEDC, (char *) (&aPixels[0][0] - dw.min.x - dw.min.y * width), \
+		frameBuffer.insert("A", Imf::Slice(USEDC, (char *) (&aPixels[0][0] - dw.min.x - dw.min.y * width), \
 		sizeof(rPixels[0][0]) * 1, sizeof(rPixels[0][0]) * width, 1, 1, FLT_MAX));
 	} else {
 		aFlag = false;
@@ -542,9 +542,9 @@ void readScanLine(InputFile& file, \
 	file.readPixels(dw.min.y, dw.max.y);
 }
 
-void readScanLine(InputFile& file, \
-		Array2D<USED> &yPixels, bool &yFlag, \
-		Array2D<USED> &aPixels, bool &aFlag, \
+void readScanLine(Imf::InputFile& file, \
+		Imf::Array2D<USED> &yPixels, bool &yFlag, \
+		Imf::Array2D<USED> &aPixels, bool &aFlag, \
 		size_t& width,
 		size_t& height) {
 
@@ -552,12 +552,12 @@ void readScanLine(InputFile& file, \
 	width = dw.max.x - dw.min.x + 1;
 	height = dw.max.y - dw.min.y + 1;
 
-	FrameBuffer frameBuffer;
+	Imf::FrameBuffer frameBuffer;
 
 	if (file.header().channels().findChannel("Y")) {
 		yFlag = true;
 		yPixels.resizeErase(height, width);
-		frameBuffer.insert("Y", Slice(USEDC, (char *) (&yPixels[0][0] - dw.min.x - dw.min.y * width), \
+		frameBuffer.insert("Y", Imf::Slice(USEDC, (char *) (&yPixels[0][0] - dw.min.x - dw.min.y * width), \
 		sizeof(yPixels[0][0]) * 1, sizeof(yPixels[0][0]) * width, 1, 1, FLT_MAX));
 	} else {
 		yFlag = false;
@@ -566,7 +566,7 @@ void readScanLine(InputFile& file, \
 	if (file.header().channels().findChannel("A")) {
 		aFlag = true;
 		aPixels.resizeErase(height, width);
-		frameBuffer.insert("A", Slice(USEDC, (char *) (&aPixels[0][0] - dw.min.x - dw.min.y * width), \
+		frameBuffer.insert("A", Imf::Slice(USEDC, (char *) (&aPixels[0][0] - dw.min.x - dw.min.y * width), \
 		sizeof(yPixels[0][0]) * 1, sizeof(yPixels[0][0]) * width, 1, 1, FLT_MAX));
 	} else {
 		aFlag = false;
@@ -576,8 +576,8 @@ void readScanLine(InputFile& file, \
 	file.readPixels(dw.min.y, dw.max.y);
 }
 
-void readScanLine(InputFile& file, \
-		std::vector<Array2D<USED>* >& cPixels,
+void readScanLine(Imf::InputFile& file, \
+		std::vector<Imf::Array2D<USED>* >& cPixels,
 		std::vector<char *>& cNames, \
 		size_t& width, \
 		size_t& height) {
@@ -594,7 +594,7 @@ void readScanLine(InputFile& file, \
 		channelIter != channelEnd; \
 		++channelIter) {
 
-		Array2D<USED> cPixelsTemp(height, width);
+		Imf::Array2D<USED> cPixelsTemp(height, width);
 		cPixels.push_back(&cPixelsTemp);
 		char *cNameTemp = (char *) malloc(EXR_MAX_STRING_LENGTH * sizeof(char));
 		cNames.push_back(cNameTemp);

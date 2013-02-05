@@ -8,26 +8,25 @@
 #ifndef OPENEXR_MEX_H_
 #define OPENEXR_MEX_H_
 
-#include "ImathBox.h"
-#include "ImfRgba.h"
-#include "ImfRgbaFile.h"
-#include "ImfInputFile.h"
-#include "ImfOutputFile.h"
-#include "ImfHeader.h"
-#include "ImathBox.h"
-#include "ImfInputFile.h"
-#include "ImfHeader.h"
-#include "ImfArray.h"
-#include "ImfChannelList.h"
-#include "ImfAttribute.h"
-#include "ImfStandardAttributes.h"
-#include "ImfExtraAttributes.h"
-#include "ImfPixelType.h"
-#include "Iex.h"
 #include <vector>
 #include <string>
 #include <stdio.h>
 #include <stdarg.h>
+
+#include "Iex.h"
+#include "ImathBox.h"
+#include "ImfArray.h"
+#include "ImfAttribute.h"
+#include "ImfChannelList.h"
+#include "ImfCompression.h"
+#include "ImfExtraAttributes.h"
+#include "ImfHeader.h"
+#include "ImfInputFile.h"
+#include "ImfOutputFile.h"
+#include "ImfPixelType.h"
+#include "ImfRgba.h"
+#include "ImfRgbaFile.h"
+#include "ImfStandardAttributes.h"
 
 #include "mex.h"
 #include "matrix.h"
@@ -59,13 +58,12 @@
 namespace exr {
 
 #define USED float
-#define USEDC FLOAT
+#define USEDC Imf::FLOAT
 
 /*
  * C++-ize, as also done in nuancefx_mex.
  */
 enum {EXR_MAX_STRING_LENGTH = 32};
-
 
 typedef enum ATTR_TYPE {
 	ATTR_CHLIST = 0,
@@ -90,229 +88,372 @@ typedef enum ATTR_TYPE {
 	ATTR_TYPE_INVALID = -1
 } ATTR_TYPE;
 
-inline ATTR_TYPE attrNameToAttrType(const char * query) {
-	if (!strcasecmp(query, "gain")) {
-		return ATTR_FLOAT;
-	} else if (!strcasecmp(query, "wavelength")) {
-		return ATTR_FLOAT;
-	} else if (!strcasecmp(query, "extTube")) {
-		return ATTR_STRING;
-	} else if (!strcasecmp(query, "lens")) {
-		return ATTR_STRING;
-	} else if (!strcasecmp(query, "material")) {
-		return ATTR_STRING;
-	} else if (!strcasecmp(query, "chromaticities")) {
-		return ATTR_CHROMATICITIES;
-	} else if (!strcasecmp(query, "whiteLuminance")) {
-		return ATTR_FLOAT;
-	} else if (!strcasecmp(query, "adoptedNeutral")) {
-		return ATTR_V2F;
-	} else if (!strcasecmp(query, "renderingTransform")) {
-		return ATTR_STRING;
-	} else if (!strcasecmp(query, "lookModTransform")) {
-		return ATTR_STRING;
-	} else if (!strcasecmp(query, "xDensity")) {
-		return ATTR_FLOAT;
-	} else if (!strcasecmp(query, "owner")) {
-		return ATTR_STRING;
-	} else if (!strcasecmp(query, "comments")) {
-		return ATTR_STRING;
-	} else if (!strcasecmp(query, "capDate")) {
-		return ATTR_STRING;
-	} else if (!strcasecmp(query, "utcOffset")) {
-		return ATTR_FLOAT;
-	} else if (!strcasecmp(query, "longitude")) {
-		return ATTR_FLOAT;
-	} else if (!strcasecmp(query, "latitude")) {
-		return ATTR_FLOAT;
-	} else if (!strcasecmp(query, "altitude")) {
-		return ATTR_FLOAT;
-	} else if (!strcasecmp(query, "focus")) {
-		return ATTR_FLOAT;
-	} else if (!strcasecmp(query, "expTime")) {
-		return ATTR_FLOAT;
-	} else if (!strcasecmp(query, "aperture")) {
-		return ATTR_FLOAT;
-	} else if (!strcasecmp(query, "isoSpeed")) {
-		return ATTR_FLOAT;
-	} else if (!strcasecmp(query, "multExpTimes")) {
-		return ATTR_VF;
-	} else if (!strcasecmp(query, "multApertures")) {
-		return ATTR_VF;
-	} else if (!strcasecmp(query, "multIsoSpeeds")) {
-		return ATTR_VF;
-	} else if (!strcasecmp(query, "multGains")) {
-		return ATTR_VF;
-	} else if (!strcasecmp(query, "envmap")) {
-		return ATTR_ENVMAP;
-	} else {
-		return ATTR_TYPE_INVALID;
+template <typename T, typename U>
+class ConstMap {
+private:
+	std::map<T, U> m_;
+public:
+
+	ConstMap(const T& key, const U& val) {
+		m_[key] = val;
 	}
-}
 
-inline ATTR_TYPE stringToAttrType(const char * propertyName) {
-	if (!strcasecmp("chlist", propertyName)) {
-		return ATTR_CHLIST;
-	} else if (!strcasecmp("compression", propertyName)) {
-		return ATTR_COMPRESSION;
-	} else if (!strcasecmp("lineOrder", propertyName)) {
-		return ATTR_LINEORDER;
-	} else if (!strcasecmp("chromaticities", propertyName)) {
-		return ATTR_CHROMATICITIES;
-	} else if (!strcasecmp("envmap", propertyName)) {
-		return ATTR_ENVMAP;
-	} else if (!strcasecmp("string", propertyName)) {
-		return ATTR_STRING;
-	} else if (!strcasecmp("box2d", propertyName)) {
-		return ATTR_BOX2D;
-	} else if (!strcasecmp("box2f", propertyName)) {
-		return ATTR_BOX2F;
-	} else if (!strcasecmp("box2i", propertyName)) {
-		return ATTR_BOX2I;
-	} else if (!strcasecmp("v2d", propertyName)) {
-		return ATTR_V2D;
-	} else if (!strcasecmp("v2f", propertyName)) {
-		return ATTR_V2F;
-	} else if (!strcasecmp("v2i", propertyName)) {
-		return ATTR_V2I;
-	} else if (!strcasecmp("vd", propertyName)) {
-		return ATTR_VD;
-	} else if (!strcasecmp("vf", propertyName)) {
-		return ATTR_VF;
-	} else if (!strcasecmp("vi", propertyName)) {
-		return ATTR_VI;
-	} else if (!strcasecmp("double", propertyName)) {
-		return ATTR_DOUBLE;
-	} else if (!strcasecmp("float", propertyName)) {
-		return ATTR_FLOAT;
-	} else if (!strcasecmp("int", propertyName)) {
-		return ATTR_INT;
-	} else {
-		return ATTR_TYPE_INVALID;
+	ConstMap<T, U>& operator()(const T& key, const U& val) {
+		m_[key] = val;
+		return *this;
 	}
-}
 
-inline void attrTypeToString(const ATTR_TYPE property, \
-							char *propertyName) {
+	operator std::map<T, U>() { return m_; }
 
-	switch (property) {
-		case ATTR_CHLIST: { strcpy(propertyName, "chlist"); return; }
-		case ATTR_COMPRESSION: { strcpy(propertyName, "compression"); return; }
-		case ATTR_LINEORDER: { strcpy(propertyName, "lineOrder"); return; }
-		case ATTR_CHROMATICITIES: { strcpy(propertyName, "chromaticities"); return; }
-		case ATTR_ENVMAP: { strcpy(propertyName, "envmap"); return; }
-		case ATTR_STRING: { strcpy(propertyName, "string"); return; }
-		case ATTR_BOX2D: { strcpy(propertyName, "box2d"); return; }
-		case ATTR_BOX2F: { strcpy(propertyName, "box2f"); return; }
-		case ATTR_BOX2I: { strcpy(propertyName, "box2i"); return; }
-		case ATTR_V2D: { strcpy(propertyName, "v2d"); return; }
-		case ATTR_V2F: { strcpy(propertyName, "v2f"); return; }
-		case ATTR_V2I: { strcpy(propertyName, "v2i"); return; }
-		case ATTR_VD: { strcpy(propertyName, "vd"); return; }
-		case ATTR_VF: { strcpy(propertyName, "vf"); return; }
-		case ATTR_VI: { strcpy(propertyName, "vi"); return; }
-		case ATTR_DOUBLE: { strcpy(propertyName, "double"); return; }
-		case ATTR_FLOAT: { strcpy(propertyName, "float"); return; }
-		case ATTR_INT: { strcpy(propertyName, "int"); return; }
-		case ATTR_TYPE_INVALID:
-		default: { strcpy(propertyName, "unknown"); return; }
+	U operator [](const T& key) const {
+		typename std::map<T,U>::const_iterator it = m_.find(key);
+		if (it==m_.end())
+			mexErrMsgIdAndTxt("openexr_mex:error", "Value not found");
+		return (*it).second;
 	}
-}
+};
 
-inline Compression stringToCompressionType(const char * propertyName) {
+const ConstMap<std::string, ATTR_TYPE> attrNameToAttrType = ConstMap<std::string, ATTR_TYPE>
+    ("gain",				ATTR_FLOAT)
+    ("wavelength",			ATTR_FLOAT)
+    ("extTube",				ATTR_STRING)
+    ("lens",				ATTR_STRING)
+    ("material",			ATTR_STRING)
+    ("chromaticities",		ATTR_CHROMATICITIES)
+    ("whiteLuminance",		ATTR_FLOAT)
+    ("adoptedNeutral",		ATTR_V2F)
+    ("renderingTransform",	ATTR_STRING)
+    ("lookModTransform",	ATTR_FLOAT)
+    ("xDensity",			ATTR_FLOAT)
+    ("owner",				ATTR_STRING)
+    ("comments",			ATTR_STRING)
+    ("capDate",				ATTR_STRING)
+    ("utcOffset",			ATTR_FLOAT)
+    ("longitude",			ATTR_FLOAT)
+    ("latitude",			ATTR_FLOAT)
+    ("altitude",			ATTR_FLOAT)
+    ("focus",				ATTR_FLOAT)
+    ("expTime",				ATTR_FLOAT)
+    ("aperture",			ATTR_FLOAT)
+    ("isoSpeed",			ATTR_FLOAT)
+    ("multExpTimes",		ATTR_VF)
+    ("multApertures",		ATTR_VF)
+    ("multIsoSpeeds",		ATTR_VF)
+    ("multGains",			ATTR_VF)
+    ("envmap",				ATTR_ENVMAP)
+    ("unknown",				ATTR_TYPE_INVALID);
 
-	if (!strcmp("no", propertyName)) {
-		return NO_COMPRESSION;
-	} else if (!strcmp("rle", propertyName)) {
-		return RLE_COMPRESSION;
-	} else if (!strcmp("zips", propertyName)) {
-		return ZIPS_COMPRESSION;
-	} else if (!strcmp("zip", propertyName)) {
-		return ZIP_COMPRESSION;
-	} else if (!strcmp("piz", propertyName)) {
-		return PIZ_COMPRESSION;
-	} else if (!strcmp("pxr24", propertyName)) {
-		return PXR24_COMPRESSION;
-	} else if (!strcmp("b44", propertyName)) {
-		return B44_COMPRESSION;
-	} else if (!strcmp("b44a", propertyName)) {
-		return B44A_COMPRESSION;
-	} else {
-		Assert(0);
-	}
-}
+//inline ATTR_TYPE attrNameToAttrType(const char * query) {
+//	if (!strcasecmp(query, "gain")) {
+//		return ATTR_FLOAT;
+//	} else if (!strcasecmp(query, "wavelength")) {
+//		return ATTR_FLOAT;
+//	} else if (!strcasecmp(query, "extTube")) {
+//		return ATTR_STRING;
+//	} else if (!strcasecmp(query, "lens")) {
+//		return ATTR_STRING;
+//	} else if (!strcasecmp(query, "material")) {
+//		return ATTR_STRING;
+//	} else if (!strcasecmp(query, "chromaticities")) {
+//		return ATTR_CHROMATICITIES;
+//	} else if (!strcasecmp(query, "whiteLuminance")) {
+//		return ATTR_FLOAT;
+//	} else if (!strcasecmp(query, "adoptedNeutral")) {
+//		return ATTR_V2F;
+//	} else if (!strcasecmp(query, "renderingTransform")) {
+//		return ATTR_STRING;
+//	} else if (!strcasecmp(query, "lookModTransform")) {
+//		return ATTR_STRING;
+//	} else if (!strcasecmp(query, "xDensity")) {
+//		return ATTR_FLOAT;
+//	} else if (!strcasecmp(query, "owner")) {
+//		return ATTR_STRING;
+//	} else if (!strcasecmp(query, "comments")) {
+//		return ATTR_STRING;
+//	} else if (!strcasecmp(query, "capDate")) {
+//		return ATTR_STRING;
+//	} else if (!strcasecmp(query, "utcOffset")) {
+//		return ATTR_FLOAT;
+//	} else if (!strcasecmp(query, "longitude")) {
+//		return ATTR_FLOAT;
+//	} else if (!strcasecmp(query, "latitude")) {
+//		return ATTR_FLOAT;
+//	} else if (!strcasecmp(query, "altitude")) {
+//		return ATTR_FLOAT;
+//	} else if (!strcasecmp(query, "focus")) {
+//		return ATTR_FLOAT;
+//	} else if (!strcasecmp(query, "expTime")) {
+//		return ATTR_FLOAT;
+//	} else if (!strcasecmp(query, "aperture")) {
+//		return ATTR_FLOAT;
+//	} else if (!strcasecmp(query, "isoSpeed")) {
+//		return ATTR_FLOAT;
+//	} else if (!strcasecmp(query, "multExpTimes")) {
+//		return ATTR_VF;
+//	} else if (!strcasecmp(query, "multApertures")) {
+//		return ATTR_VF;
+//	} else if (!strcasecmp(query, "multIsoSpeeds")) {
+//		return ATTR_VF;
+//	} else if (!strcasecmp(query, "multGains")) {
+//		return ATTR_VF;
+//	} else if (!strcasecmp(query, "envmap")) {
+//		return ATTR_ENVMAP;
+//	} else {
+//		return ATTR_TYPE_INVALID;
+//	}
+//}
 
-inline void compressionTypeToString(const Compression property, \
-									char * propertyName) {
-	switch (property) {
-		case NO_COMPRESSION: { strcpy(propertyName, "no"); return; }
-		case RLE_COMPRESSION: { strcpy(propertyName, "rle"); return; }
-		case ZIPS_COMPRESSION: { strcpy(propertyName, "zips"); return; }
-		case ZIP_COMPRESSION: { strcpy(propertyName, "zip"); return; }
-		case PIZ_COMPRESSION: { strcpy(propertyName, "piz"); return; }
-		case PXR24_COMPRESSION: { strcpy(propertyName, "pxr24"); return; }
-		case B44_COMPRESSION: { strcpy(propertyName, "b44"); return; }
-		case B44A_COMPRESSION: { strcpy(propertyName, "b44a"); return; }
-		case NUM_COMPRESSION_METHODS:
-		default: { strcpy(propertyName, "unknown"); return; }
-	}
-}
+const ConstMap<std::string, ATTR_TYPE> stringToAttrType = ConstMap<std::string, ATTR_TYPE>
+    ("chlist",			ATTR_CHLIST)
+    ("compression",		ATTR_COMPRESSION)
+    ("lineOrder",		ATTR_LINEORDER)
+    ("chromaticities",	ATTR_CHROMATICITIES)
+    ("envmap",			ATTR_ENVMAP)
+    ("string",			ATTR_STRING)
+    ("box2d",			ATTR_BOX2D)
+    ("box2f",			ATTR_BOX2F)
+    ("box2i",			ATTR_BOX2I)
+    ("v2d",				ATTR_V2D)
+    ("v2f",				ATTR_V2F)
+    ("v2i",				ATTR_V2I)
+    ("vd",				ATTR_VD)
+    ("vf",				ATTR_VF)
+    ("vi",				ATTR_VI)
+    ("double",			ATTR_DOUBLE)
+    ("float",			ATTR_FLOAT)
+    ("int",				ATTR_INT)
+    ("unknown",			ATTR_TYPE_INVALID);
 
-inline LineOrder stringToLineOrderType(const char * propertyName) {
+//inline ATTR_TYPE stringToAttrType(const char * propertyName) {
+//	if (!strcasecmp("chlist", propertyName)) {
+//		return ATTR_CHLIST;
+//	} else if (!strcasecmp("compression", propertyName)) {
+//		return ATTR_COMPRESSION;
+//	} else if (!strcasecmp("lineOrder", propertyName)) {
+//		return ATTR_LINEORDER;
+//	} else if (!strcasecmp("chromaticities", propertyName)) {
+//		return ATTR_CHROMATICITIES;
+//	} else if (!strcasecmp("envmap", propertyName)) {
+//		return ATTR_ENVMAP;
+//	} else if (!strcasecmp("string", propertyName)) {
+//		return ATTR_STRING;
+//	} else if (!strcasecmp("box2d", propertyName)) {
+//		return ATTR_BOX2D;
+//	} else if (!strcasecmp("box2f", propertyName)) {
+//		return ATTR_BOX2F;
+//	} else if (!strcasecmp("box2i", propertyName)) {
+//		return ATTR_BOX2I;
+//	} else if (!strcasecmp("v2d", propertyName)) {
+//		return ATTR_V2D;
+//	} else if (!strcasecmp("v2f", propertyName)) {
+//		return ATTR_V2F;
+//	} else if (!strcasecmp("v2i", propertyName)) {
+//		return ATTR_V2I;
+//	} else if (!strcasecmp("vd", propertyName)) {
+//		return ATTR_VD;
+//	} else if (!strcasecmp("vf", propertyName)) {
+//		return ATTR_VF;
+//	} else if (!strcasecmp("vi", propertyName)) {
+//		return ATTR_VI;
+//	} else if (!strcasecmp("double", propertyName)) {
+//		return ATTR_DOUBLE;
+//	} else if (!strcasecmp("float", propertyName)) {
+//		return ATTR_FLOAT;
+//	} else if (!strcasecmp("int", propertyName)) {
+//		return ATTR_INT;
+//	} else {
+//		return ATTR_TYPE_INVALID;
+//	}
+//}
 
-	if (!strcmp("increasing_y", propertyName)) {
-		return INCREASING_Y;
-	} else if (!strcmp("decreasing_y", propertyName)) {
-		return DECREASING_Y;
-	} else if (!strcmp("random_y", propertyName)) {
-		return RANDOM_Y;
-	} else {
-		Assert(0);
-	}
-}
+const ConstMap<ATTR_TYPE, std::string> attrTypeToString = ConstMap<ATTR_TYPE, std::string>
+    (ATTR_CHLIST, 			"chlist")
+    (ATTR_COMPRESSION,		"compression")
+    (ATTR_LINEORDER,		"lineOrder")
+    (ATTR_CHROMATICITIES,	"chromaticities")
+    (ATTR_ENVMAP,			"envmap")
+    (ATTR_STRING,			"string")
+    (ATTR_BOX2D,			"box2d")
+    (ATTR_BOX2F,			"box2f")
+    (ATTR_BOX2I,			"box2i")
+    (ATTR_V2D,				"v2d")
+    (ATTR_V2F,				"v2f")
+    (ATTR_V2I,				"v2i")
+    (ATTR_VD,				"vd")
+    (ATTR_VF,				"vf")
+    (ATTR_VI,				"vi")
+    (ATTR_DOUBLE,			"double")
+    (ATTR_FLOAT,			"float")
+    (ATTR_INT,				"int")
+    (ATTR_TYPE_INVALID,		"unknown");
 
-inline void lineOrderTypeToString(const LineOrder property, \
-								char * propertyName) {
-	switch (property) {
-		case INCREASING_Y: { strcpy(propertyName, "increasing_y"); return; }
-		case DECREASING_Y: { strcpy(propertyName, "decreasing_y"); return; }
-		case RANDOM_Y: { strcpy(propertyName, "random_y"); return; }
-		case NUM_LINEORDERS:
-		default: { strcpy(propertyName, "unknown"); return; }
-	}
-}
+//inline void attrTypeToString(const ATTR_TYPE property, \
+//							char *propertyName) {
+//
+//	switch (property) {
+//		case ATTR_CHLIST: { strcpy(propertyName, "chlist"); return; }
+//		case ATTR_COMPRESSION: { strcpy(propertyName, "compression"); return; }
+//		case ATTR_LINEORDER: { strcpy(propertyName, "lineOrder"); return; }
+//		case ATTR_CHROMATICITIES: { strcpy(propertyName, "chromaticities"); return; }
+//		case ATTR_ENVMAP: { strcpy(propertyName, "envmap"); return; }
+//		case ATTR_STRING: { strcpy(propertyName, "string"); return; }
+//		case ATTR_BOX2D: { strcpy(propertyName, "box2d"); return; }
+//		case ATTR_BOX2F: { strcpy(propertyName, "box2f"); return; }
+//		case ATTR_BOX2I: { strcpy(propertyName, "box2i"); return; }
+//		case ATTR_V2D: { strcpy(propertyName, "v2d"); return; }
+//		case ATTR_V2F: { strcpy(propertyName, "v2f"); return; }
+//		case ATTR_V2I: { strcpy(propertyName, "v2i"); return; }
+//		case ATTR_VD: { strcpy(propertyName, "vd"); return; }
+//		case ATTR_VF: { strcpy(propertyName, "vf"); return; }
+//		case ATTR_VI: { strcpy(propertyName, "vi"); return; }
+//		case ATTR_DOUBLE: { strcpy(propertyName, "double"); return; }
+//		case ATTR_FLOAT: { strcpy(propertyName, "float"); return; }
+//		case ATTR_INT: { strcpy(propertyName, "int"); return; }
+//		case ATTR_TYPE_INVALID:
+//		default: { strcpy(propertyName, "unknown"); return; }
+//	}
+//}
 
-inline Envmap stringToEnvmapType(const char * query) {
+const ConstMap<std::string, Imf::Compression> stringToCompressionType = ConstMap<std::string, Imf::Compression>
+    ("no", 		Imf::NO_COMPRESSION)
+    ("rle",		Imf::RLE_COMPRESSION)
+    ("zips",	Imf::ZIPS_COMPRESSION)
+    ("zip",		Imf::ZIP_COMPRESSION)
+    ("piz",		Imf::PIZ_COMPRESSION)
+    ("pxr24",	Imf::PXR24_COMPRESSION)
+    ("b44",		Imf::B44_COMPRESSION)
+    ("b44a",	Imf::B44A_COMPRESSION)
+    ("unknown",	Imf::NUM_COMPRESSION_METHODS);
 
-	if (!strcmp("latlong", query)) {
-		return ENVMAP_LATLONG;
-	} else if (!strcmp("cube", query)) {
-		return ENVMAP_CUBE;
-	} else {
-		Assert(0);
-	}
-}
+//inline Imf::Compression stringToCompressionType(const char * propertyName) {
+//
+//	if (!strcmp("no", propertyName)) {
+//		return Imf::NO_COMPRESSION;
+//	} else if (!strcmp("rle", propertyName)) {
+//		return Imf::RLE_COMPRESSION;
+//	} else if (!strcmp("zips", propertyName)) {
+//		return Imf::ZIPS_COMPRESSION;
+//	} else if (!strcmp("zip", propertyName)) {
+//		return Imf::ZIP_COMPRESSION;
+//	} else if (!strcmp("piz", propertyName)) {
+//		return Imf::PIZ_COMPRESSION;
+//	} else if (!strcmp("pxr24", propertyName)) {
+//		return Imf::PXR24_COMPRESSION;
+//	} else if (!strcmp("b44", propertyName)) {
+//		return Imf::B44_COMPRESSION;
+//	} else if (!strcmp("b44a", propertyName)) {
+//		return Imf::B44A_COMPRESSION;
+//	} else {
+//		Assert(0);
+//	}
+//}
 
-inline void envmapTypeToString(const Envmap property, \
-							char * propertyName) {
-	switch (property) {
-		case ENVMAP_LATLONG: { strcpy(propertyName, "latlong"); return; }
-		case ENVMAP_CUBE: { strcpy(propertyName, "cube"); return; }
-		case NUM_ENVMAPTYPES:
-		default: { strcpy(propertyName, "unknown"); return; }
-	}
-}
+const ConstMap<Imf::Compression, std::string> CompressionTypeToString = ConstMap<Imf::Compression. std::string>
+    (Imf::NO_COMPRESSION, 			"no")
+    (Imf::RLE_COMPRESSION,			"rle")
+    (Imf::ZIPS_COMPRESSION,			"zips")
+    (Imf::ZIP_COMPRESSION,			"zip")
+    (Imf::PIZ_COMPRESSION,			"piz")
+    (Imf::PXR24_COMPRESSION,		"pxr24")
+    (Imf::B44_COMPRESSION,			"b44")
+    (Imf::B44A_COMPRESSION,			"b44a")
+    (Imf::NUM_COMPRESSION_METHODS,	"unknown");
 
-const mxArray * attributeToMxArray(const Attribute & attr);
-mxArray* getAttribute(const Header& head, const char attributeName[]);
-mxArray* getAttribute(const Header& head);
-void setAttribute(Header& head, const char attrName[], const mxArray* mxarr);
-void setAttribute(Header& head, const mxArray* mxstruct);
+//inline void compressionTypeToString(const Imf::Compression property, \
+//									char * propertyName) {
+//	switch (property) {
+//		case Imf::NO_COMPRESSION: { strcpy(propertyName, "no"); return; }
+//		case Imf::RLE_COMPRESSION: { strcpy(propertyName, "rle"); return; }
+//		case Imf::ZIPS_COMPRESSION: { strcpy(propertyName, "zips"); return; }
+//		case Imf::ZIP_COMPRESSION: { strcpy(propertyName, "zip"); return; }
+//		case Imf::PIZ_COMPRESSION: { strcpy(propertyName, "piz"); return; }
+//		case Imf::PXR24_COMPRESSION: { strcpy(propertyName, "pxr24"); return; }
+//		case Imf::B44_COMPRESSION: { strcpy(propertyName, "b44"); return; }
+//		case Imf::B44A_COMPRESSION: { strcpy(propertyName, "b44a"); return; }
+//		case Imf::NUM_COMPRESSION_METHODS:
+//		default: { strcpy(propertyName, "unknown"); return; }
+//	}
+//}
 
-const Header createHeader(size_t width, size_t height, mxArray* mxstruct);
-const Header createHeader(size_t width, size_t height);
+const ConstMap<std::string, Imf::LineOrder> stringToLineOrderType = ConstMap<std::string, Imf::LineOrder>
+    ("increasing_y", 	Imf::INCREASING_Y)
+    ("decreasing_y",	Imf::DECREASING_Y)
+    ("random_y",		Imf::RANDOM_Y)
+    ("unknown",			Imf::NUM_LINEORDERS);
 
-void writeScanLine(OutputFile& file, \
+//inline Imf::LineOrder stringToLineOrderType(const char * propertyName) {
+//
+//	if (!strcmp("increasing_y", propertyName)) {
+//		return Imf::INCREASING_Y;
+//	} else if (!strcmp("decreasing_y", propertyName)) {
+//		return Imf::DECREASING_Y;
+//	} else if (!strcmp("random_y", propertyName)) {
+//		return Imf::RANDOM_Y;
+//	} else {
+//		Assert(0);
+//		return -1;
+//	}
+//}
+
+const ConstMap<Imf::LineOrder, std::string> lineOrderTypeToString = ConstMap<Imf::LineOrder, std::string>
+    (Imf::INCREASING_Y,		"increasing_y")
+    (Imf::DECREASING_Y,		"decreasing_y")
+    (Imf::RANDOM_Y,			"random_y")
+    (Imf::NUM_LINEORDERS,	"unknown");
+
+//inline void lineOrderTypeToString(const Imf::LineOrder property, \
+//								char * propertyName) {
+//	switch (property) {
+//		case Imf::INCREASING_Y: { strcpy(propertyName, "increasing_y"); return; }
+//		case Imf::DECREASING_Y: { strcpy(propertyName, "decreasing_y"); return; }
+//		case Imf::RANDOM_Y: { strcpy(propertyName, "random_y"); return; }
+//		case Imf::NUM_LINEORDERS:
+//		default: { strcpy(propertyName, "unknown"); return; }
+//	}
+//}
+
+const ConstMap<std::string, Imf::Envmap> stringToEnvmapType = ConstMap<std::string, Imf::Envmap>
+    ("latlong", Imf::ENVMAP_LATLONG)
+    ("cube",	Imf::ENVMAP_CUBE)
+    ("unknown",	Imf::NUM_ENVMAPTYPES);
+
+//inline Imf::Envmap stringToEnvmapType(const char * query) {
+//
+//	if (!strcmp("latlong", query)) {
+//		return Imf::ENVMAP_LATLONG;
+//	} else if (!strcmp("cube", query)) {
+//		return Imf::ENVMAP_CUBE;
+//	} else {
+//		Assert(0);
+//		return -1;
+//	}
+//}
+
+const ConstMap<Imf::Envmap, std::string> envmapTypeToString = ConstMap<Imf::Envmap, std::string>
+    (Imf::ENVMAP_LATLONG, 	"latlong")
+    (Imf::ENVMAP_CUBE,		"cube")
+    (Imf::NUM_ENVMAPTYPES,	"unknown");
+
+//inline void envmapTypeToString(const Imf::Envmap property, \
+//							char * propertyName) {
+//	switch (property) {
+//		case Imf::ENVMAP_LATLONG: { strcpy(propertyName, "latlong"); return; }
+//		case Imf::ENVMAP_CUBE: { strcpy(propertyName, "cube"); return; }
+//		case Imf::NUM_ENVMAPTYPES:
+//		default: { strcpy(propertyName, "unknown"); return; }
+//	}
+//}
+
+const mxArray * attributeToMxArray(const Imf::Attribute & attr);
+mxArray* getAttribute(const Imf::Header& head, const char attributeName[]);
+mxArray* getAttribute(const Imf::Header& head);
+void setAttribute(Imf::Header& head, const char attrName[], const mxArray* mxarr);
+void setAttribute(Imf::Header& head, const mxArray* mxstruct);
+
+const Imf::Header createHeader(size_t width, size_t height, mxArray* mxstruct);
+const Imf::Header createHeader(size_t width, size_t height);
+
+void writeScanLine(Imf::OutputFile& file, \
 		const USED *rPixels, \
 		const USED *gPixels, \
 		const USED *bPixels, \
@@ -320,32 +461,32 @@ void writeScanLine(OutputFile& file, \
 		const size_t width, \
 		const size_t height);
 
-void writeScanLine(OutputFile& file, \
+void writeScanLine(Imf::OutputFile& file, \
 		const USED *yPixels, \
 		const USED *aPixels, \
 		const size_t width, \
 		const size_t height);
 
-void writeScanLine(OutputFile& file, \
+void writeScanLine(Imf::OutputFile& file, \
 		const USED **cPixels, \
 		const char **cNames, \
 		const size_t width, \
 		const size_t height);
 
-void readScanLine(InputFile& file, \
-		Array2D<USED> &rPixels, bool &rFlag, \
-		Array2D<USED> &gPixels, bool &gFlag, \
-		Array2D<USED> &bPixels, bool &bFlag, \
-		Array2D<USED> &aPixels, bool &aFlag, \
+void readScanLine(Imf::InputFile& file, \
+		Imf::Array2D<USED> &rPixels, bool &rFlag, \
+		Imf::Array2D<USED> &gPixels, bool &gFlag, \
+		Imf::Array2D<USED> &bPixels, bool &bFlag, \
+		Imf::Array2D<USED> &aPixels, bool &aFlag, \
 		size_t& width, size_t& height);
 
-void readScanLine(InputFile& file, \
-		Array2D<USED> &yPixels, bool &yFlag, \
-		Array2D<USED> &aPixels, bool &aFlag, \
+void readScanLine(Imf::InputFile& file, \
+		Imf::Array2D<USED> &yPixels, bool &yFlag, \
+		Imf::Array2D<USED> &aPixels, bool &aFlag, \
 		size_t& width, size_t& height);
 
-void readScanLine(InputFile& file, \
-		std::vector<Array2D<USED> >& cPixels,
+void readScanLine(Imf::InputFile& file, \
+		std::vector<Imf::Array2D<USED> >& cPixels,
 		std::vector<char *>& cNames, \
 		size_t& width, size_t& height);
 
