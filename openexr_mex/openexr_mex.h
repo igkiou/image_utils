@@ -28,32 +28,14 @@
 #include "ImfRgbaFile.h"
 #include "ImfStandardAttributes.h"
 
+#include "mex_utils.h"
+
 #include "mex.h"
 #include "matrix.h"
 
 //using namespace Imf;
 //using namespace Imath;
 //using namespace Iex;
-
-// Inspired by mitsuba-0.4.1
-// TODO: Add mitsuba copyright.
-#ifdef NDEBUG
-#define Assert(cond) ((void) 0)
-#define AssertEx(cond, explanation) ((void) 0)
-#else
-/* Assertions */
-// Assert that a condition is true
-#define Assert(cond) do { \
-		if (!(cond)) fprintf(stderr, "Assertion \"%s\" failed in %s:%i\n", \
-		#cond, __FILE__, __LINE__); \
-	} while (0)
-
-// Assertion with a customizable error explanation
-#define AssertEx(cond, explanation) do { \
-		if (!(cond)) fprintf(stderr, "Assertion \"%s\" failed in %s:%i (" explanation ")\n", \
-		#cond, __FILE__, __LINE__); \
-	} while (0)
-#endif
 
 namespace exr {
 
@@ -88,32 +70,7 @@ typedef enum ATTR_TYPE {
 	ATTR_TYPE_INVALID = -1
 } ATTR_TYPE;
 
-template <typename T, typename U>
-class ConstMap {
-private:
-	std::map<T, U> m_;
-public:
-
-	ConstMap(const T& key, const U& val) {
-		m_[key] = val;
-	}
-
-	ConstMap<T, U>& operator()(const T& key, const U& val) {
-		m_[key] = val;
-		return *this;
-	}
-
-	operator std::map<T, U>() { return m_; }
-
-	U operator [](const T& key) const {
-		typename std::map<T,U>::const_iterator it = m_.find(key);
-		if (it==m_.end())
-			mexErrMsgIdAndTxt("openexr_mex:error", "Value not found");
-		return (*it).second;
-	}
-};
-
-const ConstMap<std::string, ATTR_TYPE> attrNameToAttrType = ConstMap<std::string, ATTR_TYPE>
+const mex::ConstMap<std::string, ATTR_TYPE> attrNameToAttrType = mex::ConstMap<std::string, ATTR_TYPE>
     ("gain",				ATTR_FLOAT)
     ("wavelength",			ATTR_FLOAT)
     ("extTube",				ATTR_STRING)
@@ -203,7 +160,7 @@ const ConstMap<std::string, ATTR_TYPE> attrNameToAttrType = ConstMap<std::string
 //	}
 //}
 
-const ConstMap<std::string, ATTR_TYPE> stringToAttrType = ConstMap<std::string, ATTR_TYPE>
+const mex::ConstMap<std::string, ATTR_TYPE> stringToAttrType = mex::ConstMap<std::string, ATTR_TYPE>
     ("chlist",			ATTR_CHLIST)
     ("compression",		ATTR_COMPRESSION)
     ("lineOrder",		ATTR_LINEORDER)
@@ -266,7 +223,7 @@ const ConstMap<std::string, ATTR_TYPE> stringToAttrType = ConstMap<std::string, 
 //	}
 //}
 
-const ConstMap<ATTR_TYPE, std::string> attrTypeToString = ConstMap<ATTR_TYPE, std::string>
+const mex::ConstMap<ATTR_TYPE, std::string> attrTypeToString = mex::ConstMap<ATTR_TYPE, std::string>
     (ATTR_CHLIST, 			"chlist")
     (ATTR_COMPRESSION,		"compression")
     (ATTR_LINEORDER,		"lineOrder")
@@ -314,7 +271,7 @@ const ConstMap<ATTR_TYPE, std::string> attrTypeToString = ConstMap<ATTR_TYPE, st
 //	}
 //}
 
-const ConstMap<std::string, Imf::Compression> stringToCompressionType = ConstMap<std::string, Imf::Compression>
+const mex::ConstMap<std::string, Imf::Compression> stringToCompressionType = mex::ConstMap<std::string, Imf::Compression>
     ("no", 		Imf::NO_COMPRESSION)
     ("rle",		Imf::RLE_COMPRESSION)
     ("zips",	Imf::ZIPS_COMPRESSION)
@@ -348,7 +305,7 @@ const ConstMap<std::string, Imf::Compression> stringToCompressionType = ConstMap
 //	}
 //}
 
-const ConstMap<Imf::Compression, std::string> CompressionTypeToString = ConstMap<Imf::Compression. std::string>
+const mex::ConstMap<Imf::Compression, std::string> compressionTypeToString = mex::ConstMap<Imf::Compression, std::string>
     (Imf::NO_COMPRESSION, 			"no")
     (Imf::RLE_COMPRESSION,			"rle")
     (Imf::ZIPS_COMPRESSION,			"zips")
@@ -375,7 +332,7 @@ const ConstMap<Imf::Compression, std::string> CompressionTypeToString = ConstMap
 //	}
 //}
 
-const ConstMap<std::string, Imf::LineOrder> stringToLineOrderType = ConstMap<std::string, Imf::LineOrder>
+const mex::ConstMap<std::string, Imf::LineOrder> stringToLineOrderType = mex::ConstMap<std::string, Imf::LineOrder>
     ("increasing_y", 	Imf::INCREASING_Y)
     ("decreasing_y",	Imf::DECREASING_Y)
     ("random_y",		Imf::RANDOM_Y)
@@ -395,7 +352,7 @@ const ConstMap<std::string, Imf::LineOrder> stringToLineOrderType = ConstMap<std
 //	}
 //}
 
-const ConstMap<Imf::LineOrder, std::string> lineOrderTypeToString = ConstMap<Imf::LineOrder, std::string>
+const mex::ConstMap<Imf::LineOrder, std::string> lineOrderTypeToString = mex::ConstMap<Imf::LineOrder, std::string>
     (Imf::INCREASING_Y,		"increasing_y")
     (Imf::DECREASING_Y,		"decreasing_y")
     (Imf::RANDOM_Y,			"random_y")
@@ -412,7 +369,7 @@ const ConstMap<Imf::LineOrder, std::string> lineOrderTypeToString = ConstMap<Imf
 //	}
 //}
 
-const ConstMap<std::string, Imf::Envmap> stringToEnvmapType = ConstMap<std::string, Imf::Envmap>
+const mex::ConstMap<std::string, Imf::Envmap> stringToEnvmapType = mex::ConstMap<std::string, Imf::Envmap>
     ("latlong", Imf::ENVMAP_LATLONG)
     ("cube",	Imf::ENVMAP_CUBE)
     ("unknown",	Imf::NUM_ENVMAPTYPES);
@@ -429,7 +386,7 @@ const ConstMap<std::string, Imf::Envmap> stringToEnvmapType = ConstMap<std::stri
 //	}
 //}
 
-const ConstMap<Imf::Envmap, std::string> envmapTypeToString = ConstMap<Imf::Envmap, std::string>
+const mex::ConstMap<Imf::Envmap, std::string> envmapTypeToString = mex::ConstMap<Imf::Envmap, std::string>
     (Imf::ENVMAP_LATLONG, 	"latlong")
     (Imf::ENVMAP_CUBE,		"cube")
     (Imf::NUM_ENVMAPTYPES,	"unknown");
@@ -444,87 +401,176 @@ const ConstMap<Imf::Envmap, std::string> envmapTypeToString = ConstMap<Imf::Envm
 //	}
 //}
 
-const mxArray * attributeToMxArray(const Imf::Attribute & attr);
-mxArray* getAttribute(const Imf::Header& head, const char attributeName[]);
-mxArray* getAttribute(const Imf::Header& head);
-void setAttribute(Imf::Header& head, const char attrName[], const mxArray* mxarr);
-void setAttribute(Imf::Header& head, const mxArray* mxstruct);
+struct EXRInputFile {
+public:
+	EXRInputFile(const std::string &fileName)
+				: m_inFile(fileName.c_str()) {	}
 
-const Imf::Header createHeader(size_t width, size_t height, mxArray* mxstruct);
-const Imf::Header createHeader(size_t width, size_t height);
+	inline int getWidth() const {
+		Imath::Box2i dw = m_inFile.header().dataWindow();
+		return dw.max.x - dw.min.x + 1;
+	}
 
-void writeScanLine(Imf::OutputFile& file, \
-		const USED *rPixels, \
-		const USED *gPixels, \
-		const USED *bPixels, \
-		const USED *aPixels, \
-		const size_t width, \
-		const size_t height);
+	inline int getHeight() const {
+		Imath::Box2i dw = m_inFile.header().dataWindow();
+		return dw.max.y - dw.min.y + 1;
+	}
 
-void writeScanLine(Imf::OutputFile& file, \
-		const USED *yPixels, \
-		const USED *aPixels, \
-		const size_t width, \
-		const size_t height);
+	inline void getDimensions(int &width, int &height) const {
+		Imath::Box2i dw = m_inFile.header().dataWindow();
+		width = dw.max.x - dw.min.x + 1;
+		height = dw.max.y - dw.min.y + 1;
+	}
 
-void writeScanLine(Imf::OutputFile& file, \
-		const USED **cPixels, \
-		const char **cNames, \
-		const size_t width, \
-		const size_t height);
+	inline int getNumberOfChannels() const {
+		int numChannels = 0;
+		for (Imf::ChannelList::ConstIterator channelIter = m_inFile.header().channels().begin(), \
+				channelEnd = m_inFile.header().channels().end(); \
+				channelIter != channelEnd; \
+				++channelIter, ++numChannels);
+		return numChannels;
+	}
 
-void readScanLine(Imf::InputFile& file, \
-		Imf::Array2D<USED> &rPixels, bool &rFlag, \
-		Imf::Array2D<USED> &gPixels, bool &gFlag, \
-		Imf::Array2D<USED> &bPixels, bool &bFlag, \
-		Imf::Array2D<USED> &aPixels, bool &aFlag, \
-		size_t& width, size_t& height);
+	inline std::vector<std::string>& getChannelNames() const {
+		std::vector<std::string> channelNames(0);
+		for (Imf::ChannelList::ConstIterator channelIter = m_inFile.header().channels().begin(), \
+				channelEnd = m_inFile.header().channels().end(); \
+				channelIter != channelEnd; \
+				++channelIter) {
+			channelNames.push_back(std::string(channelIter.name()));
+		}
+		return channelNames;
+	}
 
-void readScanLine(Imf::InputFile& file, \
-		Imf::Array2D<USED> &yPixels, bool &yFlag, \
-		Imf::Array2D<USED> &aPixels, bool &aFlag, \
-		size_t& width, size_t& height);
+	void readScanLineRGBA(Imf::Array2D<USED> &rPixels, bool &rFlag, \
+			Imf::Array2D<USED> &gPixels, bool &gFlag, \
+			Imf::Array2D<USED> &bPixels, bool &bFlag, \
+			Imf::Array2D<USED> &aPixels, bool &aFlag) const;
 
-void readScanLine(Imf::InputFile& file, \
-		std::vector<Imf::Array2D<USED> >& cPixels,
-		std::vector<char *>& cNames, \
-		size_t& width, size_t& height);
+	void readScanLineYA(Imf::Array2D<USED> &yPixels, bool &yFlag, \
+			Imf::Array2D<USED> &aPixels, bool &aFlag) const;
 
-}	/* namespace exr */
+	void readScanLine(Imf::Array2D<USED> &cPixels, bool &cFlag, \
+					std::string &cName) const;
 
-/* TODO: Implement these using std::map types. */
-/*
-template<class K, class V>
-struct map_list_of_type_sub {
-	typedef std::map<K, V> Map;
-	Map data;
-	map_list_of_type_sub(K k, V v) { data[k] = v; }
-	map_list_of_type_sub& operator()(K k, V v) { data[k] = v; return *this; }
-	operator Map const&() const { return data; }
+	void readScanLine(std::vector<Imf::Array2D<USED> > &cPixels, std::vector<bool> &cFlags, \
+			std::vector<std::string> &cNames) const;
+
+	MxArray getAttribute(const std::string &attributeName) const;
+	MxArray getAttribute() const;
+
+	virtual ~EXRInputFile() {	}
+
+private:
+	Imf::InputFile m_inFile;
+
 };
 
-template<class K, class V>
-map_list_of_type_sub<K, V> map_list_of(K k, V v) {
-  return map_list_of_type_sub<K, V>(k, v);
-}
+struct EXROutputFile {
+public:
+	EXROutputFile(const int width, const int height)
+				: m_header(width, height), \
+				  m_frameBuffer(), \
+				  m_createdFrameBuffer(false), \
+				  m_wroteFile(false) {	}
 
-const std::map<ATTR_TYPE, std::string> attrTypeToString = \
-		map_list_of(ATTR_CHLIST, "chlist") (ATTR_COMPRESSION, "compression") \
-		(ATTR_LINEORDER, "lineOrder") (ATTR_CHROMATICITIES, "chromaticities") \
-		(ATTR_ENVMAP, "envmap") (ATTR_STRING, "string") \
-		(ATTR_BOX2D, "box2d") (ATTR_BOX2F, "box2f") (ATTR_BOX2I, "box2i") \
-		(ATTR_V2D, "v2d") (ATTR_V2F, "v2f") (ATTR_V2I, "v2i") \
-		(ATTR_VD, "vd") (ATTR_VF, "vf") (ATTR_VI, "vi") \
-		(ATTR_DOUBLE, "double") (ATTR_FLOAT, "float") (ATTR_INT, "int");
+	inline int getWidth() const {
+		Imath::Box2i dw = m_header.dataWindow();
+		return dw.max.x - dw.min.x + 1;
+	}
 
-const std::map<std::string, ATTR_TYPE> stringToAttrType = \
-		map_list_of("chlist", ATTR_CHLIST) ("compression", ATTR_COMPRESSION) \
-		("lineOrder", ATTR_LINEORDER) ("chromaticities", ATTR_CHROMATICITIES) \
-		("envmap", ATTR_ENVMAP) ("string", ATTR_STRING) \
-		("box2d", ATTR_BOX2D) ("box2f", ATTR_BOX2F) ("box2i", ATTR_BOX2I) \
-		("v2d", ATTR_V2D) ("v2f", ATTR_V2F) ("v2i", ATTR_V2I) \
-		("vd", ATTR_VD) ("vf", ATTR_VF) ("vi", ATTR_VI) \
-		("double", ATTR_DOUBLE) ("float", ATTR_FLOAT) (ATTR_INT, "int");
-*/
+	inline int getHeight() const {
+		Imath::Box2i dw = m_header.dataWindow();
+		return dw.max.y - dw.min.y + 1;
+	}
+
+	inline void getDimensions(int &width, int &height) const {
+		Imath::Box2i dw = m_header.dataWindow();
+		width = dw.max.x - dw.min.x + 1;
+		height = dw.max.y - dw.min.y + 1;
+	}
+
+	inline int getNumberOfChannels() const {
+			int numChannels = 0;
+			for (Imf::ChannelList::ConstIterator channelIter = m_header.channels().begin(), \
+					channelEnd = m_header.channels().end(); \
+					channelIter != channelEnd; \
+					++channelIter, ++numChannels);
+			return numChannels;
+		}
+
+	inline std::vector<std::string>& getChannelNames() const {
+		std::vector<std::string> channelNames(0);
+		for (Imf::ChannelList::ConstIterator channelIter = m_header.channels().begin(), \
+				channelEnd = m_header.channels().end(); \
+				channelIter != channelEnd; \
+				++channelIter) {
+			channelNames.push_back(std::string(channelIter.name()));
+		}
+		return channelNames;
+	}
+
+	inline void addChannelRGBA() {
+		m_header.channels().insert("R", Channel(USEDC));
+		m_header.channels().insert("G", Channel(USEDC));
+		m_header.channels().insert("B", Channel(USEDC));
+		m_header.channels().insert("A", Channel(USEDC));
+	}
+
+	inline void addChannelYA() {
+		m_header.channels().insert("Y", Channel(USEDC));
+		m_header.channels().insert("A", Channel(USEDC));
+	}
+
+	inline void addChannel(const std::string& channelName) {
+		m_header.channels().insert(channelName.c_str(), Channel(USEDC));
+	}
+
+	inline void addChannel(const std::vector<const std::string> &channelNames) {
+		for (int iter = 0, numChannels = channelNames.size(); \
+			iter < numChannels; \
+			++iter) {
+			m_header.channels().insert(channelNames[iter].c_str(), Channel(USEDC));
+		}
+	}
+
+	void setAttribute(const std::string &attrName, const MxArray &mxarr);
+	void setAttribute(const MxArray &mxstruct);
+
+	void createFrameBufferRGBA(const USED *rPixels, \
+							const USED *gPixels, \
+							const USED *bPixels, \
+							const USED *aPixels);
+
+	void createFrameBufferYA(const USED *yPixels, \
+							const USED *aPixels);
+
+	void createFrameBuffer(const USED *cPixels, \
+						const std::string &cName);
+
+	void createFrameBuffer(const std::vector<const USED *> &cPixels, \
+						const std::vector<const std::string> &cNames);
+
+	inline void writeFile(const std::string &fileName) {
+		Assert((m_createdFrameBuffer) && (!m_wroteFile));
+		int height = getHeight();
+		Imf::OutputFile outFile(fileName.c_str(), m_header);
+		outFile.setFrameBuffer(m_frameBuffer);
+		outFile.writePixels(height);
+		m_wroteFile = true;
+	}
+
+	virtual ~EXROutputFile() {	}
+
+private:
+	Imf::Header m_header;
+	Imf::FrameBuffer m_frameBuffer;
+	bool m_createdFrameBuffer;
+	bool m_wroteFile;
+};
+
+MxArray attributeToMxArray(const Imf::Attribute & attr);
+
+}	/* namespace exr */
 
 #endif /* OPENEXR_MEX_H_ */

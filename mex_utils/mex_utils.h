@@ -11,6 +11,7 @@
 #include <algorithm>
 #include <string>
 #include <vector>
+#include <map>
 
 #include <string.h>
 
@@ -23,6 +24,53 @@
  * TODO: Fix specialization issue.
  */
 namespace mex {
+
+const char * const ERROR_ID = "MATLAB:image_utils";
+
+// Inspired by mitsuba-0.4.1
+// TODO: Add mitsuba copyright.
+#ifdef NDEBUG
+#define Assert(cond) ((void) 0)
+#define AssertEx(cond, explanation) ((void) 0)
+#else
+/* Assertions */
+// Assert that a condition is true
+#define Assert(cond) do { \
+		if (!(cond)) mexErrMsgIdAndTxt(ERROR_ID, "Assertion \"%s\" failed in %s:%i\n", \
+		#cond, __FILE__, __LINE__); \
+	} while (0)
+
+// Assertion with a customizable error explanation
+#define AssertEx(cond, explanation) do { \
+		if (!(cond)) mexErrMsgIdAndTxt(ERROR_ID, "Assertion \"%s\" failed in %s:%i (" explanation ")\n", \
+		#cond, __FILE__, __LINE__); \
+	} while (0)
+#endif
+
+template <typename T, typename U>
+class ConstMap {
+private:
+	std::map<T, U> m_;
+public:
+
+	ConstMap(const T& key, const U& val) {
+		m_[key] = val;
+	}
+
+	ConstMap<T, U>& operator()(const T& key, const U& val) {
+		m_[key] = val;
+		return *this;
+	}
+
+	operator std::map<T, U>() { return m_; }
+
+	U operator [](const T& key) const {
+		typename std::map<T,U>::const_iterator it = m_.find(key);
+		if (it==m_.end())
+			mexErrMsgIdAndTxt("openexr_mex:error", "Value not found");
+		return (*it).second;
+	}
+};
 
 typedef mxArray* pMxArray;
 
@@ -73,7 +121,8 @@ template <> MxClassID<unsigned long>::MxClassID() : m_class(mxUINT64_CLASS) {	}
 template <> MxClassID<float>::MxClassID() : m_class(mxSINGLE_CLASS) {	}
 template <> MxClassID<double>::MxClassID() : m_class(mxDOUBLE_CLASS) {	}
 template <> MxClassID<bool>::MxClassID() : m_class(mxLOGICAL_CLASS) {	}
-template <> MxClassID<pMxArray>::MxClassID() : m_class(mxCELL_CLASS) {	}
+//template <> MxClassID<pMxArray>::MxClassID() : m_class(mxCELL_CLASS) {	}
+//template <> MxClassID<std::string>::MxClassID() : m_class(mxCHAR_CLASS) {	}
 
 //			mxCELL_CLASS,
 //		    mxSTRUCT_CLASS,
@@ -82,71 +131,65 @@ template <> MxClassID<pMxArray>::MxClassID() : m_class(mxCELL_CLASS) {	}
 //		    mxOPAQUE_CLASS,
 //		    mxOBJECT_CLASS, /* keep the last real item in the list */
 
-template <typename T>
 struct MxArray {
-private:
-	mxArray *m_mxArray;
-	mxClassID m_mxClassID;
+protected:
+	pMxArray m_mxArray;
 
 public:
 	MxArray()
-		: m_mxClassID(MxClassID<T>()), m_mxArray() {	};
+		: m_mxArray() {	}
 
-	MxArray(const int numRows, const int numColumns)
-		: m_mxClassID(MxClassID<T>()) {
-		m_mxArray = mxCreateNumericMatrix(numRows, numColumns, MxClassID<T>(), mxREAL);
+	MxArray(const MxArray& arr)
+		: m_mxArray(arr()) {	}
+
+	MxArray& operator=(const MxArray& rhs) {
+		if (this != &rhs) {
+			this->m_mxArray = rhs.m_mxArray;
+		}
+		return *this;
 	}
 
-//	MxArray(const int numDims, const int *dims)
-//		: m_mxClassID(MxClassID<T>()) {
-//		m_mxArray = mxCreateNumericArray(numDims, dims, MxClassID<T>(), mxREAL);
+	MxArray(const pMxArray mxarr)
+		: m_mxArray(mxarr) {	}
+
+	virtual ~MxArray() {}
+
+/*
+ * TODO: Decide whether to provide these, possible conflict with T* data in
+ * numeric.
+ */
+//	inline const void * data() const {
+//		return (void *) mxGetData(m_mxArray);
+//	}
+//
+//	inline void * data() {
+//		return (void *) mxGetData(m_mxArray);
 //	}
 
-	MxArray(const T scalarVar)
-		: m_mxClassID(MxClassID<T>()) {
-		m_mxArray = mxCreateNumericMatrix(1, 1, MxClassID<T>(), mxREAL);
-		T *val = (T *) mxGetData(m_mxArray);
-		*val = (T) scalarVar;
-	}
-
-	MxArray(const std::vector<T>& vecVar)
-		: m_mxClassID(MxClassID<T>()) {
-		m_mxArray = mxCreateNumericMatrix(vecVar.size(), 1, MxClassID<T>(), mxREAL);
-		T *val = (T *) mxGetData(m_mxArray);
-		std::copy(vecVar.begin(), vecVar.end(), val);
-	}
-
-	MxArray(const T* arrVar, const int numRows, const int numColumns)
-		: m_mxClassID(MxClassID<T>()) {
-		m_mxArray = mxCreateNumericMatrix(numRows, numColumns, MxClassID<T>(), mxREAL);
-		T *val = (T *) mxGetData(m_mxArray);
-		memcpy(val, arrVar, numRows * numColumns * sizeof(T));
-	}
-
-//	MxArray(const T* arrVar, const int numDims, const int *dims)
-//		: m_mxClassID(MxClassID<T>()) {
-//		m_mxArray = mxCreateNumericArray(numDims, dims, MxClassID<T>(), mxREAL);
-//		T *val = (T *) mxGetData(m_mxArray);
-//		int numElements = 1;
-//		for (int iter = 0; iter < numDims; ++iter) {
-//			numElements *= dims[iter];
-//		}
-//		memcpy(val, arrVar, numElements * sizeof(T));
-//	}
-
-	inline const mxArray* getMxArray() const {
+	/* getter */
+	inline const pMxArray getMxArray() const {
 		return m_mxArray;
 	}
 
-	inline mxArray* getMxArray() {
+	inline pMxArray getMxArray() {
 		return m_mxArray;
 	}
 
-	inline const mxArray* operator()() const {
+	/* parenthesis operator */
+	inline const pMxArray operator()() const {
 		return m_mxArray;
 	}
 
-	inline mxArray* operator()() {
+	inline pMxArray operator()() {
+		return m_mxArray;
+	}
+
+	/* cast to getMxArray* */
+	inline operator const pMxArray() const {
+		return m_mxArray;
+	}
+
+	inline operator pMxArray() {
 		return m_mxArray;
 	}
 
@@ -174,6 +217,161 @@ public:
 //		return mxGetDimensions(m_mxArray);
 //	}
 
+	inline void destroy() {
+		mxDestroyArray(m_mxArray);
+	}
+};
+
+
+/* Special declarations for string. */
+//MxString(const std::string& stringVar)
+//			: m_mxArray(mxCreateString(stringVar.c_str())) {	}
+//
+//MxString(const char* cStringVar)
+//			: m_mxArray(mxCreateString(cStringVar)) {	}
+
+template <typename T>
+struct MxNumeric : public MxArray {
+private:
+	mxClassID m_mxClassID;
+
+public:
+	MxNumeric()
+		: MxArray(), \
+		  m_mxClassID(MxClassID<T>()) {	}
+
+	MxNumeric(const MxNumeric<T>& arr)
+		: 	MxArray(arr), \
+			m_mxClassID(MxClassID<T>()) {	}
+
+	MxNumeric<T>& operator=(const MxNumeric<T>& rhs) {
+		if (this != &rhs) {
+			this->m_mxArray = rhs.m_mxArray;
+			this->m_mxClassID = rhs.m_mxClassID;
+		}
+		return *this;
+	}
+
+	MxNumeric(const pMxArray mxarr)
+		: MxArray(mxarr), \
+		  m_mxClassID(MxClassID<T>()) {
+		Assert(m_mxClassID == mxGetClassID(mxarr));
+	}
+
+	MxNumeric(const int numRows, const int numColumns)
+		: MxArray(), \
+		  m_mxClassID(MxClassID<T>()) {
+		m_mxArray = mxCreateNumericMatrix(numRows, numColumns, MxClassID<T>(), mxREAL);
+	}
+
+//	MxNumeric(const std::vector<int> &dims)
+//		: MxArray(), \
+//		  m_mxClassID(MxClassID<T>()) {
+//		const int numDims = dims.size();
+//		mwSize *tempDims = (mwSize *) malloc(numDims * sizeof(mwSize));
+//		for (int iter = 0; iter < numDims; ++iter) {
+//			tempDims[iter] = dims[iter];
+//		}
+//		m_mxArray = mxCreateNumericArray(numDims, tempDims, MxClassID<T>(), mxREAL);
+//		mxFree(tempDims);
+//	}
+
+	MxNumeric(const int numDims, const int *dims)
+		: MxArray(), \
+		  m_mxClassID(MxClassID<T>()) {
+		mwSize *tempDims = (mwSize *) malloc(numDims * sizeof(mwSize));
+		for (int iter = 0; iter < numDims; ++iter) {
+			tempDims[iter] = dims[iter];
+		}
+		m_mxArray = mxCreateNumericArray(numDims, tempDims, MxClassID<T>(), mxREAL);
+		mxFree(tempDims);
+	}
+
+	MxNumeric(const int numDims, const mwSize *dims)
+		: m_mxClassID(MxClassID<T>()) {
+		m_mxArray = mxCreateNumericArray(numDims, dims, MxClassID<T>(), mxREAL);
+	}
+
+	MxNumeric(const T scalarVar)
+		: MxArray(), \
+		  m_mxClassID(MxClassID<T>()) {
+		m_mxArray = mxCreateNumericMatrix(1, 1, MxClassID<T>(), mxREAL);
+		T *val = (T *) mxGetData(m_mxArray);
+		*val = (T) scalarVar;
+	}
+
+	MxNumeric(const std::vector<T>& vecVar)
+		: MxArray(), \
+		  m_mxClassID(MxClassID<T>()) {
+		m_mxArray = mxCreateNumericMatrix(vecVar.size(), 1, MxClassID<T>(), mxREAL);
+		T *val = (T *) mxGetData(m_mxArray);
+		std::copy(vecVar.begin(), vecVar.end(), val);
+	}
+
+	MxNumeric(const T* arrVar, const int numRows, const int numColumns)
+		: MxArray(), \
+		  m_mxClassID(MxClassID<T>()) {
+		m_mxArray = mxCreateNumericMatrix(numRows, numColumns, MxClassID<T>(), mxREAL);
+		T *val = (T *) mxGetData(m_mxArray);
+		memcpy(val, arrVar, numRows * numColumns * sizeof(T));
+	}
+
+	MxNumeric(const T* arrVar, const std::vector<int>& dims)
+		: MxArray(), \
+		  m_mxClassID(MxClassID<T>()) {
+		const int numDims = dims.size();
+		mwSize *tempDims = (mwSize *) malloc(numDims * sizeof(mwSize));
+		for (int iter = 0; iter < numDims; ++iter) {
+			tempDims[iter] = dims[iter];
+		}
+		m_mxArray = mxCreateNumericArray(numDims, tempDims, MxClassID<T>(), mxREAL);
+		mxFree(tempDims);
+		int numElements = 1;
+		for (int iter = 0; iter < numDims; ++iter) {
+			numElements *= dims[iter];
+		}
+		T *val = (T *) mxGetData(m_mxArray);
+		memcpy(val, arrVar, numElements * sizeof(T));
+	}
+
+	MxNumeric(const T* arrVar, const int numDims, const int *dims)
+		: MxArray(), \
+		  m_mxClassID(MxClassID<T>()) {
+		mwSize *tempDims = (mwSize *) malloc(numDims * sizeof(mwSize));
+		for (int iter = 0; iter < numDims; ++iter) {
+			tempDims[iter] = dims[iter];
+		}
+		m_mxArray = mxCreateNumericArray(numDims, tempDims, MxClassID<T>(), mxREAL);
+		mxFree(tempDims);
+		int numElements = 1;
+		for (int iter = 0; iter < numDims; ++iter) {
+			numElements *= dims[iter];
+		}
+		T *val = (T *) mxGetData(m_mxArray);
+		memcpy(val, arrVar, numElements * sizeof(T));
+	}
+
+	MxNumeric(const T* arrVar, const int numDims, const mwSize *dims)
+	: MxArray(), \
+	  m_mxClassID(MxClassID<T>()) {
+		m_mxArray = mxCreateNumericArray(numDims, dims, MxClassID<T>(), mxREAL);
+		int numElements = 1;
+		for (int iter = 0; iter < numDims; ++iter) {
+			numElements *= dims[iter];
+		}
+		T *val = (T *) mxGetData(m_mxArray);
+		memcpy(val, arrVar, numElements * sizeof(T));
+	}
+
+	/* getter */
+	inline mxClassID getMxClassID() {
+		return m_mxClassID;
+	}
+
+	inline const mxClassID getMxClassID() const {
+		return m_mxClassID;
+	}
+
 	inline const T* data() const {
 		return (T *) mxGetData(m_mxArray);
 	}
@@ -182,166 +380,230 @@ public:
 		return (T *) mxGetData(m_mxArray);
 	}
 
-	inline void destroy() {
-		mxDestroyArray(m_mxArray);
+	inline std::vector<T> vectorize() {
+		int numElements = numel();
+		const T* pData = data();
+		return std::vector<T>(pData, pData + numElements);
+	}
+
+	inline const std::vector<T> vectorize() const {
+		int numElements = numel();
+		const T* pData = data();
+		return std::vector<T>(pData, pData + numElements);
 	}
 };
 
-struct MxArrayCreator {
+struct MxString: public MxArray {
 private:
-	mxArray *m_mxArray;
+	const static mxClassID m_mxClassID = mxCHAR_CLASS;
 
 public:
-	/* Templates for numeric types. */
-	template <typename T>
-	MxArrayCreator(const MxClassID<T> classID, const int numRows, const int numColumns) {
-		m_mxArray = mxCreateNumericMatrix(numRows, numColumns, classID.getMxClassID(), mxREAL);
+	MxString(const MxString& arr)
+		: MxArray(arr) {	}
+
+	MxString& operator=(const MxString& rhs) {
+		if (this != &rhs) {
+			this->m_mxArray = rhs.m_mxArray;
+		}
+		return *this;
 	}
 
-	template <typename T>
-	MxArrayCreator(const T scalarVar) {
-		m_mxArray = mxCreateNumericMatrix(1, 1, MxClassID<T>(), mxREAL);
-		T *val = (T *) mxGetData(m_mxArray);
-		*val = (T) scalarVar;
+	MxString(const pMxArray mxarr)
+		: MxArray(mxarr) {
+		Assert(m_mxClassID == mxGetClassID(mxarr));
 	}
 
-	template <typename T>
-	MxArrayCreator(const std::vector<T>& vecVar) {
-		m_mxArray = mxCreateNumericMatrix(vecVar.size(), 1, MxClassID<T>(), mxREAL);
-		T *val = (T *) mxGetData(m_mxArray);
-		std::copy(vecVar.begin(), vecVar.end(), val);
+	MxString(const std::string& strVar) {
+		m_mxArray = mxCreateString(strVar.c_str());
 	}
 
-	template <typename T>
-	MxArrayCreator(const T* arrVar, const int numRows, const int numColumns) {
-		m_mxArray = mxCreateNumericMatrix(numRows, numColumns, MxClassID<T>(), mxREAL);
-		T *val = (T *) mxGetData(m_mxArray);
-		memcpy(val, arrVar, numRows * numColumns * sizeof(T));
+	MxString(const char* charVar) {
+		m_mxArray = mxCreateString(charVar);
 	}
 
-//	template <typename T>
-//	MxArrayCreator(const MxClassID<T> classID, const int numDims, const int *dims) {
-//		m_mxArray = mxCreateNumericArray(numDims, dims, classID.getMxClassID(), mxREAL);
-//	}
-//	template <typename T>
-//	MxArrayCreator(const T* arrVar, const int numDims, const int *dims) {
-//		m_mxArray = mxCreateNumericArray(numDims, dims, MxClassID<T>(), mxREAL);
-//		T *val = (T *) mxGetData(m_mxArray);
-//		int numElements = 1;
-//		for (int iter = 0; iter < numDims; ++iter) {
-//			numElements *= dims[iter];
-//		}
-//		memcpy(val, arrVar, numElements * sizeof(T));
-//	}
+	std::string string() {
+		char *temp = mxArrayToString(m_mxArray);
+		std::string retArg(temp);
+		mxFree(temp);
+		return retArg;
+	}
 
-	/* "Specializations" (overloads) for cell. */
-	MxArrayCreator(const MxClassID<pMxArray> classID, const int numRows, const int numColumns) {
+	const std::string string() const {
+		char *temp = mxArrayToString(m_mxArray);
+		std::string retArg(temp);
+		mxFree(temp);
+		return retArg;
+	}
+
+	char* c_str() {
+		return mxArrayToString(m_mxArray);
+	}
+
+	const char* c_str() const {
+		return mxArrayToString(m_mxArray);
+	}
+
+	inline int length() const {
+		return mxGetNumberOfElements(m_mxArray);
+	}
+};
+
+struct MxCell : public MxArray {
+private:
+	const static mxClassID m_mxClassID = mxCELL_CLASS;
+
+public:
+	MxCell(const MxCell& arr)
+		: MxArray(arr) {	}
+
+	MxCell& operator=(const MxCell& rhs) {
+		if (this != &rhs) {
+			this->m_mxArray = rhs.m_mxArray;
+		}
+		return *this;
+	}
+
+	MxCell(const pMxArray mxarr)
+		: MxArray() {
+		if (m_mxClassID == mxGetClassID(mxarr)) {
+			m_mxArray = mxarr;
+		} else {
+			m_mxArray = mxCreateCellMatrix(1, 1);
+			mxSetCell(m_mxArray, 0, mxarr);
+		}
+	}
+
+	MxCell(const int numRows, const int numColumns)
+		: MxArray() {
 		m_mxArray = mxCreateCellMatrix(numRows, numColumns);
 	}
 
-	MxArrayCreator(const pMxArray scalarVar) {
-		m_mxArray = mxCreateCellMatrix(1, 1);
-		mxSetCell(m_mxArray, 1, scalarVar);
+	MxCell(const std::vector<int> &dims)
+		: MxArray() {
+		const int numDims = dims.size();
+		mwSize *tempDims = (mwSize *) malloc(numDims * sizeof(mwSize));
+		for (int iter = 0; iter < numDims; ++iter) {
+			tempDims[iter] = dims[iter];
+		}
+		m_mxArray = mxCreateCellArray(numDims, tempDims);
+		mxFree(tempDims);
 	}
 
-	MxArrayCreator(const std::vector<pMxArray>& vecVar) {
+	MxCell(const int numDims, const int *dims)
+		: MxArray() {
+		mwSize *tempDims = (mwSize *) malloc(numDims * sizeof(mwSize));
+		for (int iter = 0; iter < numDims; ++iter) {
+			tempDims[iter] = dims[iter];
+		}
+		m_mxArray = mxCreateCellArray(numDims, tempDims);
+		mxFree(tempDims);
+	}
+
+	MxCell(const int numDims, const mwSize *dims)
+		: MxArray() {
+		m_mxArray = mxCreateCellArray(numDims, dims);
+	}
+
+	MxCell(const std::vector<pMxArray>& vecVar)
+		: MxArray() {
 		m_mxArray = mxCreateCellMatrix(vecVar.size(), 1);
-		for (int iter = 0, size = vecVar.size(); iter < size; ++iter) {
+		for (int iter = 0, numElements = vecVar.size(); iter < numElements; ++iter) {
 			mxSetCell(m_mxArray, iter, vecVar[iter]);
 		}
 	}
 
-	MxArrayCreator(const pMxArray* arrVar, const int numRows, const int numColumns) {
+	MxCell(const std::vector<MxArray>& vecVar)
+		: MxArray() {
+		m_mxArray = mxCreateCellMatrix(vecVar.size(), 1);
+		for (int iter = 0, numElements = vecVar.size(); iter < numElements; ++iter) {
+			mxSetCell(m_mxArray, iter, (pMxArray) vecVar[iter]);
+		}
+	}
+
+	MxCell(const pMxArray* arrVar, const int numRows, const int numColumns)
+		: MxArray() {
 		m_mxArray = mxCreateCellMatrix(numRows, numColumns);
-		for (int iter = 0; iter < numRows * numColumns; ++iter) {
+		int numElements = numRows * numColumns;
+		for (int iter = 0; iter < numElements; ++iter) {
 			mxSetCell(m_mxArray, iter, arrVar[iter]);
 		}
 	}
 
-	/* Special declarations for string. */
-	MxArrayCreator(const std::string& stringVar)
-				: m_mxArray(mxCreateString(stringVar.c_str())) {	}
-
-	MxArrayCreator(const char* cStringVar)
-				: m_mxArray(mxCreateString(cStringVar)) {	}
-
-	virtual ~MxArrayCreator() {}
-
-	inline const mxArray* getMxArray() const {
-		return m_mxArray;
+	MxCell(const pMxArray* arrVar, const std::vector<int>& dims)
+		: MxArray() {
+		const int numDims = dims.size();
+		mwSize *tempDims = (mwSize *) malloc(numDims * sizeof(mwSize));
+		for (int iter = 0; iter < numDims; ++iter) {
+			tempDims[iter] = dims[iter];
+		}
+		m_mxArray = mxCreateCellArray(numDims, tempDims);
+		mxFree(tempDims);
+		int numElements = 1;
+		for (int iter = 0; iter < numDims; ++iter) {
+			numElements *= dims[iter];
+		}
+		for (int iter = 0; iter < numElements; ++iter) {
+			mxSetCell(m_mxArray, iter, arrVar[iter]);
+		}
 	}
 
-	inline mxArray* getMxArray() {
-		return m_mxArray;
+	MxCell(const pMxArray* arrVar, const int numDims, const int *dims)
+		: MxArray() {
+		mwSize *tempDims = (mwSize *) malloc(numDims * sizeof(mwSize));
+		for (int iter = 0; iter < numDims; ++iter) {
+			tempDims[iter] = dims[iter];
+		}
+		m_mxArray = mxCreateCellArray(numDims, tempDims);
+		mxFree(tempDims);
+		int numElements = 1;
+		for (int iter = 0; iter < numDims; ++iter) {
+			numElements *= dims[iter];
+		}
+		for (int iter = 0; iter < numElements; ++iter) {
+			mxSetCell(m_mxArray, iter, arrVar[iter]);
+		}
 	}
 
-	inline const mxArray* operator()() const {
-		return m_mxArray;
+	MxCell(const pMxArray* arrVar, const int numDims, const mwSize *dims)
+		: MxArray() {
+		m_mxArray = mxCreateCellArray(numDims, dims);
+		int numElements = 1;
+		for (int iter = 0; iter < numDims; ++iter) {
+			numElements *= dims[iter];
+		}
+		for (int iter = 0; iter < numElements; ++iter) {
+			mxSetCell(m_mxArray, iter, arrVar[iter]);
+		}
 	}
 
-	inline mxArray* operator()() {
-		return m_mxArray;
+	inline const pMxArray* data() const {
+		return (pMxArray *) mxGetData(m_mxArray);
 	}
 
-	inline operator const mxArray*() const {
-		return m_mxArray;
+	inline pMxArray* data() {
+		return (pMxArray *) mxGetData(m_mxArray);
 	}
 
-	inline operator mxArray*() {
-		return m_mxArray;
+	template <typename T>
+	inline const std::vector<T> vectorize() const {
+		int numElements = numel();
+		std::vector<T> retArg;
+		for (int iter = 0; iter < numElements; ++iter) {
+			retArg.push_back(T(mxGetCell(m_mxArray, iter)));
+		}
+		return retArg;
 	}
 
-	inline const void * data() const {
-		return (void *) mxGetData(m_mxArray);
-	}
-
-	inline void * data() {
-		return (void *) mxGetData(m_mxArray);
+	template <typename T>
+	inline std::vector<T> vectorize() {
+		int numElements = numel();
+		std::vector<T> retArg;
+		for (int iter = 0; iter < numElements; ++iter) {
+			retArg.push_back(T(mxGetCell(m_mxArray, iter)));
+		}
+		return retArg;
 	}
 };
-
-/*
- * TODO: These are not working due to gcc bug.
- */
-//template <>
-//MxArrayCreator::MxArrayCreator<pMxArray>(const MxClassID<pMxArray> classID, const int numRows, const int numColumns) {
-//	m_mxArray = mxCreateCellMatrix(numRows, numColumns);
-//}
-//
-//template <>
-//MxArrayCreator::MxArrayCreator<pMxArray>(const pMxArray scalarVar) {
-//	m_mxArray = mxCreateCellMatrix(1, 1);
-//	mxSetCell(m_mxArray, 1, scalarVar);
-//}
-//
-//
-//template <>
-//MxArrayCreator::MxArrayCreator<pMxArray>(const std::vector<pMxArray>& vecVar) {
-//	m_mxArray = mxCreateCellMatrix(vecVar.size(), 1);
-//	for (int iter = 0, size = vecVar.size(); iter < size; ++iter) {
-//		mxSetCell(m_mxArray, iter, vecVar[iter]);
-//	}
-//}
-//
-//template <>
-//MxArrayCreator::MxArrayCreator<pMxArray>(const pMxArray* arrVar, const int numRows, const int numColumns) {
-//	m_mxArray = mxCreateCellMatrix(numRows, numColumns);
-//	for (int iter = 0; iter < numRows * numColumns; ++iter) {
-//		mxSetCell(m_mxArray, iter, arrVar[iter]);
-//	}
-//}
-//
-//template <>
-//inline MxArrayCreator::MxArrayCreator<pMxArray>(const pMxArray* arrVar, const int numDims, const int *dims) {
-//	m_mxArray = mxCreateCellArray(numDims, dims);
-//	int numElements = 1;
-//	for (int iter = 0; iter < numDims; ++iter) {
-//		numElements *= dims[iter];
-//	}
-//	for (int iter = 0; iter < numElements; ++iter) {
-//		mxSetCell(m_mxArray, iter, arrVar[iter]);
-//	}
-//}
 
 }	/* name space mex */
 

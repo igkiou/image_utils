@@ -9,7 +9,7 @@
 
 namespace exr {
 
-const mxArray * attributeToMxArray(const Imf::Attribute & attr) {
+MxArray attributeToMxArray(const Imf::Attribute & attr) {
 	switch (stringToAttrType(attr.typeName())) {
 		case ATTR_CHLIST:
 		{
@@ -28,16 +28,12 @@ const mxArray * attributeToMxArray(const Imf::Attribute & attr) {
 		case ATTR_COMPRESSION:
 		{
 			const Imf::TypedAttribute<Imf::Compression>& comprAttr = static_cast<const Imf::TypedAttribute<Imf::Compression>& >(attr);
-			char compression[EXR_MAX_STRING_LENGTH];
-			compressionTypeToString(comprAttr.value(), compression);
-			return mxCreateString(compression);
+			return mxCreateString(compressionTypeToString[comprAttr.value()].c_str());
 		}
 		case ATTR_LINEORDER:
 		{
 			const Imf::TypedAttribute<Imf::LineOrder>& linOrdAttr = static_cast<const Imf::TypedAttribute<Imf::LineOrder>& >(attr);
-			char lineOrder[EXR_MAX_STRING_LENGTH];
-			lineOrderTypeToString(linOrdAttr.value(), lineOrder);
-			return mxCreateString(lineOrder);
+			return mxCreateString(lineOrderTypeToString[linOrdAttr.value()].c_str());
 		}
 		case ATTR_CHROMATICITIES:
 		{
@@ -105,7 +101,7 @@ const mxArray * attributeToMxArray(const Imf::Attribute & attr) {
 		}
 		case ATTR_BOX2I:
 		{
-			const Imf::TypedAttribute<Box2i>& box2iAttr = static_cast<const Imf::TypedAttribute<Box2i>& >(attr);
+			const Imf::TypedAttribute<Imath::Box2i>& box2iAttr = static_cast<const Imf::TypedAttribute<Imath::Box2i>& >(attr);
 			const mwSize numPoints = 2;
 			mxArray* temp = mxCreateCellArray(1, &numPoints);
 			mxArray* point;
@@ -435,57 +431,61 @@ void setAttribute(Imf::Header& head, const mxArray* mxstruct) {
 	}
 }
 
-void writeScanLine(Imf::OutputFile& file, \
-		const USED *rPixels, \
-		const USED *gPixels, \
-		const USED *bPixels, \
-		const USED *aPixels, \
-		const size_t width,
-		const size_t height) {
-	Imf::FrameBuffer frameBuffer;
-	frameBuffer.insert("R", Imf::Slice(USEDC, (char *) rPixels, \
-			sizeof(*rPixels) * 1, sizeof(*rPixels) * width));
-	frameBuffer.insert("G", Imf::Slice(USEDC, (char *) gPixels, \
-			sizeof(*gPixels) * 1, sizeof(*gPixels) * width));
-	frameBuffer.insert("B", Imf::Slice(USEDC, (char *) bPixels, \
-			sizeof(*bPixels) * 1, sizeof(*bPixels) * width));
-	if (aPixels != NULL) {
-		frameBuffer.insert("A", Slice(USEDC, (char *) aPixels, \
-			sizeof(*aPixels) * 1, sizeof(*aPixels) * width));
-	}
-	file.setFrameBuffer(frameBuffer);
-	file.writePixels(height);
+void EXROutputFile::createFrameBufferRGBA(const USED *rPixels, \
+										const USED *gPixels, \
+										const USED *bPixels, \
+										const USED *aPixels) {
+
+	std::vector<const USED *> cPixels;
+	std::vector<const std::string> cNames;
+	cPixels.push_back(rPixels);
+	cPixels.push_back(gPixels);
+	cPixels.push_back(bPixels);
+	cPixels.push_back(aPixels);
+	cNames.push_back(std::string("R"));
+	cNames.push_back(std::string("G"));
+	cNames.push_back(std::string("B"));
+	cNames.push_back(std::string("A"));
+	createFrameBuffer(cPixels, cNames);
 }
 
-void writeScanLine(Imf::OutputFile& file, \
-		const USED *yPixels, \
-		const USED *aPixels, \
-		const size_t width,
-		const size_t height) {
-	Imf::FrameBuffer frameBuffer;
-	frameBuffer.insert("Y", Imf::Slice(USEDC, (char *) yPixels, \
-			sizeof(*yPixels) * 1, sizeof(*yPixels) * width));
-	if (aPixels != NULL) {
-		frameBuffer.insert("A", Imf::Slice(USEDC, (char *) aPixels, \
-			sizeof(*aPixels) * 1, sizeof(*aPixels) * width));
-	}
-	file.setFrameBuffer(frameBuffer);
-	file.writePixels(height);
+void EXROutputFile::createFrameBufferYA(const USED *yPixels, \
+										const USED *aPixels) {
+
+	std::vector<const USED *> cPixels;
+	std::vector<const std::string> cNames;
+	cPixels.push_back(yPixels);
+	cPixels.push_back(aPixels);
+	cNames.push_back(std::string("Y"));
+	cNames.push_back(std::string("A"));
+	createFrameBuffer(cPixels, cNames);
 }
 
-void writeScanLine(Imf::OutputFile& file, \
-		const std::vector<USED *>& cPixels, \
-		const char **cNames, \
-		const size_t width, \
-		const size_t height) {
-	Imf::FrameBuffer frameBuffer;
-	size_t channels = cPixels.size();
-	for (size_t iterChannel = 0; iterChannel < channels; ++iterChannel) {
-		frameBuffer.insert(cNames[iterChannel], Imf::Slice(USEDC, (char *) cPixels[iterChannel], \
-				sizeof(*cPixels[iterChannel]) * 1, sizeof(*cPixels[iterChannel]) * width));
+void EXROutputFile::createFrameBuffer(const USED *cPixels, \
+									const std::string &cName) {
+
+	std::vector<const USED *> ccPixels;
+	std::vector<const std::string> cNames;
+	ccPixels.push_back(cPixels);
+	cNames.push_back(cName);
+	createFrameBuffer(ccPixels, cNames);
+}
+
+void EXROutputFile::createFrameBuffer(const std::vector<const USED *> &cPixels, \
+								const std::vector<const std::string> &cNames) {
+	Assert((!m_createdFrameBuffer) && (!m_wroteFile));
+	Assert(cPixels.size() == cNames.size());
+	int channels = cPixels.size();
+	int width, height;
+	getDimensions(width, height);
+	for (int iterChannel = 0; iterChannel < channels; ++iterChannel) {
+		if (cPixels[iterChannel] != NULL) {
+			m_frameBuffer.insert(cNames[iterChannel].c_str(), \
+					Imf::Slice(USEDC, (char *) cPixels[iterChannel], \
+					sizeof(*cPixels[iterChannel]) * 1, sizeof(*cPixels[iterChannel]) * width));
+		}
 	}
-	file.setFrameBuffer(frameBuffer);
-	file.writePixels(height);
+	m_createdFrameBuffer = true;
 }
 
 void readScanLine(Imf::InputFile& file, \
