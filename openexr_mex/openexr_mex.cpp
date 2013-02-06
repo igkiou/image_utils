@@ -431,47 +431,225 @@ void setAttribute(Imf::Header& head, const mxArray* mxstruct) {
 	}
 }
 
-void EXROutputFile::createFrameBufferRGBA(const USED *rPixels, \
+void EXRInputFile::readChannelRGBA(Imf::Array2D<USED> &rPixels, bool &rFlag, \
+								Imf::Array2D<USED> &gPixels, bool &gFlag, \
+								Imf::Array2D<USED> &bPixels, bool &bFlag, \
+								Imf::Array2D<USED> &aPixels, bool &aFlag) const {
+
+	int width, height;
+	getDimensions(width, height);
+	Imf::FrameBuffer frameBuffer;
+	Imath::Box2i dw = m_inFile.header().dataWindow();
+
+	if (m_inFile.header().channels().findChannel("R")) {
+		rFlag = true;
+		rPixels.resizeErase(height, width);
+		frameBuffer.insert("R", \
+						Imf::Slice(USEDC, \
+								(char *) (&rPixels[0][0] - dw.min.x - dw.min.y * width), \
+								sizeof(rPixels[0][0]) * 1, \
+								sizeof(rPixels[0][0]) * width, \
+								1, \
+								1, \
+								FLT_MAX));
+	} else {
+		rFlag = false;
+	}
+
+	if (m_inFile.header().channels().findChannel("G")) {
+		gFlag = true;
+		gPixels.resizeErase(height, width);
+		frameBuffer.insert("G", \
+						Imf::Slice(USEDC, \
+								(char *) (&gPixels[0][0] - dw.min.x - dw.min.y * width), \
+								sizeof(gPixels[0][0]) * 1, \
+								sizeof(gPixels[0][0]) * width, \
+								1, \
+								1, \
+								FLT_MAX));
+	} else {
+		gFlag = false;
+	}
+
+	if (m_inFile.header().channels().findChannel("B")) {
+		bFlag = true;
+		bPixels.resizeErase(height, width);
+		frameBuffer.insert("B", \
+						Imf::Slice(USEDC, \
+								(char *) (&bPixels[0][0] - dw.min.x - dw.min.y * width), \
+								sizeof(bPixels[0][0]) * 1, \
+								sizeof(bPixels[0][0]) * width, \
+								1, \
+								1, \
+								FLT_MAX));
+	} else {
+		bFlag = false;
+	}
+
+	if (m_inFile.header().channels().findChannel("A")) {
+		aFlag = true;
+		aPixels.resizeErase(height, width);
+		frameBuffer.insert("A", \
+						Imf::Slice(USEDC, \
+								(char *) (&aPixels[0][0] - dw.min.x - dw.min.y * width), \
+								sizeof(aPixels[0][0]) * 1, \
+								sizeof(aPixels[0][0]) * width, \
+								1, \
+								1, \
+								FLT_MAX));
+	} else {
+		aFlag = false;
+	}
+
+	m_inFile.setFrameBuffer(frameBuffer);
+	m_inFile.readPixels(dw.min.y, dw.max.y);
+
+}
+
+void EXRInputFile::readChannelYA(Imf::Array2D<USED> &yPixels, bool &yFlag, \
+								Imf::Array2D<USED> &aPixels, bool &aFlag) const {
+
+	int width, height;
+	getDimensions(width, height);
+	Imf::FrameBuffer frameBuffer;
+	Imath::Box2i dw = m_inFile.header().dataWindow();
+
+	if (m_inFile.header().channels().findChannel("Y")) {
+		yFlag = true;
+		yPixels.resizeErase(height, width);
+		frameBuffer.insert("R", \
+						Imf::Slice(USEDC, \
+								(char *) (&yPixels[0][0] - dw.min.x - dw.min.y * width), \
+								sizeof(yPixels[0][0]) * 1, \
+								sizeof(yPixels[0][0]) * width, \
+								1, \
+								1, \
+								FLT_MAX));
+	} else {
+		yFlag = false;
+	}
+
+	if (m_inFile.header().channels().findChannel("A")) {
+		aFlag = true;
+		aPixels.resizeErase(height, width);
+		frameBuffer.insert("A", \
+						Imf::Slice(USEDC, \
+								(char *) (&aPixels[0][0] - dw.min.x - dw.min.y * width), \
+								sizeof(aPixels[0][0]) * 1, \
+								sizeof(aPixels[0][0]) * width, \
+								1, \
+								1, \
+								FLT_MAX));
+	} else {
+		aFlag = false;
+	}
+
+	m_inFile.setFrameBuffer(frameBuffer);
+	m_inFile.readPixels(dw.min.y, dw.max.y);
+
+}
+
+void EXRInputFile::readChannel(Imf::Array2D<USED> &cPixels, bool &cFlag, \
+							const std::string &cName) const {
+
+	int width, height;
+	getDimensions(width, height);
+	Imf::FrameBuffer frameBuffer;
+	Imath::Box2i dw = m_inFile.header().dataWindow();
+
+	if (m_inFile.header().channels().findChannel(cName.c_str())) {
+		cFlag = true;
+		cPixels.resizeErase(height, width);
+		frameBuffer.insert("R", \
+						Imf::Slice(USEDC, \
+								(char *) (&cPixels[0][0] - dw.min.x - dw.min.y * width), \
+								sizeof(cPixels[0][0]) * 1, \
+								sizeof(cPixels[0][0]) * width, \
+								1, \
+								1, \
+								FLT_MAX));
+	} else {
+		cFlag = false;
+	}
+
+	m_inFile.setFrameBuffer(frameBuffer);
+	m_inFile.readPixels(dw.min.y, dw.max.y);
+
+}
+
+
+void EXRInputFile::readChannel(std::vector<Imf::Array2D<USED> > &cPixels, \
+							std::vector<bool> &cFlags, \
+							const std::vector<std::string> &cNames) const {
+
+	int width, height;
+	getDimensions(width, height);
+	int numChannels = cNames.size();
+	cPixels.resize(numChannels);
+	cFlags.resize(numChannels, false);
+	Imf::FrameBuffer frameBuffer;
+	Imath::Box2i dw = m_inFile.header().dataWindow();
+
+	for (int iter = 0; iter < numChannels; ++iter) {
+		if (m_inFile.header().channels().findChannel(cNames[iter].c_str())) {
+			cFlags[iter] = true;
+			cPixels[iter].resizeErase(height, width);
+			frameBuffer.insert(cNames[iter].c_str(), \
+							Imf::Slice(USEDC, \
+									(char *) (&cPixels[iter][0][0] - dw.min.x - dw.min.y * width), \
+									sizeof(cPixels[iter][0][0]) * 1, \
+									sizeof(cPixels[iter][0][0]) * width, \
+									1, \
+									1, \
+									FLT_MAX));
+		}
+	}
+
+	m_inFile.setFrameBuffer(frameBuffer);
+	m_inFile.readPixels(dw.min.y, dw.max.y);
+}
+
+void EXROutputFile::writeChannelRGBA(const USED *rPixels, \
 										const USED *gPixels, \
 										const USED *bPixels, \
 										const USED *aPixels) {
 
 	std::vector<const USED *> cPixels;
-	std::vector<const std::string> cNames;
 	cPixels.push_back(rPixels);
 	cPixels.push_back(gPixels);
 	cPixels.push_back(bPixels);
 	cPixels.push_back(aPixels);
+	std::vector<const std::string> cNames;
 	cNames.push_back(std::string("R"));
 	cNames.push_back(std::string("G"));
 	cNames.push_back(std::string("B"));
 	cNames.push_back(std::string("A"));
-	createFrameBuffer(cPixels, cNames);
+	writeChannel(cPixels, cNames);
 }
 
-void EXROutputFile::createFrameBufferYA(const USED *yPixels, \
+void EXROutputFile::writeChannelYA(const USED *yPixels, \
 										const USED *aPixels) {
 
 	std::vector<const USED *> cPixels;
-	std::vector<const std::string> cNames;
 	cPixels.push_back(yPixels);
 	cPixels.push_back(aPixels);
+	std::vector<const std::string> cNames;
 	cNames.push_back(std::string("Y"));
 	cNames.push_back(std::string("A"));
-	createFrameBuffer(cPixels, cNames);
+	writeChannel(cPixels, cNames);
 }
 
-void EXROutputFile::createFrameBuffer(const USED *cPixels, \
+void EXROutputFile::writeChannel(const USED *cPixels, \
 									const std::string &cName) {
 
 	std::vector<const USED *> ccPixels;
-	std::vector<const std::string> cNames;
 	ccPixels.push_back(cPixels);
+	std::vector<const std::string> cNames;
 	cNames.push_back(cName);
-	createFrameBuffer(ccPixels, cNames);
+	writeChannel(ccPixels, cNames);
 }
 
-void EXROutputFile::createFrameBuffer(const std::vector<const USED *> &cPixels, \
+void EXROutputFile::writeChannel(const std::vector<const USED *> &cPixels, \
 								const std::vector<const std::string> &cNames) {
 	Assert((!m_createdFrameBuffer) && (!m_wroteFile));
 	Assert(cPixels.size() == cNames.size());
@@ -486,126 +664,6 @@ void EXROutputFile::createFrameBuffer(const std::vector<const USED *> &cPixels, 
 		}
 	}
 	m_createdFrameBuffer = true;
-}
-
-void readScanLine(Imf::InputFile& file, \
-		Imf::Array2D<USED> &rPixels, bool &rFlag, \
-		Imf::Array2D<USED> &gPixels, bool &gFlag, \
-		Imf::Array2D<USED> &bPixels, bool &bFlag, \
-		Imf::Array2D<USED> &aPixels, bool &aFlag, \
-		size_t& width,
-		size_t& height) {
-
-	Box2i dw = file.header().dataWindow();
-	width = dw.max.x - dw.min.x + 1;
-	height = dw.max.y - dw.min.y + 1;
-
-	Imf::FrameBuffer frameBuffer;
-
-	if (file.header().channels().findChannel("R")) {
-		rFlag = true;
-		rPixels.resizeErase(height, width);
-		frameBuffer.insert("R", Imf::Slice(USEDC, (char *) (&rPixels[0][0] - dw.min.x - dw.min.y * width), \
-		sizeof(rPixels[0][0]) * 1, sizeof(rPixels[0][0]) * width, 1, 1, FLT_MAX));
-	} else {
-		rFlag = false;
-	}
-
-	if (file.header().channels().findChannel("G")) {
-		gFlag = true;
-		gPixels.resizeErase(height, width);
-		frameBuffer.insert("G", Imf::Slice(USEDC, (char *) (&gPixels[0][0] - dw.min.x - dw.min.y * width), \
-		sizeof(rPixels[0][0]) * 1, sizeof(rPixels[0][0]) * width, 1, 1, FLT_MAX));
-	} else {
-		gFlag = false;
-	}
-
-	if (file.header().channels().findChannel("B")) {
-		bFlag = true;
-		bPixels.resizeErase(height, width);
-		frameBuffer.insert("B", Imf::Slice(USEDC, (char *) (&bPixels[0][0] - dw.min.x - dw.min.y * width), \
-		sizeof(rPixels[0][0]) * 1, sizeof(rPixels[0][0]) * width, 1, 1, FLT_MAX));
-	} else {
-		bFlag = false;
-	}
-
-	if (file.header().channels().findChannel("A")) {
-		aFlag = true;
-		aPixels.resizeErase(height, width);
-		frameBuffer.insert("A", Imf::Slice(USEDC, (char *) (&aPixels[0][0] - dw.min.x - dw.min.y * width), \
-		sizeof(rPixels[0][0]) * 1, sizeof(rPixels[0][0]) * width, 1, 1, FLT_MAX));
-	} else {
-		aFlag = false;
-	}
-
-	file.setFrameBuffer(frameBuffer);
-	file.readPixels(dw.min.y, dw.max.y);
-}
-
-void readScanLine(Imf::InputFile& file, \
-		Imf::Array2D<USED> &yPixels, bool &yFlag, \
-		Imf::Array2D<USED> &aPixels, bool &aFlag, \
-		size_t& width,
-		size_t& height) {
-
-	Box2i dw = file.header().dataWindow();
-	width = dw.max.x - dw.min.x + 1;
-	height = dw.max.y - dw.min.y + 1;
-
-	Imf::FrameBuffer frameBuffer;
-
-	if (file.header().channels().findChannel("Y")) {
-		yFlag = true;
-		yPixels.resizeErase(height, width);
-		frameBuffer.insert("Y", Imf::Slice(USEDC, (char *) (&yPixels[0][0] - dw.min.x - dw.min.y * width), \
-		sizeof(yPixels[0][0]) * 1, sizeof(yPixels[0][0]) * width, 1, 1, FLT_MAX));
-	} else {
-		yFlag = false;
-	}
-
-	if (file.header().channels().findChannel("A")) {
-		aFlag = true;
-		aPixels.resizeErase(height, width);
-		frameBuffer.insert("A", Imf::Slice(USEDC, (char *) (&aPixels[0][0] - dw.min.x - dw.min.y * width), \
-		sizeof(yPixels[0][0]) * 1, sizeof(yPixels[0][0]) * width, 1, 1, FLT_MAX));
-	} else {
-		aFlag = false;
-	}
-
-	file.setFrameBuffer(frameBuffer);
-	file.readPixels(dw.min.y, dw.max.y);
-}
-
-void readScanLine(Imf::InputFile& file, \
-		std::vector<Imf::Array2D<USED>* >& cPixels,
-		std::vector<char *>& cNames, \
-		size_t& width, \
-		size_t& height) {
-
-	Box2i dw = file.header().dataWindow();
-	width = dw.max.x - dw.min.x + 1;
-	height = dw.max.y - dw.min.y + 1;
-	cPixels.resize(0);
-	FrameBuffer frameBuffer;
-	size_t channels = 0;
-
-	for (Imf::ChannelList::ConstIterator channelIter = file.header().channels().begin(), \
-		channelEnd = file.header().channels().end(); \
-		channelIter != channelEnd; \
-		++channelIter) {
-
-		Imf::Array2D<USED> cPixelsTemp(height, width);
-		cPixels.push_back(&cPixelsTemp);
-		char *cNameTemp = (char *) malloc(EXR_MAX_STRING_LENGTH * sizeof(char));
-		cNames.push_back(cNameTemp);
-		strcpy(cNameTemp, channelIter.name());
-		frameBuffer.insert(cNameTemp, Slice(USEDC, (char *) (&cPixelsTemp[0][0] - dw.min.x - dw.min.y * width), \
-		sizeof(cPixelsTemp[0][0]) * 1, sizeof(cPixelsTemp[0][0]) * width, 1, 1, FLT_MAX));
-		++channels;
-	}
-
-	file.setFrameBuffer(frameBuffer);
-	file.readPixels(dw.min.y, dw.max.y);
 }
 
 }	/* namespace nuance */

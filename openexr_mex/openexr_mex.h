@@ -39,8 +39,8 @@
 
 namespace exr {
 
-#define USED float
-#define USEDC Imf::FLOAT
+typedef float USED;
+typedef Imf::FLOAT USEDC;
 
 /*
  * C++-ize, as also done in nuancefx_mex.
@@ -442,19 +442,20 @@ public:
 		return channelNames;
 	}
 
-	void readScanLineRGBA(Imf::Array2D<USED> &rPixels, bool &rFlag, \
-			Imf::Array2D<USED> &gPixels, bool &gFlag, \
-			Imf::Array2D<USED> &bPixels, bool &bFlag, \
-			Imf::Array2D<USED> &aPixels, bool &aFlag) const;
+	void readChannelRGBA(Imf::Array2D<USED> &rPixels, bool &rFlag, \
+						Imf::Array2D<USED> &gPixels, bool &gFlag, \
+						Imf::Array2D<USED> &bPixels, bool &bFlag, \
+						Imf::Array2D<USED> &aPixels, bool &aFlag) const;
 
-	void readScanLineYA(Imf::Array2D<USED> &yPixels, bool &yFlag, \
-			Imf::Array2D<USED> &aPixels, bool &aFlag) const;
+	void readChannelYA(Imf::Array2D<USED> &yPixels, bool &yFlag, \
+					Imf::Array2D<USED> &aPixels, bool &aFlag) const;
 
-	void readScanLine(Imf::Array2D<USED> &cPixels, bool &cFlag, \
-					std::string &cName) const;
+	void readChannel(Imf::Array2D<USED> &cPixels, bool &cFlag, \
+					const std::string &cName) const;
 
-	void readScanLine(std::vector<Imf::Array2D<USED> > &cPixels, std::vector<bool> &cFlags, \
-			std::vector<std::string> &cNames) const;
+	void readChannel(std::vector<Imf::Array2D<USED> > &cPixels, \
+					std::vector<bool> &cFlags, \
+					const std::vector<std::string> &cNames) const;
 
 	MxArray getAttribute(const std::string &attributeName) const;
 	MxArray getAttribute() const;
@@ -511,44 +512,44 @@ public:
 	}
 
 	inline void addChannelRGBA() {
-		m_header.channels().insert("R", Channel(USEDC));
-		m_header.channels().insert("G", Channel(USEDC));
-		m_header.channels().insert("B", Channel(USEDC));
-		m_header.channels().insert("A", Channel(USEDC));
+		m_header.channels().insert("R", Imf::Channel(USEDC));
+		m_header.channels().insert("G", Imf::Channel(USEDC));
+		m_header.channels().insert("B", Imf::Channel(USEDC));
+		m_header.channels().insert("A", Imf::Channel(USEDC));
 	}
 
 	inline void addChannelYA() {
-		m_header.channels().insert("Y", Channel(USEDC));
-		m_header.channels().insert("A", Channel(USEDC));
+		m_header.channels().insert("Y", Imf::Channel(USEDC));
+		m_header.channels().insert("A", Imf::Channel(USEDC));
 	}
 
 	inline void addChannel(const std::string& channelName) {
-		m_header.channels().insert(channelName.c_str(), Channel(USEDC));
+		m_header.channels().insert(channelName.c_str(), Imf::Channel(USEDC));
 	}
 
 	inline void addChannel(const std::vector<const std::string> &channelNames) {
 		for (int iter = 0, numChannels = channelNames.size(); \
 			iter < numChannels; \
 			++iter) {
-			m_header.channels().insert(channelNames[iter].c_str(), Channel(USEDC));
+			m_header.channels().insert(channelNames[iter].c_str(), Imf::Channel(USEDC));
 		}
 	}
 
 	void setAttribute(const std::string &attrName, const MxArray &mxarr);
 	void setAttribute(const MxArray &mxstruct);
 
-	void createFrameBufferRGBA(const USED *rPixels, \
+	void writeChannelRGBA(const USED *rPixels, \
 							const USED *gPixels, \
 							const USED *bPixels, \
 							const USED *aPixels);
 
-	void createFrameBufferYA(const USED *yPixels, \
+	void writeChannelYA(const USED *yPixels, \
 							const USED *aPixels);
 
-	void createFrameBuffer(const USED *cPixels, \
+	void writeChannel(const USED *cPixels, \
 						const std::string &cName);
 
-	void createFrameBuffer(const std::vector<const USED *> &cPixels, \
+	void writeChannel(const std::vector<const USED *> &cPixels, \
 						const std::vector<const std::string> &cNames);
 
 	inline void writeFile(const std::string &fileName) {

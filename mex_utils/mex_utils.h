@@ -25,8 +25,6 @@
  */
 namespace mex {
 
-const char * const ERROR_ID = "MATLAB:image_utils";
-
 // Inspired by mitsuba-0.4.1
 // TODO: Add mitsuba copyright.
 #ifdef NDEBUG
@@ -36,13 +34,13 @@ const char * const ERROR_ID = "MATLAB:image_utils";
 /* Assertions */
 // Assert that a condition is true
 #define Assert(cond) do { \
-		if (!(cond)) mexErrMsgIdAndTxt(ERROR_ID, "Assertion \"%s\" failed in %s:%i\n", \
+		if (!(cond)) mexErrMsgIdAndTxt("MATLAB:image_utils", "Assertion \"%s\" failed in %s:%i\n", \
 		#cond, __FILE__, __LINE__); \
 	} while (0)
 
 // Assertion with a customizable error explanation
 #define AssertEx(cond, explanation) do { \
-		if (!(cond)) mexErrMsgIdAndTxt(ERROR_ID, "Assertion \"%s\" failed in %s:%i (" explanation ")\n", \
+		if (!(cond)) mexErrMsgIdAndTxt("MATLAB:image_utils", "Assertion \"%s\" failed in %s:%i (" explanation ")\n", \
 		#cond, __FILE__, __LINE__); \
 	} while (0)
 #endif

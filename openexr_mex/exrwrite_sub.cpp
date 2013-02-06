@@ -53,7 +53,7 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[]) {
 			}
 		}
 		const float *a = (float *) mxGetData(prhs[1]);
-		outFile.createFrameBufferYA(y, a);
+		outFile.writeChannelYA(y, a);
 
 	} else if ((numDims == 3) && (dims[2] == 3)) {
 		/* RGB image. */
@@ -76,7 +76,7 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[]) {
 			}
 		}
 		const float *a = (float *) mxGetData(prhs[1]);
-		outFile.createFrameBufferRGBA(r, g, b, a);
+		outFile.writeChannelRGBA(r, g, b, a);
 	} else if (numDims == 3) {
 		/* Multi-channel image. */
 
@@ -110,7 +110,7 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[]) {
 		for (int iterChannel = 0; iterChannel < numChannels; ++iterChannel) {
 			ccPixels.push_back(&c[iterChannel * width * height]);
 		}
-		outFile.createFrameBuffer(ccPixels, cNames);
+		outFile.writeChannel(ccPixels, cNames);
 
 	} else {
 		mexErrMsgTxt("First argument must be two- or three-dimensional.");
