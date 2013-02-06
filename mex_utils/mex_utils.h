@@ -9,19 +9,16 @@
 #define MEX_UTILS_H_
 
 #include <algorithm>
+#include <map>
 #include <string>
 #include <vector>
-#include <map>
-
-#include <string.h>
 
 #include "mex.h"
 #include "matrix.h"
 
 /*
- * TODO: Add cell support.
  * TODO: Add struct support.
- * TODO: Fix specialization issue.
+ * TODO: Add indexing and at operators.
  */
 namespace mex {
 
@@ -34,13 +31,13 @@ namespace mex {
 /* Assertions */
 // Assert that a condition is true
 #define Assert(cond) do { \
-		if (!(cond)) mexErrMsgIdAndTxt("MATLAB:image_utils", "Assertion \"%s\" failed in %s:%i\n", \
+		if (!(cond)) mexErrMsgIdAndTxt("MATLAB:mex", "Assertion \"%s\" failed in %s:%i\n", \
 		#cond, __FILE__, __LINE__); \
 	} while (0)
 
 // Assertion with a customizable error explanation
 #define AssertEx(cond, explanation) do { \
-		if (!(cond)) mexErrMsgIdAndTxt("MATLAB:image_utils", "Assertion \"%s\" failed in %s:%i (" explanation ")\n", \
+		if (!(cond)) mexErrMsgIdAndTxt("MATLAB:mex", "Assertion \"%s\" failed in %s:%i (" explanation ")\n", \
 		#cond, __FILE__, __LINE__); \
 	} while (0)
 #endif
@@ -64,8 +61,7 @@ public:
 
 	U operator [](const T& key) const {
 		typename std::map<T,U>::const_iterator it = m_.find(key);
-		if (it==m_.end())
-			mexErrMsgIdAndTxt("openexr_mex:error", "Value not found");
+		AssertEx(it == m_.end(), "Value not found.");
 		return (*it).second;
 	}
 };
@@ -119,15 +115,10 @@ template <> MxClassID<unsigned long>::MxClassID() : m_class(mxUINT64_CLASS) {	}
 template <> MxClassID<float>::MxClassID() : m_class(mxSINGLE_CLASS) {	}
 template <> MxClassID<double>::MxClassID() : m_class(mxDOUBLE_CLASS) {	}
 template <> MxClassID<bool>::MxClassID() : m_class(mxLOGICAL_CLASS) {	}
-//template <> MxClassID<pMxArray>::MxClassID() : m_class(mxCELL_CLASS) {	}
-//template <> MxClassID<std::string>::MxClassID() : m_class(mxCHAR_CLASS) {	}
-
 //			mxCELL_CLASS,
 //		    mxSTRUCT_CLASS,
 //		    mxVOID_CLASS,
-//		    mxFUNCTION_CLASS,
-//		    mxOPAQUE_CLASS,
-//		    mxOBJECT_CLASS, /* keep the last real item in the list */
+//		    mxCHAR_CLASS,
 
 struct MxArray {
 protected:
