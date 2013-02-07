@@ -9,31 +9,10 @@
 #define PFM_MEX_H_
 
 #include <fstream>
-#include <vector>
 #include <string>
+#include <vector>
 
-#include "mex.h"
-#include "matrix.h"
-
-// Inspired by mitsuba-0.4.1
-// TODO: Add mitsuba copyright.
-//#ifdef NDEBUG
-//#define Assert(cond) ((void) 0)
-//#define AssertEx(cond, explanation) ((void) 0)
-//#else
-///* Assertions */
-//// Assert that a condition is true
-//#define Assert(cond) do { \
-//		if (!(cond)) fprintf(stderr, "Assertion \"%s\" failed in %s:%i\n", \
-//		#cond, __FILE__, __LINE__); \
-//	} while (0)
-//
-//// Assertion with a customizable error explanation
-//#define AssertEx(cond, explanation) do { \
-//		if (!(cond)) fprintf(stderr, "Assertion \"%s\" failed in %s:%i (" explanation ")\n", \
-//		#cond, __FILE__, __LINE__); \
-//	} while (0)
-//#endif
+#include "mex_utils.h"
 
 namespace pfm {
 
@@ -44,14 +23,12 @@ typedef enum ENDIANNESS {
 	ENDIANNESS_INVALID = -1
 } ENDIANNESS;
 
-//typedef enum
-
-struct InputFIle {
+struct PFMInputFIle {
 private:
 	std::fstream m_file;
 
 public:
-	InputFIle(const std::string& fileName)
+	PFMInputFIle(const std::string& fileName)
 			: m_file(fileName.c_str(), fstream::in | fstream::binary) {	}
 
 
@@ -63,15 +40,17 @@ public:
 
 	}
 
-	~InputFIle() {
+	~PFMInputFIle() {
 		m_file.close();
 	}
 };
 
-struct OutputFIle {
+struct PFMOutputFIle {
+private:
+	std::fstream m_file;
 
 public:
-	OutputFIle(const std::string& fileName)
+	PFMOutputFIle(const std::string& fileName)
 			: m_(fileName.c_str(), fstream::out | fstream::binary) {	}
 
 
@@ -83,12 +62,9 @@ public:
 
 	}
 
-	~OutputFIle() {
+	~PFMOutputFIle() {
 		m_file.close();
 	}
-
-private:
-	std::fstream m_file;
 };
 
 

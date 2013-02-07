@@ -9,179 +9,12 @@
 
 namespace exr {
 
-MxArray attributeToMxArray(const Imf::Attribute & attr) {
-	switch (stringToAttrType(attr.typeName())) {
-		case ATTR_CHLIST:
-		{
-			const Imf::TypedAttribute<Imf::ChannelList>& chlistAttr = static_cast<const Imf::TypedAttribute<Imf::ChannelList>& >(attr);
-			mwSize numChannels = 0;
-			for (Imf::ChannelList::ConstIterator chIt = chlistAttr.value().begin(); \
-				chIt != chlistAttr.value().end(); ++chIt, ++numChannels);
-			mxArray* temp = mxCreateCellArray(1, &numChannels);
-			int iterCh = 0;
-			for (Imf::ChannelList::ConstIterator chIt = chlistAttr.value().begin(); \
-				chIt != chlistAttr.value().end(); ++chIt, ++iterCh) {
-				mxSetCell(temp, iterCh, mxCreateString(chIt.name()));
-			}
-			return temp;
-		}
-		case ATTR_COMPRESSION:
-		{
-			const Imf::TypedAttribute<Imf::Compression>& comprAttr = static_cast<const Imf::TypedAttribute<Imf::Compression>& >(attr);
-			return mxCreateString(compressionTypeToString[comprAttr.value()].c_str());
-		}
-		case ATTR_LINEORDER:
-		{
-			const Imf::TypedAttribute<Imf::LineOrder>& linOrdAttr = static_cast<const Imf::TypedAttribute<Imf::LineOrder>& >(attr);
-			return mxCreateString(lineOrderTypeToString[linOrdAttr.value()].c_str());
-		}
-		case ATTR_CHROMATICITIES:
-		{
-			const Imf::TypedAttribute<Imf::Chromaticities>& chromaAttr = static_cast<const Imf::TypedAttribute<Imf::Chromaticities>& >(attr);
-			const mwSize dims[2] = {4, 2};
-			mxArray* temp = mxCreateCellArray(2, dims);
-			mxSetCell(temp, 0, mxCreateString("red"));
-			mxSetCell(temp, 1, mxCreateString("green"));
-			mxSetCell(temp, 2, mxCreateString("blue"));
-			mxSetCell(temp, 3, mxCreateString("white"));
-			mxArray* point;
-			float *pointData;
-			point = mxCreateNumericMatrix(1, 2, mxSINGLE_CLASS, mxREAL);
-			pointData = (float *) mxGetData(point);
-			pointData[0] = chromaAttr.value().red.x;
-			pointData[1] = chromaAttr.value().red.y;
-			mxSetCell(temp, 4, point);
-			point = mxCreateNumericMatrix(1, 2, mxSINGLE_CLASS, mxREAL);
-			pointData = (float *) mxGetData(point);
-			pointData[0] = chromaAttr.value().green.x;
-			pointData[1] = chromaAttr.value().green.y;
-			mxSetCell(temp, 5, point);
-			point = mxCreateNumericMatrix(1, 2, mxSINGLE_CLASS, mxREAL);
-			pointData = (float *) mxGetData(point);
-			pointData[0] = chromaAttr.value().blue.x;
-			pointData[1] = chromaAttr.value().blue.y;
-			mxSetCell(temp, 6, point);
-			point = mxCreateNumericMatrix(1, 2, mxSINGLE_CLASS, mxREAL);
-			pointData = (float *) mxGetData(point);
-			pointData[0] = chromaAttr.value().white.x;
-			pointData[1] = chromaAttr.value().white.y;
-			mxSetCell(temp, 7, point);
-			return temp;
-		}
-		case ATTR_ENVMAP:
-		{
-			const Imf::TypedAttribute<Imf::Envmap>& envmapAttr = static_cast<const Imf::TypedAttribute<Imf::Envmap>& >(attr);
-			char envmap[EXR_MAX_STRING_LENGTH];
-			envmapTypeToString(envmapAttr.value(), envmap);
-			return mxCreateString(envmap);
-		}
-		case ATTR_STRING:
-		{
-			const Imf::TypedAttribute<std::string>& stringAttr = static_cast<const Imf::TypedAttribute<std::string>& >(attr);
-			return mxCreateString(stringAttr.value().c_str());
-		}
-		case ATTR_BOX2F:
-		{
-			const Imf::TypedAttribute<Imath::Box2f>& box2fAttr = static_cast<const Imf::TypedAttribute<Imath::Box2f>& >(attr);
-			const mwSize numPoints = 2;
-			mxArray* temp = mxCreateCellArray(1, &numPoints);
-			mxArray* point;
-			float *pointData;
-			point = mxCreateNumericMatrix(2, 1, mxSINGLE_CLASS, mxREAL);
-			pointData = (float *) mxGetData(point);
-			pointData[0] = box2fAttr.value().min.x;
-			pointData[1] = box2fAttr.value().min.y;
-			mxSetCell(temp, 0, point);
-			point = mxCreateNumericMatrix(2, 1, mxSINGLE_CLASS, mxREAL);
-			pointData = (float *) mxGetData(point);
-			pointData[0] = box2fAttr.value().max.x;
-			pointData[1] = box2fAttr.value().max.y;
-			mxSetCell(temp, 1, point);
-			return temp;
-		}
-		case ATTR_BOX2I:
-		{
-			const Imf::TypedAttribute<Imath::Box2i>& box2iAttr = static_cast<const Imf::TypedAttribute<Imath::Box2i>& >(attr);
-			const mwSize numPoints = 2;
-			mxArray* temp = mxCreateCellArray(1, &numPoints);
-			mxArray* point;
-			int *pointData;
-			point = mxCreateNumericMatrix(2, 1, mxINT32_CLASS, mxREAL);
-			pointData = (int *) mxGetData(point);
-			pointData[0] = box2iAttr.value().min.x;
-			pointData[1] = box2iAttr.value().min.y;
-			mxSetCell(temp, 0, point);
-			point = mxCreateNumericMatrix(2, 1, mxINT32_CLASS, mxREAL);
-			pointData = (int *) mxGetData(point);
-			pointData[0] = box2iAttr.value().max.x;
-			pointData[1] = box2iAttr.value().max.y;
-			mxSetCell(temp, 1, point);
-			return temp;
-		}
-		case ATTR_V2F:
-		{
-			const Imf::TypedAttribute<V2f>& v2fAttr = static_cast<const Imf::TypedAttribute<V2f>& >(attr);
-			mxArray* temp = mxCreateNumericMatrix(2, 1, mxSINGLE_CLASS, mxREAL);
-			float *data = (float *) mxGetData(temp);
-			data[0] = v2fAttr.value().x;
-			data[1] = v2fAttr.value().y;
-			return temp;
-		}
-		case ATTR_V2I:
-		{
-			const Imf::TypedAttribute<V2i>& v2iAttr = static_cast<const Imf::TypedAttribute<V2i>& >(attr);
-			mxArray* temp = mxCreateNumericMatrix(2, 1, mxINT32_CLASS, mxREAL);
-			int *data = (int *) mxGetData(temp);
-			data[0] = v2iAttr.value().x;
-			data[1] = v2iAttr.value().y;
-			return temp;
-		}
-		case ATTR_VF:
-		{
-			const Imf::VectorAttribute<float>& vfAttr = static_cast<const Imf::VectorAttribute<float>& >(attr);
-			const size_t vecLength = vfAttr.value().size();
-			mexPrintf("%d\n", (int) vecLength);
-//			std::cout << vecLength << std:endl;
-			mxArray* temp = mxCreateNumericMatrix(5, 1, mxSINGLE_CLASS, mxREAL);
-			float *data = (float *) mxGetData(temp);
-			for (size_t iterVec = 0; iterVec < vecLength; ++iterVec) {
-				data[iterVec] = vfAttr.value()[iterVec];
-			}
-			return temp;
-		}
-		case ATTR_VI:
-		{
-			const Imf::VectorAttribute<int>& vfAttr = static_cast<const Imf::VectorAttribute<int>& >(attr);
-			const size_t vecLength = vfAttr.value().size();
-			mxArray* temp = mxCreateNumericMatrix(vecLength, 1, mxINT32_CLASS, mxREAL);
-			int *data = (int *) mxGetData(temp);
-			for (size_t iterVec = 0; iterVec < vecLength; ++iterVec) {
-				data[iterVec] = vfAttr.value()[iterVec];
-			}
-			return temp;
-		}
-		case ATTR_FLOAT:
-		{
-			const Imf::TypedAttribute<float>& floatAttr = static_cast<const Imf::TypedAttribute<float>& >(attr);
-			mxArray *temp = mxCreateNumericMatrix(1, 1, mxSINGLE_CLASS, mxREAL);
-			float *val = (float *) mxGetData(temp);
-			*val = floatAttr.value();
-			return temp;
-		}
-		case ATTR_INT:
-		{
-			const Imf::TypedAttribute<int>& intAttr = static_cast<const Imf::TypedAttribute<int>& >(attr);
-			mxArray *temp = mxCreateNumericMatrix(1, 1, mxINT32_CLASS, mxREAL);
-			int *val = (int *) mxGetData(temp);
-			*val = (int) intAttr.value();
-			return temp;
-		}
-		default:
-			return NULL;
-	}
+mex::MxArray EXRInputFile::getAttribute(const std::string &attributeName) {
+	const Imf::Attribute& attr = m_file.header[attributeName];
+	return const_cast<mxArray *>(attributeToMxArray(attr));
 }
 
-mxArray* getAttribute(const Imf::Header& head) {
+mex::MxArray EXRInputFile::getAttribute(const Imf::Header& head) {
 
 	mxArray* matStruct;
 	int numAttributes = 0;
@@ -200,11 +33,6 @@ mxArray* getAttribute(const Imf::Header& head) {
 		mxSetFieldByNumber(matStruct, 0, iterField, const_cast<mxArray*>(attributeToMxArray(attIt.attribute())));
 	}
 	return matStruct;
-}
-
-mxArray* getAttribute(const Imf::Header& head, const char attributeName[]) {
-	const Imf::Attribute& attr = head[attributeName];
-	return const_cast<mxArray *>(attributeToMxArray(attr));
 }
 
 void setAttribute(Imf::Header& head, const char attrName[], const mxArray* mxarr) {
@@ -439,9 +267,9 @@ void EXRInputFile::readChannelRGBA(Imf::Array2D<USED> &rPixels, bool &rFlag, \
 	int width, height;
 	getDimensions(width, height);
 	Imf::FrameBuffer frameBuffer;
-	Imath::Box2i dw = m_inFile.header().dataWindow();
+	Imath::Box2i dw = m_file.header().dataWindow();
 
-	if (m_inFile.header().channels().findChannel("R")) {
+	if (m_file.header().channels().findChannel("R")) {
 		rFlag = true;
 		rPixels.resizeErase(height, width);
 		frameBuffer.insert("R", \
@@ -456,7 +284,7 @@ void EXRInputFile::readChannelRGBA(Imf::Array2D<USED> &rPixels, bool &rFlag, \
 		rFlag = false;
 	}
 
-	if (m_inFile.header().channels().findChannel("G")) {
+	if (m_file.header().channels().findChannel("G")) {
 		gFlag = true;
 		gPixels.resizeErase(height, width);
 		frameBuffer.insert("G", \
@@ -471,7 +299,7 @@ void EXRInputFile::readChannelRGBA(Imf::Array2D<USED> &rPixels, bool &rFlag, \
 		gFlag = false;
 	}
 
-	if (m_inFile.header().channels().findChannel("B")) {
+	if (m_file.header().channels().findChannel("B")) {
 		bFlag = true;
 		bPixels.resizeErase(height, width);
 		frameBuffer.insert("B", \
@@ -486,7 +314,7 @@ void EXRInputFile::readChannelRGBA(Imf::Array2D<USED> &rPixels, bool &rFlag, \
 		bFlag = false;
 	}
 
-	if (m_inFile.header().channels().findChannel("A")) {
+	if (m_file.header().channels().findChannel("A")) {
 		aFlag = true;
 		aPixels.resizeErase(height, width);
 		frameBuffer.insert("A", \
@@ -501,8 +329,8 @@ void EXRInputFile::readChannelRGBA(Imf::Array2D<USED> &rPixels, bool &rFlag, \
 		aFlag = false;
 	}
 
-	m_inFile.setFrameBuffer(frameBuffer);
-	m_inFile.readPixels(dw.min.y, dw.max.y);
+	m_file.setFrameBuffer(frameBuffer);
+	m_file.readPixels(dw.min.y, dw.max.y);
 
 }
 
@@ -512,9 +340,9 @@ void EXRInputFile::readChannelYA(Imf::Array2D<USED> &yPixels, bool &yFlag, \
 	int width, height;
 	getDimensions(width, height);
 	Imf::FrameBuffer frameBuffer;
-	Imath::Box2i dw = m_inFile.header().dataWindow();
+	Imath::Box2i dw = m_file.header().dataWindow();
 
-	if (m_inFile.header().channels().findChannel("Y")) {
+	if (m_file.header().channels().findChannel("Y")) {
 		yFlag = true;
 		yPixels.resizeErase(height, width);
 		frameBuffer.insert("R", \
@@ -529,7 +357,7 @@ void EXRInputFile::readChannelYA(Imf::Array2D<USED> &yPixels, bool &yFlag, \
 		yFlag = false;
 	}
 
-	if (m_inFile.header().channels().findChannel("A")) {
+	if (m_file.header().channels().findChannel("A")) {
 		aFlag = true;
 		aPixels.resizeErase(height, width);
 		frameBuffer.insert("A", \
@@ -544,8 +372,8 @@ void EXRInputFile::readChannelYA(Imf::Array2D<USED> &yPixels, bool &yFlag, \
 		aFlag = false;
 	}
 
-	m_inFile.setFrameBuffer(frameBuffer);
-	m_inFile.readPixels(dw.min.y, dw.max.y);
+	m_file.setFrameBuffer(frameBuffer);
+	m_file.readPixels(dw.min.y, dw.max.y);
 
 }
 
@@ -555,9 +383,9 @@ void EXRInputFile::readChannel(Imf::Array2D<USED> &cPixels, bool &cFlag, \
 	int width, height;
 	getDimensions(width, height);
 	Imf::FrameBuffer frameBuffer;
-	Imath::Box2i dw = m_inFile.header().dataWindow();
+	Imath::Box2i dw = m_file.header().dataWindow();
 
-	if (m_inFile.header().channels().findChannel(cName.c_str())) {
+	if (m_file.header().channels().findChannel(cName.c_str())) {
 		cFlag = true;
 		cPixels.resizeErase(height, width);
 		frameBuffer.insert("R", \
@@ -572,8 +400,8 @@ void EXRInputFile::readChannel(Imf::Array2D<USED> &cPixels, bool &cFlag, \
 		cFlag = false;
 	}
 
-	m_inFile.setFrameBuffer(frameBuffer);
-	m_inFile.readPixels(dw.min.y, dw.max.y);
+	m_file.setFrameBuffer(frameBuffer);
+	m_file.readPixels(dw.min.y, dw.max.y);
 
 }
 
@@ -588,10 +416,10 @@ void EXRInputFile::readChannel(std::vector<Imf::Array2D<USED> > &cPixels, \
 	cPixels.resize(numChannels);
 	cFlags.resize(numChannels, false);
 	Imf::FrameBuffer frameBuffer;
-	Imath::Box2i dw = m_inFile.header().dataWindow();
+	Imath::Box2i dw = m_file.header().dataWindow();
 
 	for (int iter = 0; iter < numChannels; ++iter) {
-		if (m_inFile.header().channels().findChannel(cNames[iter].c_str())) {
+		if (m_file.header().channels().findChannel(cNames[iter].c_str())) {
 			cFlags[iter] = true;
 			cPixels[iter].resizeErase(height, width);
 			frameBuffer.insert(cNames[iter].c_str(), \
@@ -605,8 +433,8 @@ void EXRInputFile::readChannel(std::vector<Imf::Array2D<USED> > &cPixels, \
 		}
 	}
 
-	m_inFile.setFrameBuffer(frameBuffer);
-	m_inFile.readPixels(dw.min.y, dw.max.y);
+	m_file.setFrameBuffer(frameBuffer);
+	m_file.readPixels(dw.min.y, dw.max.y);
 }
 
 void EXROutputFile::writeChannelRGBA(const USED *rPixels, \

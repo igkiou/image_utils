@@ -1,13 +1,12 @@
 /*
- * exrread.cpp
+ * test_utils.cpp
  *
- *  Created on: Jun 14, 2011
+ *  Created on: Feb 2, 2013
  *      Author: igkiou
  */
 
 #include "mex_utils.h"
 
-// TODO: Handle case of missing or differently named channels.
 void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[]) {
 
 	int height = 10;
