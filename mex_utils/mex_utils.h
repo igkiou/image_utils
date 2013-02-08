@@ -18,26 +18,23 @@
 
 /*
  * TODO: Add struct support.
- * TODO: Add indexing and at operators.
  */
 namespace mex {
 
-// Inspired by mitsuba-0.4.1
-// TODO: Add mitsuba copyright.
 #ifdef NDEBUG
 #define Assert(cond) ((void) 0)
 #define AssertEx(cond, explanation) ((void) 0)
 #else
-/* Assertions */
-// Assert that a condition is true
 #define Assert(cond) do { \
-		if (!(cond)) mexErrMsgIdAndTxt("MATLAB:mex", "Assertion \"%s\" failed in %s:%i\n", \
+		if (!(cond)) \
+		mexErrMsgIdAndTxt("MATLAB:mex", "Assertion \"%s\" failed in %s:%i\n", \
 		#cond, __FILE__, __LINE__); \
 	} while (0)
 
-// Assertion with a customizable error explanation
 #define AssertEx(cond, explanation) do { \
-		if (!(cond)) mexErrMsgIdAndTxt("MATLAB:mex", "Assertion \"%s\" failed in %s:%i (" explanation ")\n", \
+		if (!(cond)) \
+		mexErrMsgIdAndTxt(\
+		"MATLAB:mex", "Assertion \"%s\" failed in %s:%i (" explanation ")\n", \
 		#cond, __FILE__, __LINE__); \
 	} while (0)
 #endif
@@ -47,7 +44,6 @@ class ConstMap {
 private:
 	std::map<T, U> m_;
 public:
-
 	ConstMap(const T& key, const U& val) {
 		m_[key] = val;
 	}
@@ -59,8 +55,8 @@ public:
 
 	operator std::map<T, U>() { return m_; }
 
-	U operator [](const T& key) const {
-		typename std::map<T,U>::const_iterator it = m_.find(key);
+	U operator[] (const T& key) const {
+		typename std::map<T, U>::const_iterator it = m_.find(key);
 		AssertEx(it == m_.end(), "Value not found.");
 		return (*it).second;
 	}
@@ -115,12 +111,8 @@ template <> MxClassID<unsigned long>::MxClassID() : m_class(mxUINT64_CLASS) {	}
 template <> MxClassID<float>::MxClassID() : m_class(mxSINGLE_CLASS) {	}
 template <> MxClassID<double>::MxClassID() : m_class(mxDOUBLE_CLASS) {	}
 template <> MxClassID<bool>::MxClassID() : m_class(mxLOGICAL_CLASS) {	}
-//			mxCELL_CLASS,
-//		    mxSTRUCT_CLASS,
-//		    mxVOID_CLASS,
-//		    mxCHAR_CLASS,
 
-struct MxArray {
+class MxArray {
 protected:
 	pMxArray m_mxArray;
 
@@ -138,7 +130,7 @@ public:
 		return *this;
 	}
 
-	MxArray(const pMxArray mxarr)
+	explicit MxArray(const pMxArray mxarr)
 		: m_mxArray(mxarr) {	}
 
 	virtual ~MxArray() {}
@@ -211,16 +203,8 @@ public:
 	}
 };
 
-
-/* Special declarations for string. */
-//MxString(const std::string& stringVar)
-//			: m_mxArray(mxCreateString(stringVar.c_str())) {	}
-//
-//MxString(const char* cStringVar)
-//			: m_mxArray(mxCreateString(cStringVar)) {	}
-
 template <typename T>
-struct MxNumeric : public MxArray {
+class MxNumeric : public MxArray {
 private:
 	mxClassID m_mxClassID;
 
@@ -241,7 +225,7 @@ public:
 		return *this;
 	}
 
-	MxNumeric(const pMxArray mxarr)
+	explicit MxNumeric(const pMxArray mxarr)
 		: MxArray(mxarr), \
 		  m_mxClassID(MxClassID<T>()) {
 		Assert(m_mxClassID == mxGetClassID(mxarr));
@@ -250,7 +234,8 @@ public:
 	MxNumeric(const int numRows, const int numColumns)
 		: MxArray(), \
 		  m_mxClassID(MxClassID<T>()) {
-		m_mxArray = mxCreateNumericMatrix(numRows, numColumns, MxClassID<T>(), mxREAL);
+		m_mxArray = mxCreateNumericMatrix(numRows, numColumns, MxClassID<T>(), \
+										mxREAL);
 	}
 
 //	MxNumeric(const std::vector<int> &dims)
@@ -272,7 +257,8 @@ public:
 		for (int iter = 0; iter < numDims; ++iter) {
 			tempDims[iter] = dims[iter];
 		}
-		m_mxArray = mxCreateNumericArray(numDims, tempDims, MxClassID<T>(), mxREAL);
+		m_mxArray = mxCreateNumericArray(numDims, tempDims, MxClassID<T>(), \
+										mxREAL);
 		mxFree(tempDims);
 	}
 
@@ -281,7 +267,7 @@ public:
 		m_mxArray = mxCreateNumericArray(numDims, dims, MxClassID<T>(), mxREAL);
 	}
 
-	MxNumeric(const T scalarVar)
+	explicit MxNumeric(const T scalarVar)
 		: MxArray(), \
 		  m_mxClassID(MxClassID<T>()) {
 		m_mxArray = mxCreateNumericMatrix(1, 1, MxClassID<T>(), mxREAL);
@@ -289,10 +275,11 @@ public:
 		*val = (T) scalarVar;
 	}
 
-	MxNumeric(const std::vector<T>& vecVar)
+	explicit MxNumeric(const std::vector<T>& vecVar)
 		: MxArray(), \
 		  m_mxClassID(MxClassID<T>()) {
-		m_mxArray = mxCreateNumericMatrix(vecVar.size(), 1, MxClassID<T>(), mxREAL);
+		m_mxArray = mxCreateNumericMatrix(vecVar.size(), 1, MxClassID<T>(),
+										mxREAL);
 		T *val = (T *) mxGetData(m_mxArray);
 		std::copy(vecVar.begin(), vecVar.end(), val);
 	}
@@ -300,7 +287,8 @@ public:
 	MxNumeric(const T* arrVar, const int numRows, const int numColumns)
 		: MxArray(), \
 		  m_mxClassID(MxClassID<T>()) {
-		m_mxArray = mxCreateNumericMatrix(numRows, numColumns, MxClassID<T>(), mxREAL);
+		m_mxArray = mxCreateNumericMatrix(numRows, numColumns, MxClassID<T>(),
+										mxREAL);
 		T *val = (T *) mxGetData(m_mxArray);
 		memcpy(val, arrVar, numRows * numColumns * sizeof(T));
 	}
@@ -361,6 +349,16 @@ public:
 		return m_mxClassID;
 	}
 
+	inline T& operator[] (int i) {
+		T* temp = (T *) mxGetData(m_mxArray);
+		return temp[i];
+	}
+
+	inline const T& operator[] (int i) const {
+		T* temp = (T *) mxGetData(m_mxArray);
+		return temp[i];
+	}
+
 	inline const T* data() const {
 		return (T *) mxGetData(m_mxArray);
 	}
@@ -382,7 +380,7 @@ public:
 	}
 };
 
-struct MxString: public MxArray {
+class MxString: public MxArray {
 private:
 	const static mxClassID m_mxClassID = mxCHAR_CLASS;
 
@@ -410,25 +408,25 @@ public:
 		m_mxArray = mxCreateString(charVar);
 	}
 
-	std::string string() {
+	inline std::string string() {
 		char *temp = mxArrayToString(m_mxArray);
 		std::string retArg(temp);
 		mxFree(temp);
 		return retArg;
 	}
 
-	const std::string string() const {
+	inline const std::string string() const {
 		char *temp = mxArrayToString(m_mxArray);
 		std::string retArg(temp);
 		mxFree(temp);
 		return retArg;
 	}
 
-	char* c_str() {
+	inline char* c_str() {
 		return mxArrayToString(m_mxArray);
 	}
 
-	const char* c_str() const {
+	inline const char* c_str() const {
 		return mxArrayToString(m_mxArray);
 	}
 
@@ -501,11 +499,19 @@ public:
 		}
 	}
 
-	MxCell(const std::vector<MxArray>& vecVar)
+	MxCell(const std::vector<MxArray &>& vecVar)
 		: MxArray() {
 		m_mxArray = mxCreateCellMatrix(vecVar.size(), 1);
 		for (int iter = 0, numElements = vecVar.size(); iter < numElements; ++iter) {
-			mxSetCell(m_mxArray, iter, (pMxArray) vecVar[iter]);
+			mxSetCell(m_mxArray, iter, (pMxArray) (vecVar[iter]));
+		}
+	}
+
+	MxCell(const std::vector<const MxArray &>& vecVar)
+		: MxArray() {
+		m_mxArray = mxCreateCellMatrix(vecVar.size(), 1);
+		for (int iter = 0, numElements = vecVar.size(); iter < numElements; ++iter) {
+			mxSetCell(m_mxArray, iter, (pMxArray) (vecVar[iter]));
 		}
 	}
 
@@ -563,6 +569,73 @@ public:
 		for (int iter = 0; iter < numElements; ++iter) {
 			mxSetCell(m_mxArray, iter, arrVar[iter]);
 		}
+	}
+
+	inline pMxArray& operator[] (int i) {
+		return mxGetCell(m_mxArray, i);
+	}
+
+	inline const pMxArray& operator[] (int i) const {
+		return mxGetCell(m_mxArray, i);
+	}
+
+	inline const pMxArray* data() const {
+		return (pMxArray *) mxGetData(m_mxArray);
+	}
+
+	inline pMxArray* data() {
+		return (pMxArray *) mxGetData(m_mxArray);
+	}
+
+	template <typename T>
+	inline const std::vector<T> vectorize() const {
+		int numElements = numel();
+		std::vector<T> retArg;
+		for (int iter = 0; iter < numElements; ++iter) {
+			retArg.push_back(T(mxGetCell(m_mxArray, iter)));
+		}
+		return retArg;
+	}
+
+	template <typename T>
+	inline std::vector<T> vectorize() {
+		int numElements = numel();
+		std::vector<T> retArg;
+		for (int iter = 0; iter < numElements; ++iter) {
+			retArg.push_back(T(mxGetCell(m_mxArray, iter)));
+		}
+		return retArg;
+	}
+};
+
+struct MxStruct : public MxArray {
+private:
+	const static mxClassID m_mxClassID = mxSTRUCT_CLASS;
+
+public:
+	MxStruct(const MxStruct& arr)
+		: MxArray(arr) {	}
+
+	MxStruct& operator=(const MxStruct& rhs) {
+		if (this != &rhs) {
+			this->m_mxArray = rhs.m_mxArray;
+		}
+		return *this;
+	}
+
+	MxStruct(const pMxArray mxarr)
+		: MxArray() {
+		Assert(m_mxClassID == mxGetClassID(mxarr));
+	}
+
+
+
+	inline pMxArray& operator[] (int i) {
+		return mxGetCell(m_mxArray, i);
+	}
+
+	inline const pMxArray& operator[] (int i) const {
+		return mxGetCell(m_mxArray, i);
 	}
 
 	inline const pMxArray* data() const {
