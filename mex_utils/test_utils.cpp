@@ -21,12 +21,12 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[]) {
 	plhs[3] = mxCreateNumericMatrix(height, width, mex::MxClassID<bool>(), mxREAL);
 	mex::MxNumeric<int> foo(height, width);
 	foo.data()[0] = 10;
-	plhs[4] = foo.getMxArray();
+	plhs[4] = foo.pArray();
 	mexPrintf("M %d N %d size %d numel %d.\n", foo.M(), foo.N(), foo.size(), foo.numel());
 	plhs[5] = mex::MxString(std::string("gkiou"));
 	plhs[6] = mex::MxString("gkiou");
 	std::vector<bool> dummy(10, false);
 	plhs[7] = mex::MxNumeric<bool>(dummy);
-	plhs[8] = mex::MxNumeric<bool>(dummy).getMxArray();
+	plhs[8] = mex::MxNumeric<bool>(dummy).pArray();
 
 }
