@@ -13,6 +13,11 @@
 #include <string>
 #include <vector>
 #include <string.h>
+
+/*
+ * TODO: Maybe include these inside mex namespace, to make sure mex:: needs to
+ * be used? Check if this actually works.
+ */
 #include "mex.h"
 #include "matrix.h"
 

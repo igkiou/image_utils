@@ -176,37 +176,15 @@ const static mex::ConstMap<Imf::Envmap, std::string> envmapTypeToString = mex::C
 	(Imf::ENVMAP_CUBE,		"cube")
 	(Imf::NUM_ENVMAPTYPES,	"unknown");
 
-
-template <> EXRAttribute<int>::AttrType() : m_type(EAttributeInt) {	}
-template <> EXRAttribute<float>::AttrType() : m_type(EAttributeFloat) {	}
-template <> EXRAttribute<double>::AttrType() : m_type(EAttributeDouble) {	}
-template <> EXRAttribute<Imath::V2i>::AttrType() : m_type(EAttributeV2i) {	}
-template <> EXRAttribute<Imath::V2f>::AttrType() : m_type(EAttributeV2f) {	}
-template <> EXRAttribute<Imath::V2d>::AttrType() : m_type(EAttributeV2d) {	}
-template <> EXRAttribute<std::vector<int> >::AttrType() : m_type(EAttributeVi) {	}
-template <> EXRAttribute<std::vector<float> >::AttrType() : m_type(EAttributeVf) {	}
-template <> EXRAttribute<std::vector<double> >::AttrType() : m_type(EAttributeVd) {	}
-template <> EXRAttribute<Imath::Box2i>::AttrType() : m_type(EAttributeBox2i) {	}
-template <> EXRAttribute<Imath::Box2f>::AttrType() : m_type(EAttributeBox2f) {	}
-template <> EXRAttribute<Imath::Box2d>::AttrType() : m_type(EAttributeBox2d) {	}
-template <> EXRAttribute<std::string>::AttrType() : m_type(EAttributeString) {	}
-template <> EXRAttribute<Imf::Envmap>::AttrType() : m_type(EAttributeEnvmap) {	}
-template <> EXRAttribute<Imf::Chromaticities>::AttrType() : m_type(EAttributeChromaticities) {	}
-template <> EXRAttribute<Imf::LineOrder>::AttrType() : m_type(EAttributeLineOrder) {	}
-template <> EXRAttribute<Imf::Compression>::AttrType() : m_type(EAttributeCompression) {	}
-template <> EXRAttribute<Imf::ChannelList>::AttrType() : m_type(EAttributeChannelList) {	}
-
-
-
 class EXRAttribute {
 public:
 	EXRAttribute()
 				: m_type(EAttributeTypeInvalid),
-				  m_attribute() {	}
+				  m_pAttribute() {	}
 
 	EXRAttribute(const Imf::Attribute* attribute)
 				: m_type(attributeNameToAttributeType(attribute->typeName())), \
-				  m_attribute(attribute) {	}
+				  m_pAttribute(attribute) {	}
 
 	inline const EAttributeType get_type() const {
 		return m_type;
@@ -217,22 +195,29 @@ public:
 	}
 
 	inline const Imf::Attribute* get_attribute() const {
-		return m_attribute;
+		return m_pAttribute;
 	}
 
 	inline Imf::Attribute* get_attribute() {
-		return m_attribute;
+		return m_pAttribute;
 	}
 
-	const mex::MxArray* toMxArray() const;
-
-	inline mex::MxArray* toMxArray() {
-        return const_cast<mex::MxArray>(static_cast<const EXRAttribute &>(*this).toMxArray());
+	inline const mex::MxArray get_attribute() const {
+		return m_array;
 	}
+
+	inline mex::MxArray get_array() {
+		return m_array;
+	}
+
+	void buildMxArray();
+
+	void buildAttribute();
 
 private:
 	EAttributeType m_type;
-	Imf::Attribute *m_attribute;
+	Imf::Attribute *m_pAttribute;
+	mex::MxArray m_array;
 };
 
 template <typename T>
