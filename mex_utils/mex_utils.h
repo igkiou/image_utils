@@ -12,7 +12,7 @@
 #include <map>
 #include <string>
 #include <vector>
-
+#include <string.h>
 #include "mex.h"
 #include "matrix.h"
 
@@ -123,7 +123,7 @@ typedef MxArrayNative* PMxArrayNative;
 
 class MxArray {
 public:
-	static const mxClassID m_kClass = mxVOID_CLASS;
+	static const mxClassID m_kClass = mxUNKNOWN_CLASS;
 
 	MxArray()
 		: m_array() {	}
@@ -151,10 +151,10 @@ public:
 		return m_kClass;
 	}
 
-/*
- * TODO: Decide whether to provide these, possible conflict with T* data in
- * numeric.
- */
+	/*
+ 	 * TODO: These were removed as unsafe versions of specialized versions of
+ 	 * the same in derived classes.
+ 	 */
 //	inline const void * data() const {
 //		return (void *) mxGetData(m_pArray);
 //	}
@@ -172,6 +172,9 @@ public:
 		return m_array;
 	}
 
+	/*
+	 * TODO: These were removed because they are not very safe.
+	 */
 	/* parenthesis operator */
 //	inline const PMxArrayNative operator()() const {
 //		return m_array;
@@ -189,7 +192,7 @@ public:
 		return mxGetNumberOfElements(m_array);
 	}
 
-	inline int numElements() const {
+	inline int getNumberOfElements() const {
 		return mxGetNumberOfElements(m_array);
 	}
 
@@ -197,17 +200,35 @@ public:
 		return mxGetM(m_array);
 	}
 
+	inline int getNumberOfRows() const {
+		return mxGetM(m_array);
+	}
+
 	inline int N() const {
 		return mxGetN(m_array);
 	}
 
-	inline int numDim() const {
+	inline int getNumberOfColumns() const {
+		return mxGetN(m_array);
+	}
+
+	inline int numdims() const {
 		return mxGetNumberOfDimensions(m_array);
 	}
 
-//	inline int dims() const {
-//		return mxGetDimensions(m_pArray);
-//	}
+	inline int getNumberOfDimensions() const {
+		return mxGetNumberOfDimensions(m_array);
+	}
+
+	inline std::vector<int> dims() const {
+		const mwSize *tempDims = mxGetDimensions(m_array);
+		std::vector<int> retArg;
+		for (int iter = 0, numdims = getNumberOfDimensions(); iter < numdims;
+			++iter) {
+			retArg.push_back(tempDims[iter]);
+		}
+		return retArg;
+	}
 
 	inline void destroy() {
 		mxDestroyArray(m_array);
@@ -245,6 +266,10 @@ public:
 		m_array = mxCreateNumericMatrix(numRows, numColumns, m_kClass, mxREAL);
 	}
 
+	/*
+	 * TODO: This was removed because of a conflict with the vector initializer
+	 * in the case of T = int.
+	 */
 //	MxNumeric(const std::vector<int> &dims)
 //		: MxArray(), \
 //		  m_mxClassID(MxClassID<T>()) {
@@ -337,14 +362,6 @@ public:
 		memcpy(val, arrVar, numElements * sizeof(T));
 	}
 
-//	inline mxClassID mxClass() {
-//		return m_kClass;
-//	}
-//
-//	inline const mxClassID mxClass() const {
-//		return m_kClass;
-//	}
-
 	inline T& operator[] (int i) {
 		T* temp = (T *) mxGetData(m_array);
 		return temp[i];
@@ -364,13 +381,13 @@ public:
 	}
 
 	inline std::vector<T> vectorize() {
-		int numel = numElements();
+		int numel = getNumberOfElements();
 		const T* pData = data();
 		return std::vector<T>(pData, pData + numel);
 	}
 
 	inline const std::vector<T> vectorize() const {
-		int numel = numElements();
+		int numel = getNumberOfElements();
 		const T* pData = data();
 		return std::vector<T>(pData, pData + numel);
 	}
@@ -403,14 +420,6 @@ public:
 		m_array = mxCreateString(charVar);
 	}
 
-//	inline mxClassID mxClass() {
-//		return m_kClass;
-//	}
-//
-//	inline const mxClassID mxClass() const {
-//		return m_kClass;
-//	}
-
 	inline std::string string() {
 		char *temp = mxArrayToString(m_array);
 		std::string retArg(temp);
@@ -438,7 +447,7 @@ public:
 	}
 };
 
-struct MxCell : public MxArray {
+class MxCell : public MxArray {
 public:
 	static const mxClassID m_kClass = mxCELL_CLASS;
 
@@ -583,19 +592,11 @@ public:
 		}
 	}
 
-//	inline mxClassID mxClass() {
-//		return m_kClass;
-//	}
-//
-//	inline const mxClassID mxClass() const {
-//		return m_kClass;
-//	}
-
-	inline PMxArrayNative* operator[] (int i) {
+	inline PMxArrayNative operator[] (int i) {
 		return mxGetCell(m_array, i);
 	}
 
-	inline const PMxArrayNative* operator[] (int i) const {
+	inline const PMxArrayNative operator[] (int i) const {
 		return mxGetCell(m_array, i);
 	}
 
@@ -607,26 +608,9 @@ public:
 		return (PMxArrayNative *) mxGetData(m_array);
 	}
 
-	inline const std::vector<MxArray *> vectorize() const {
-		int numElements = numel();
-		std::vector<MxArray *> retArg;
-		for (int iter = 0; iter < numElements; ++iter) {
-			retArg.push_back(&MxArray((mxGetCell(m_array, iter))));
-		}
-		return retArg;
-	}
-
-	inline std::vector<MxArray *> vectorize() {
-		std::vector<MxArray *> retArg;
-		for (int iter = 0, numel = numElements(); iter < numel; ++iter) {
-			retArg.push_back(&MxArray((mxGetCell(m_array, iter))));
-		}
-		return retArg;
-	}
-
 	inline const std::vector<PMxArrayNative> vectorize() const {
 		std::vector<PMxArrayNative> retArg;
-		for (int iter = 0, numel = numElements(); iter < numel; ++iter) {
+		for (int iter = 0, numel = getNumberOfElements(); iter < numel; ++iter) {
 			retArg.push_back((mxGetCell(m_array, iter)));
 		}
 		return retArg;
@@ -634,14 +618,14 @@ public:
 
 	inline std::vector<PMxArrayNative> vectorize() {
 		std::vector<PMxArrayNative> retArg;
-		for (int iter = 0, numel = numElements(); iter < numel; ++iter) {
+		for (int iter = 0, numel = getNumberOfElements(); iter < numel; ++iter) {
 			retArg.push_back((mxGetCell(m_array, iter)));
 		}
 		return retArg;
 	}
 };
 
-struct MxStruct : public MxArray {
+class MxStruct : public MxArray {
 public:
 	static const mxClassID m_kClass = mxSTRUCT_CLASS;
 
@@ -707,23 +691,59 @@ public:
 		}
 	}
 
+	void addField(const std::string& scalarName,
+				const PMxArrayNative& scalarVar) {
+		mxAddField(m_array, scalarName.c_str());
+		mxSetField(m_array, 0, scalarName.c_str(), scalarVar);
+	}
+
+	void addField(const std::string& scalarName, const MxArray& scalarVar) {
+		mxAddField(m_array, scalarName.c_str());
+		mxSetField(m_array, 0, scalarName.c_str(), scalarVar.get_array());
+	}
+
+	void addField(const std::vector<std::string>& vecName,
+				const std::vector<PMxArrayNative>& vecVar) {
+		Assert(vecVar.size() == numFields);
+		for (int iter = 0, numFields = vecName.size(); iter < numFields;
+			++iter) {
+			mxAddField(m_array, vecName[iter].c_str());
+			mxSetField(m_array, 0, vecName[iter].c_str(), vecVar[iter]);
+		}
+	}
+
+	void addField(const std::vector<std::string>& vecName,
+			const std::vector<MxArray *>& vecVar) {
+		Assert(vecVar.size() == numFields);
+		for (int iter = 0, numFields = vecName.size(); iter < numFields;
+			++iter) {
+			mxAddField(m_array, vecName[iter].c_str());
+			mxSetField(m_array, 0, vecName[iter].c_str(),
+					vecVar[iter]->get_array());
+		}
+	}
+
+	bool isField(const std::string& name) {
+		return (mxGetFieldNumber(m_array, name.c_str()) != -1);
+	}
+
 	inline int numFields() const {
 		return mxGetNumberOfFields(m_array);
 	}
 
-	inline PMxArrayNative& operator[] (int i) {
+	inline PMxArrayNative operator[] (int i) {
 		return mxGetFieldByNumber(m_array, 0, i);
 	}
 
-	inline const PMxArrayNative& operator[] (int i) const {
+	inline const PMxArrayNative operator[] (int i) const {
 		return mxGetFieldByNumber(m_array, 0, i);
 	}
 
-	inline PMxArrayNative& operator[] (const std::string& name) {
+	inline PMxArrayNative operator[] (const std::string& name) {
 		return mxGetField(m_array, 0, name.c_str());
 	}
 
-	inline const PMxArrayNative& operator[] (const std::string& name) const {
+	inline const PMxArrayNative operator[] (const std::string& name) const {
 		return mxGetField(m_array, 0, name.c_str());
 	}
 
@@ -754,24 +774,10 @@ public:
 		vecName.resize(0);
 		vecVar.resize(0);
 		for (int iter = 0, numf = numFields(); iter < numf; ++iter) {
-			char* tempName = mxGetFieldNameByNumber(m_array, iter);
+			const char* tempName = mxGetFieldNameByNumber(m_array, iter);
 			vecName.push_back(std::string(tempName));
-			mxFree(tempName);
 			PMxArrayNative tempVar = mxGetFieldByNumber(m_array, 0, iter);
 			vecVar.push_back(tempVar);
-		}
-	}
-
-	inline void vectorize(std::vector<std::string>& vecName,
-						std::vector<MxArray *>& vecVar ) const {
-		vecName.resize(0);
-		vecVar.resize(0);
-		for (int iter = 0, numf = numFields(); iter < numf; ++iter) {
-			char* tempName = mxGetFieldNameByNumber(m_array, iter);
-			vecName.push_back(std::string(tempName));
-			mxFree(tempName);
-			PMxArrayNative tempVar = mxGetFieldByNumber(m_array, 0, iter);
-			vecVar.push_back(&MxArray(tempVar));
 		}
 	}
 };

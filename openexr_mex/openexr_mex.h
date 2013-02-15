@@ -32,339 +32,105 @@
 
 namespace exr {
 
-typedef float USED;
-typedef Imf::FLOAT USEDC;
+typedef float FloatUsed;
+typedef Imf::FLOAT EXRFloatUsed;
 
-enum {EXR_MAX_STRING_LENGTH = 32};
+static const int kEXRMaxStringLength = 32;
 
-typedef enum ATTR_TYPE {
-	ATTR_CHLIST = 0,
-	ATTR_COMPRESSION = 1,
-	ATTR_LINEORDER = 2,
-	ATTR_CHROMATICITIES = 3,
-	ATTR_ENVMAP = 4,
-	ATTR_STRING = 5,
-	ATTR_BOX2D = 6,
-	ATTR_BOX2F = 7,
-	ATTR_BOX2I = 8,
-	ATTR_V2D = 9,
-	ATTR_V2F = 10,
-	ATTR_V2I = 11,
-	ATTR_VD = 12,
-	ATTR_VF = 13,
-	ATTR_VI = 14,
-	ATTR_DOUBLE = 15,
-	ATTR_FLOAT = 16,
-	ATTR_INT = 17,
-	ATTR_TYPE_LENGTH = 18,
-	ATTR_TYPE_INVALID = -1
-} ATTR_TYPE;
+typedef enum EAttributeType {
+	EAttributeChannelList = 0,
+	EAttributeCompression,
+	EAttributeLineOrder,
+	EAttributeChromaticities,
+	EAttributeEnvmap,
+	EAttributeString,
+	EAttributeBox2d,
+	EAttributeBox2f,
+	EAttributeBox2i,
+	EAttributeV2d,
+	EAttributeV2f,
+	EAttributeV2i,
+	EAttributeVd,
+	EAttributeVf,
+	EAttributeVi,
+	EAttributeDouble,
+	EAttributeFloat,
+	EAttributeInt,
+	EAttributeTypeLength,
+	EAttributeTypeInvalid = -1
+} EAttributeType;
 
-/*
- * TODO: Put these maps and routines in class.
- */
+const static mex::ConstMap<std::string, EAttributeType> attributeNameToAttributeType = mex::ConstMap<std::string, EAttributeType>
+	("gain",				EAttributeFloat)
+	("wavelength",			EAttributeFloat)
+	("extTube",				EAttributeString)
+	("lens",				EAttributeString)
+	("material",			EAttributeString)
+	("chromaticities",		EAttributeChromaticities)
+	("whiteLuminance",		EAttributeFloat)
+	("adoptedNeutral",		EAttributeV2f)
+	("renderingTransform",	EAttributeString)
+	("lookModTransform",	EAttributeFloat)
+	("xDensity",			EAttributeFloat)
+	("owner",				EAttributeString)
+	("comments",			EAttributeString)
+	("capDate",				EAttributeString)
+	("utcOffset",			EAttributeFloat)
+	("longitude",			EAttributeFloat)
+	("latitude",			EAttributeFloat)
+	("altitude",			EAttributeFloat)
+	("focus",				EAttributeFloat)
+	("expTime",				EAttributeFloat)
+	("aperture",			EAttributeFloat)
+	("isoSpeed",			EAttributeFloat)
+	("multExpTimes",		EAttributeVf)
+	("multApertures",		EAttributeVf)
+	("multIsoSpeeds",		EAttributeVf)
+	("multGains",			EAttributeVf)
+	("envmap",				EAttributeEnvmap)
+	("unknown",				EAttributeTypeInvalid);
 
-//inline ATTR_TYPE attrNameToAttrType(const char * query) {
-//	if (!strcasecmp(query, "gain")) {
-//		return ATTR_FLOAT;
-//	} else if (!strcasecmp(query, "wavelength")) {
-//		return ATTR_FLOAT;
-//	} else if (!strcasecmp(query, "extTube")) {
-//		return ATTR_STRING;
-//	} else if (!strcasecmp(query, "lens")) {
-//		return ATTR_STRING;
-//	} else if (!strcasecmp(query, "material")) {
-//		return ATTR_STRING;
-//	} else if (!strcasecmp(query, "chromaticities")) {
-//		return ATTR_CHROMATICITIES;
-//	} else if (!strcasecmp(query, "whiteLuminance")) {
-//		return ATTR_FLOAT;
-//	} else if (!strcasecmp(query, "adoptedNeutral")) {
-//		return ATTR_V2F;
-//	} else if (!strcasecmp(query, "renderingTransform")) {
-//		return ATTR_STRING;
-//	} else if (!strcasecmp(query, "lookModTransform")) {
-//		return ATTR_STRING;
-//	} else if (!strcasecmp(query, "xDensity")) {
-//		return ATTR_FLOAT;
-//	} else if (!strcasecmp(query, "owner")) {
-//		return ATTR_STRING;
-//	} else if (!strcasecmp(query, "comments")) {
-//		return ATTR_STRING;
-//	} else if (!strcasecmp(query, "capDate")) {
-//		return ATTR_STRING;
-//	} else if (!strcasecmp(query, "utcOffset")) {
-//		return ATTR_FLOAT;
-//	} else if (!strcasecmp(query, "longitude")) {
-//		return ATTR_FLOAT;
-//	} else if (!strcasecmp(query, "latitude")) {
-//		return ATTR_FLOAT;
-//	} else if (!strcasecmp(query, "altitude")) {
-//		return ATTR_FLOAT;
-//	} else if (!strcasecmp(query, "focus")) {
-//		return ATTR_FLOAT;
-//	} else if (!strcasecmp(query, "expTime")) {
-//		return ATTR_FLOAT;
-//	} else if (!strcasecmp(query, "aperture")) {
-//		return ATTR_FLOAT;
-//	} else if (!strcasecmp(query, "isoSpeed")) {
-//		return ATTR_FLOAT;
-//	} else if (!strcasecmp(query, "multExpTimes")) {
-//		return ATTR_VF;
-//	} else if (!strcasecmp(query, "multApertures")) {
-//		return ATTR_VF;
-//	} else if (!strcasecmp(query, "multIsoSpeeds")) {
-//		return ATTR_VF;
-//	} else if (!strcasecmp(query, "multGains")) {
-//		return ATTR_VF;
-//	} else if (!strcasecmp(query, "envmap")) {
-//		return ATTR_ENVMAP;
-//	} else {
-//		return ATTR_TYPE_INVALID;
-//	}
-//}
+const static mex::ConstMap<std::string, EAttributeType> stringToAttributeType = mex::ConstMap<std::string, EAttributeType>
+	("chlist",			EAttributeChannelList)
+	("compression",		EAttributeCompression)
+	("lineOrder",		EAttributeLineOrder)
+	("chromaticities",	EAttributeChromaticities)
+	("envmap",			EAttributeEnvmap)
+	("string",			EAttributeString)
+	("box2d",			EAttributeBox2d)
+	("box2f",			EAttributeBox2f)
+	("box2i",			EAttributeBox2i)
+	("v2d",				EAttributeV2d)
+	("v2f",				EAttributeV2f)
+	("v2i",				EAttributeV2i)
+	("vd",				EAttributeVd)
+	("vf",				EAttributeVf)
+	("vi",				EAttributeVi)
+	("double",			EAttributeDouble)
+	("float",			EAttributeFloat)
+	("int",				EAttributeInt)
+	("unknown",			EAttributeTypeInvalid);
 
-
-
-//inline ATTR_TYPE stringToAttrType(const char * propertyName) {
-//	if (!strcasecmp("chlist", propertyName)) {
-//		return ATTR_CHLIST;
-//	} else if (!strcasecmp("compression", propertyName)) {
-//		return ATTR_COMPRESSION;
-//	} else if (!strcasecmp("lineOrder", propertyName)) {
-//		return ATTR_LINEORDER;
-//	} else if (!strcasecmp("chromaticities", propertyName)) {
-//		return ATTR_CHROMATICITIES;
-//	} else if (!strcasecmp("envmap", propertyName)) {
-//		return ATTR_ENVMAP;
-//	} else if (!strcasecmp("string", propertyName)) {
-//		return ATTR_STRING;
-//	} else if (!strcasecmp("box2d", propertyName)) {
-//		return ATTR_BOX2D;
-//	} else if (!strcasecmp("box2f", propertyName)) {
-//		return ATTR_BOX2F;
-//	} else if (!strcasecmp("box2i", propertyName)) {
-//		return ATTR_BOX2I;
-//	} else if (!strcasecmp("v2d", propertyName)) {
-//		return ATTR_V2D;
-//	} else if (!strcasecmp("v2f", propertyName)) {
-//		return ATTR_V2F;
-//	} else if (!strcasecmp("v2i", propertyName)) {
-//		return ATTR_V2I;
-//	} else if (!strcasecmp("vd", propertyName)) {
-//		return ATTR_VD;
-//	} else if (!strcasecmp("vf", propertyName)) {
-//		return ATTR_VF;
-//	} else if (!strcasecmp("vi", propertyName)) {
-//		return ATTR_VI;
-//	} else if (!strcasecmp("double", propertyName)) {
-//		return ATTR_DOUBLE;
-//	} else if (!strcasecmp("float", propertyName)) {
-//		return ATTR_FLOAT;
-//	} else if (!strcasecmp("int", propertyName)) {
-//		return ATTR_INT;
-//	} else {
-//		return ATTR_TYPE_INVALID;
-//	}
-//}
-
-
-
-//inline void attrTypeToString(const ATTR_TYPE property, \
-//							char *propertyName) {
-//
-//	switch (property) {
-//		case ATTR_CHLIST: { strcpy(propertyName, "chlist"); return; }
-//		case ATTR_COMPRESSION: { strcpy(propertyName, "compression"); return; }
-//		case ATTR_LINEORDER: { strcpy(propertyName, "lineOrder"); return; }
-//		case ATTR_CHROMATICITIES: { strcpy(propertyName, "chromaticities"); return; }
-//		case ATTR_ENVMAP: { strcpy(propertyName, "envmap"); return; }
-//		case ATTR_STRING: { strcpy(propertyName, "string"); return; }
-//		case ATTR_BOX2D: { strcpy(propertyName, "box2d"); return; }
-//		case ATTR_BOX2F: { strcpy(propertyName, "box2f"); return; }
-//		case ATTR_BOX2I: { strcpy(propertyName, "box2i"); return; }
-//		case ATTR_V2D: { strcpy(propertyName, "v2d"); return; }
-//		case ATTR_V2F: { strcpy(propertyName, "v2f"); return; }
-//		case ATTR_V2I: { strcpy(propertyName, "v2i"); return; }
-//		case ATTR_VD: { strcpy(propertyName, "vd"); return; }
-//		case ATTR_VF: { strcpy(propertyName, "vf"); return; }
-//		case ATTR_VI: { strcpy(propertyName, "vi"); return; }
-//		case ATTR_DOUBLE: { strcpy(propertyName, "double"); return; }
-//		case ATTR_FLOAT: { strcpy(propertyName, "float"); return; }
-//		case ATTR_INT: { strcpy(propertyName, "int"); return; }
-//		case ATTR_TYPE_INVALID:
-//		default: { strcpy(propertyName, "unknown"); return; }
-//	}
-//}
-
-
-
-//inline Imf::Compression stringToCompressionType(const char * propertyName) {
-//
-//	if (!strcmp("no", propertyName)) {
-//		return Imf::NO_COMPRESSION;
-//	} else if (!strcmp("rle", propertyName)) {
-//		return Imf::RLE_COMPRESSION;
-//	} else if (!strcmp("zips", propertyName)) {
-//		return Imf::ZIPS_COMPRESSION;
-//	} else if (!strcmp("zip", propertyName)) {
-//		return Imf::ZIP_COMPRESSION;
-//	} else if (!strcmp("piz", propertyName)) {
-//		return Imf::PIZ_COMPRESSION;
-//	} else if (!strcmp("pxr24", propertyName)) {
-//		return Imf::PXR24_COMPRESSION;
-//	} else if (!strcmp("b44", propertyName)) {
-//		return Imf::B44_COMPRESSION;
-//	} else if (!strcmp("b44a", propertyName)) {
-//		return Imf::B44A_COMPRESSION;
-//	} else {
-//		Assert(0);
-//	}
-//}
-
-
-
-//inline void compressionTypeToString(const Imf::Compression property, \
-//									char * propertyName) {
-//	switch (property) {
-//		case Imf::NO_COMPRESSION: { strcpy(propertyName, "no"); return; }
-//		case Imf::RLE_COMPRESSION: { strcpy(propertyName, "rle"); return; }
-//		case Imf::ZIPS_COMPRESSION: { strcpy(propertyName, "zips"); return; }
-//		case Imf::ZIP_COMPRESSION: { strcpy(propertyName, "zip"); return; }
-//		case Imf::PIZ_COMPRESSION: { strcpy(propertyName, "piz"); return; }
-//		case Imf::PXR24_COMPRESSION: { strcpy(propertyName, "pxr24"); return; }
-//		case Imf::B44_COMPRESSION: { strcpy(propertyName, "b44"); return; }
-//		case Imf::B44A_COMPRESSION: { strcpy(propertyName, "b44a"); return; }
-//		case Imf::NUM_COMPRESSION_METHODS:
-//		default: { strcpy(propertyName, "unknown"); return; }
-//	}
-//}
-
-
-//inline Imf::LineOrder stringToLineOrderType(const char * propertyName) {
-//
-//	if (!strcmp("increasing_y", propertyName)) {
-//		return Imf::INCREASING_Y;
-//	} else if (!strcmp("decreasing_y", propertyName)) {
-//		return Imf::DECREASING_Y;
-//	} else if (!strcmp("random_y", propertyName)) {
-//		return Imf::RANDOM_Y;
-//	} else {
-//		Assert(0);
-//		return -1;
-//	}
-//}
-
-
-
-//inline void lineOrderTypeToString(const Imf::LineOrder property, \
-//								char * propertyName) {
-//	switch (property) {
-//		case Imf::INCREASING_Y: { strcpy(propertyName, "increasing_y"); return; }
-//		case Imf::DECREASING_Y: { strcpy(propertyName, "decreasing_y"); return; }
-//		case Imf::RANDOM_Y: { strcpy(propertyName, "random_y"); return; }
-//		case Imf::NUM_LINEORDERS:
-//		default: { strcpy(propertyName, "unknown"); return; }
-//	}
-//}
-
-
-
-//inline Imf::Envmap stringToEnvmapType(const char * query) {
-//
-//	if (!strcmp("latlong", query)) {
-//		return Imf::ENVMAP_LATLONG;
-//	} else if (!strcmp("cube", query)) {
-//		return Imf::ENVMAP_CUBE;
-//	} else {
-//		Assert(0);
-//		return -1;
-//	}
-//}
-
-
-
-//inline void envmapTypeToString(const Imf::Envmap property, \
-//							char * propertyName) {
-//	switch (property) {
-//		case Imf::ENVMAP_LATLONG: { strcpy(propertyName, "latlong"); return; }
-//		case Imf::ENVMAP_CUBE: { strcpy(propertyName, "cube"); return; }
-//		case Imf::NUM_ENVMAPTYPES:
-//		default: { strcpy(propertyName, "unknown"); return; }
-//	}
-//}
-
-const static mex::ConstMap<std::string, ATTR_TYPE> attrNameToAttrType = mex::ConstMap<std::string, ATTR_TYPE>
-	("gain",				ATTR_FLOAT)
-	("wavelength",			ATTR_FLOAT)
-	("extTube",				ATTR_STRING)
-	("lens",				ATTR_STRING)
-	("material",			ATTR_STRING)
-	("chromaticities",		ATTR_CHROMATICITIES)
-	("whiteLuminance",		ATTR_FLOAT)
-	("adoptedNeutral",		ATTR_V2F)
-	("renderingTransform",	ATTR_STRING)
-	("lookModTransform",	ATTR_FLOAT)
-	("xDensity",			ATTR_FLOAT)
-	("owner",				ATTR_STRING)
-	("comments",			ATTR_STRING)
-	("capDate",				ATTR_STRING)
-	("utcOffset",			ATTR_FLOAT)
-	("longitude",			ATTR_FLOAT)
-	("latitude",			ATTR_FLOAT)
-	("altitude",			ATTR_FLOAT)
-	("focus",				ATTR_FLOAT)
-	("expTime",				ATTR_FLOAT)
-	("aperture",			ATTR_FLOAT)
-	("isoSpeed",			ATTR_FLOAT)
-	("multExpTimes",		ATTR_VF)
-	("multApertures",		ATTR_VF)
-	("multIsoSpeeds",		ATTR_VF)
-	("multGains",			ATTR_VF)
-	("envmap",				ATTR_ENVMAP)
-	("unknown",				ATTR_TYPE_INVALID);
-
-const static mex::ConstMap<std::string, ATTR_TYPE> stringToAttrType = mex::ConstMap<std::string, ATTR_TYPE>
-	("chlist",			ATTR_CHLIST)
-	("compression",		ATTR_COMPRESSION)
-	("lineOrder",		ATTR_LINEORDER)
-	("chromaticities",	ATTR_CHROMATICITIES)
-	("envmap",			ATTR_ENVMAP)
-	("string",			ATTR_STRING)
-	("box2d",			ATTR_BOX2D)
-	("box2f",			ATTR_BOX2F)
-	("box2i",			ATTR_BOX2I)
-	("v2d",				ATTR_V2D)
-	("v2f",				ATTR_V2F)
-	("v2i",				ATTR_V2I)
-	("vd",				ATTR_VD)
-	("vf",				ATTR_VF)
-	("vi",				ATTR_VI)
-	("double",			ATTR_DOUBLE)
-	("float",			ATTR_FLOAT)
-	("int",				ATTR_INT)
-	("unknown",			ATTR_TYPE_INVALID);
-
-const static mex::ConstMap<ATTR_TYPE, std::string> attrTypeToString = mex::ConstMap<ATTR_TYPE, std::string>
-	(ATTR_CHLIST, 			"chlist")
-	(ATTR_COMPRESSION,		"compression")
-	(ATTR_LINEORDER,		"lineOrder")
-	(ATTR_CHROMATICITIES,	"chromaticities")
-	(ATTR_ENVMAP,			"envmap")
-	(ATTR_STRING,			"string")
-	(ATTR_BOX2D,			"box2d")
-	(ATTR_BOX2F,			"box2f")
-	(ATTR_BOX2I,			"box2i")
-	(ATTR_V2D,				"v2d")
-	(ATTR_V2F,				"v2f")
-	(ATTR_V2I,				"v2i")
-	(ATTR_VD,				"vd")
-	(ATTR_VF,				"vf")
-	(ATTR_VI,				"vi")
-	(ATTR_DOUBLE,			"double")
-	(ATTR_FLOAT,			"float")
-	(ATTR_INT,				"int")
-	(ATTR_TYPE_INVALID,		"unknown");
+const static mex::ConstMap<EAttributeType, std::string> attributeTypeToString = mex::ConstMap<EAttributeType, std::string>
+	(EAttributeChannelList, 	"chlist")
+	(EAttributeCompression,		"compression")
+	(EAttributeLineOrder,		"lineOrder")
+	(EAttributeChromaticities,	"chromaticities")
+	(EAttributeEnvmap,			"envmap")
+	(EAttributeString,			"string")
+	(EAttributeBox2d,			"box2d")
+	(EAttributeBox2f,			"box2f")
+	(EAttributeBox2i,			"box2i")
+	(EAttributeV2d,				"v2d")
+	(EAttributeV2f,				"v2f")
+	(EAttributeV2i,				"v2i")
+	(EAttributeVd,				"vd")
+	(EAttributeVf,				"vf")
+	(EAttributeVi,				"vi")
+	(EAttributeDouble,			"double")
+	(EAttributeFloat,			"float")
+	(EAttributeInt,				"int")
+	(EAttributeTypeInvalid,		"unknown");
 
 const static mex::ConstMap<std::string, Imf::Compression> stringToCompressionType = mex::ConstMap<std::string, Imf::Compression>
 	("no", 		Imf::NO_COMPRESSION)
@@ -411,91 +177,73 @@ const static mex::ConstMap<Imf::Envmap, std::string> envmapTypeToString = mex::C
 	(Imf::NUM_ENVMAPTYPES,	"unknown");
 
 
-template <typename T>
-class AttrType {
+template <> EXRAttribute<int>::AttrType() : m_type(EAttributeInt) {	}
+template <> EXRAttribute<float>::AttrType() : m_type(EAttributeFloat) {	}
+template <> EXRAttribute<double>::AttrType() : m_type(EAttributeDouble) {	}
+template <> EXRAttribute<Imath::V2i>::AttrType() : m_type(EAttributeV2i) {	}
+template <> EXRAttribute<Imath::V2f>::AttrType() : m_type(EAttributeV2f) {	}
+template <> EXRAttribute<Imath::V2d>::AttrType() : m_type(EAttributeV2d) {	}
+template <> EXRAttribute<std::vector<int> >::AttrType() : m_type(EAttributeVi) {	}
+template <> EXRAttribute<std::vector<float> >::AttrType() : m_type(EAttributeVf) {	}
+template <> EXRAttribute<std::vector<double> >::AttrType() : m_type(EAttributeVd) {	}
+template <> EXRAttribute<Imath::Box2i>::AttrType() : m_type(EAttributeBox2i) {	}
+template <> EXRAttribute<Imath::Box2f>::AttrType() : m_type(EAttributeBox2f) {	}
+template <> EXRAttribute<Imath::Box2d>::AttrType() : m_type(EAttributeBox2d) {	}
+template <> EXRAttribute<std::string>::AttrType() : m_type(EAttributeString) {	}
+template <> EXRAttribute<Imf::Envmap>::AttrType() : m_type(EAttributeEnvmap) {	}
+template <> EXRAttribute<Imf::Chromaticities>::AttrType() : m_type(EAttributeChromaticities) {	}
+template <> EXRAttribute<Imf::LineOrder>::AttrType() : m_type(EAttributeLineOrder) {	}
+template <> EXRAttribute<Imf::Compression>::AttrType() : m_type(EAttributeCompression) {	}
+template <> EXRAttribute<Imf::ChannelList>::AttrType() : m_type(EAttributeChannelList) {	}
+
+
+
+class EXRAttribute {
+public:
+	EXRAttribute()
+				: m_type(EAttributeTypeInvalid),
+				  m_attribute() {	}
+
+	EXRAttribute(const Imf::Attribute* attribute)
+				: m_type(attributeNameToAttributeType(attribute->typeName())), \
+				  m_attribute(attribute) {	}
+
+	inline const EAttributeType get_type() const {
+		return m_type;
+	}
+
+	inline EAttributeType get_type() {
+		return m_type;
+	}
+
+	inline const Imf::Attribute* get_attribute() const {
+		return m_attribute;
+	}
+
+	inline Imf::Attribute* get_attribute() {
+		return m_attribute;
+	}
+
+	const mex::MxArray* toMxArray() const;
+
+	inline mex::MxArray* toMxArray() {
+        return const_cast<mex::MxArray>(static_cast<const EXRAttribute &>(*this).toMxArray());
+	}
+
 private:
-	ATTR_TYPE m_type;
-
-public:
-	AttrType() : m_type(mxUNKNOWN_CLASS) {	}
-	AttrType(const AttrType& mxClass) {
-		m_type = mxClass();
-	}
-
-	inline const ATTR_TYPE getAttrType() const {
-		return m_type;
-	}
-
-	inline ATTR_TYPE getAttrType() {
-		return m_type;
-	}
-
-	inline const ATTR_TYPE operator()() const {
-		return m_type;
-	}
-
-	inline ATTR_TYPE operator()() {
-		return m_type;
-	}
-
-	inline operator const ATTR_TYPE() const {
-		return m_type;
-	}
-
-	inline operator ATTR_TYPE() {
-		return m_type;
-	}
-};
-
-template <> AttrType<int>::AttrType() : m_type(ATTR_INT) {	}
-template <> AttrType<float>::AttrType() : m_type(ATTR_FLOAT) {	}
-template <> AttrType<double>::AttrType() : m_type(ATTR_DOUBLE) {	}
-template <> AttrType<Imath::V2i>::AttrType() : m_type(ATTR_V2I) {	}
-template <> AttrType<Imath::V2f>::AttrType() : m_type(ATTR_V2F) {	}
-template <> AttrType<Imath::V2d>::AttrType() : m_type(ATTR_V2D) {	}
-template <> AttrType<std::vector<int> >::AttrType() : m_type(ATTR_VI) {	}
-template <> AttrType<std::vector<float> >::AttrType() : m_type(ATTR_VF) {	}
-template <> AttrType<std::vector<double> >::AttrType() : m_type(ATTR_VD) {	}
-template <> AttrType<Imath::Box2i>::AttrType() : m_type(ATTR_BOX2I) {	}
-template <> AttrType<Imath::Box2f>::AttrType() : m_type(ATTR_BOX2F) {	}
-template <> AttrType<Imath::Box2d>::AttrType() : m_type(ATTR_BOX2D) {	}
-template <> AttrType<std::string>::AttrType() : m_type(ATTR_STRING) {	}
-template <> AttrType<Imf::Envmap>::AttrType() : m_type(ATTR_ENVMAP) {	}
-template <> AttrType<Imf::Chromaticities>::AttrType() : m_type(ATTR_CHROMATICITIES) {	}
-template <> AttrType<Imf::LineOrder>::AttrType() : m_type(ATTR_LINEORDER) {	}
-template <> AttrType<Imf::Compression>::AttrType() : m_type(ATTR_COMPRESSION) {	}
-template <> AttrType<Imf::ChannelList>::AttrType() : m_type(ATTR_CHLIST) {	}
-
-
-template <typename T>
-struct EXRTypedAttribute {
-protected:
-	ATTR_TYPE m_type;
-	Imf::TypedAttribute<T> *m_attr;
-
-public:
-	EXRTypedAttribute(const Imf::TypedAttribute<T> * attr)
-					: m_type(AttrType<T>()), \
-					  m_attr(attr) {	}
-
-	inline const mex::MxArray toMxArray() const {
-		return mex::MxNumeric<T>(m_attr->value());
-	}
-
-	inline mex::MxArray toMxArray() {
-        return const_cast<mex::MxArray>(static_cast<const EXRTypedAttribute<T> &>(*this).toMxArray());
-	}
+	EAttributeType m_type;
+	Imf::Attribute *m_attribute;
 };
 
 template <typename T>
-struct EXRTypedAttribute<Imath::Vec2<T> > {
+class EXRTypedAttribute<Imath::Vec2<T> > {
 protected:
-	ATTR_TYPE m_type;
+	EAttributeType m_type;
 	Imf::TypedAttribute<Imath::Vec2<T> > *m_attr;
 
 public:
 	EXRTypedAttribute(const Imf::TypedAttribute<Imath::Vec2<T> > * attr)
-					: m_type(AttrType<Imath::Vec2<T> >()), \
+					: m_type(EXRAttribute<Imath::Vec2<T> >()), \
 					  m_attr(attr) {	}
 
 	inline const mex::MxArray toMxArray() const {
@@ -511,14 +259,14 @@ public:
 };
 
 template <typename T>
-struct EXRTypedAttribute<std::vector<T> > {
+class EXRTypedAttribute<std::vector<T> > {
 protected:
-	ATTR_TYPE m_type;
+	EAttributeType m_type;
 	Imf::TypedAttribute<std::vector<T> > *m_attr;
 
 public:
 	EXRTypedAttribute(const Imf::TypedAttribute<std::vector<T> > * attr)
-					: m_type(AttrType<std::vector<T> >()), \
+					: m_type(EXRAttribute<std::vector<T> >()), \
 					  m_attr(attr) {	}
 
 	inline const mex::MxArray toMxArray() const {
@@ -531,14 +279,14 @@ public:
 };
 
 template <typename T>
-struct EXRTypedAttribute<Imath::Box<Imath::Vec2<T> > > {
+class EXRTypedAttribute<Imath::Box<Imath::Vec2<T> > > {
 protected:
-	ATTR_TYPE m_type;
+	EAttributeType m_type;
 	Imf::TypedAttribute<Imath::Box<Imath::Vec2<T> > > *m_attr;
 
 public:
 	EXRTypedAttribute(const Imf::TypedAttribute<Imath::Box<Imath::Vec2<T> > > * attr)
-					: m_type(AttrType<Imath::Box<Imath::Vec2<T> > >()), \
+					: m_type(EXRAttribute<Imath::Box<Imath::Vec2<T> > >()), \
 					  m_attr(attr) {	}
 
 	inline const mex::MxArray toMxArray() const {
@@ -560,14 +308,14 @@ public:
 };
 
 template <>
-struct EXRTypedAttribute<std::string> {
+class EXRTypedAttribute<std::string> {
 protected:
-	ATTR_TYPE m_type;
+	EAttributeType m_type;
 	Imf::TypedAttribute<std::string> *m_attr;
 
 public:
 	EXRTypedAttribute(const Imf::TypedAttribute<std::string> * attr)
-					: m_type(AttrType<std::string>()), \
+					: m_type(EXRAttribute<std::string>()), \
 					  m_attr(attr) {	}
 
 	inline const mex::MxArray toMxArray() const {
@@ -580,14 +328,14 @@ public:
 };
 
 template <>
-struct EXRTypedAttribute<Imf::Envmap> {
+class EXRTypedAttribute<Imf::Envmap> {
 protected:
-	ATTR_TYPE m_type;
+	EAttributeType m_type;
 	Imf::TypedAttribute<Imf::Envmap> *m_attr;
 
 public:
 	EXRTypedAttribute(const Imf::TypedAttribute<Imf::Envmap> * attr)
-					: m_type(AttrType<Imf::Envmap>()), \
+					: m_type(EXRAttribute<Imf::Envmap>()), \
 					  m_attr(attr) {	}
 
 	inline const mex::MxArray toMxArray() const {
@@ -600,14 +348,14 @@ public:
 };
 
 template <>
-struct EXRTypedAttribute<Imf::Chromaticities> {
+class EXRTypedAttribute<Imf::Chromaticities> {
 protected:
-	ATTR_TYPE m_type;
+	EAttributeType m_type;
 	Imf::TypedAttribute<Imf::Chromaticities> *m_attr;
 
 public:
 	EXRTypedAttribute(const Imf::TypedAttribute<Imf::Chromaticities> * attr)
-					: m_type(AttrType<Imf::Chromaticities>()), \
+					: m_type(EXRAttribute<Imf::Chromaticities>()), \
 					  m_attr(attr) {	}
 
 	/*
@@ -644,14 +392,14 @@ public:
 };
 
 template <>
-struct EXRTypedAttribute<Imf::LineOrder> {
+class EXRTypedAttribute<Imf::LineOrder> {
 protected:
-	ATTR_TYPE m_type;
+	EAttributeType m_type;
 	Imf::TypedAttribute<Imf::LineOrder> *m_attr;
 
 public:
 	EXRTypedAttribute(const Imf::TypedAttribute<Imf::LineOrder> * attr)
-					: m_type(AttrType<Imf::LineOrder>()), \
+					: m_type(EXRAttribute<Imf::LineOrder>()), \
 					  m_attr(attr) {	}
 
 	inline const mex::MxArray toMxArray() const {
@@ -664,14 +412,14 @@ public:
 };
 
 template <>
-struct EXRTypedAttribute<Imf::Compression> {
+class EXRTypedAttribute<Imf::Compression> {
 protected:
-	ATTR_TYPE m_type;
+	EAttributeType m_type;
 	Imf::TypedAttribute<Imf::Compression> *m_attr;
 
 public:
 	EXRTypedAttribute(const Imf::TypedAttribute<Imf::Compression> * attr)
-					: m_type(AttrType<Imf::Compression>()), \
+					: m_type(EXRAttribute<Imf::Compression>()), \
 					  m_attr(attr) {	}
 
 	inline const mex::MxArray toMxArray() const {
@@ -684,14 +432,14 @@ public:
 };
 
 template <>
-struct EXRTypedAttribute<Imf::ChannelList> {
+class EXRTypedAttribute<Imf::ChannelList> {
 protected:
-	ATTR_TYPE m_type;
+	EAttributeType m_type;
 	Imf::TypedAttribute<Imf::ChannelList> *m_attr;
 
 public:
 	EXRTypedAttribute(const Imf::TypedAttribute<Imf::ChannelList> * attr)
-					: m_type(AttrType<Imf::ChannelList>()), \
+					: m_type(EXRAttribute<Imf::ChannelList>()), \
 					  m_attr(attr) {	}
 
 	inline const mex::MxArray toMxArray() const {
@@ -710,7 +458,7 @@ public:
 	}
 };
 
-struct EXRInputFile {
+class EXRInputFile {
 private:
 	Imf::InputFile m_file;
 
@@ -763,25 +511,25 @@ public:
 	 * TODO: Change these to word directly with pointers to float, as in
 	 * writeChannel in EXROutputFile.
 	 */
-	void readChannelRGBA(Imf::Array2D<USED> &rPixels, bool &rFlag, \
-						Imf::Array2D<USED> &gPixels, bool &gFlag, \
-						Imf::Array2D<USED> &bPixels, bool &bFlag, \
-						Imf::Array2D<USED> &aPixels, bool &aFlag) const;
+	void readChannelRGBA(Imf::Array2D<FloatUsed> &rPixels, bool &rFlag, \
+						Imf::Array2D<FloatUsed> &gPixels, bool &gFlag, \
+						Imf::Array2D<FloatUsed> &bPixels, bool &bFlag, \
+						Imf::Array2D<FloatUsed> &aPixels, bool &aFlag) const;
 
-	void readChannelYA(Imf::Array2D<USED> &yPixels, bool &yFlag, \
-					Imf::Array2D<USED> &aPixels, bool &aFlag) const;
+	void readChannelYA(Imf::Array2D<FloatUsed> &yPixels, bool &yFlag, \
+					Imf::Array2D<FloatUsed> &aPixels, bool &aFlag) const;
 
-	void readChannel(Imf::Array2D<USED> &cPixels, bool &cFlag, \
+	void readChannel(Imf::Array2D<FloatUsed> &cPixels, bool &cFlag, \
 					const std::string &cName) const;
 
-	void readChannel(std::vector<Imf::Array2D<USED> > &cPixels, \
+	void readChannel(std::vector<Imf::Array2D<FloatUsed> > &cPixels, \
 					std::vector<bool> &cFlags, \
 					const std::vector<std::string> &cNames) const;
 
 	virtual ~EXRInputFile() {	}
 };
 
-struct EXROutputFile {
+class EXROutputFile {
 private:
 	Imf::Header m_header;
 	Imf::FrameBuffer m_frameBuffer;
@@ -832,44 +580,44 @@ public:
 	}
 
 	inline void addChannelRGBA() {
-		m_header.channels().insert("R", Imf::Channel(USEDC));
-		m_header.channels().insert("G", Imf::Channel(USEDC));
-		m_header.channels().insert("B", Imf::Channel(USEDC));
-		m_header.channels().insert("A", Imf::Channel(USEDC));
+		m_header.channels().insert("R", Imf::Channel(EXRFloatUsed));
+		m_header.channels().insert("G", Imf::Channel(EXRFloatUsed));
+		m_header.channels().insert("B", Imf::Channel(EXRFloatUsed));
+		m_header.channels().insert("A", Imf::Channel(EXRFloatUsed));
 	}
 
 	inline void addChannelYA() {
-		m_header.channels().insert("Y", Imf::Channel(USEDC));
-		m_header.channels().insert("A", Imf::Channel(USEDC));
+		m_header.channels().insert("Y", Imf::Channel(EXRFloatUsed));
+		m_header.channels().insert("A", Imf::Channel(EXRFloatUsed));
 	}
 
 	inline void addChannel(const std::string& channelName) {
-		m_header.channels().insert(channelName.c_str(), Imf::Channel(USEDC));
+		m_header.channels().insert(channelName.c_str(), Imf::Channel(EXRFloatUsed));
 	}
 
 	inline void addChannel(const std::vector<const std::string> &channelNames) {
 		for (int iter = 0, numChannels = channelNames.size(); \
 			iter < numChannels; \
 			++iter) {
-			m_header.channels().insert(channelNames[iter].c_str(), Imf::Channel(USEDC));
+			m_header.channels().insert(channelNames[iter].c_str(), Imf::Channel(EXRFloatUsed));
 		}
 	}
 
 	void setAttribute(const std::string &attrName, const mex::MxArray &mxarr);
 	void setAttribute(const mex::MxArray &mxstruct);
 
-	void writeChannelRGBA(const USED *rPixels, \
-							const USED *gPixels, \
-							const USED *bPixels, \
-							const USED *aPixels);
+	void writeChannelRGBA(const FloatUsed *rPixels, \
+							const FloatUsed *gPixels, \
+							const FloatUsed *bPixels, \
+							const FloatUsed *aPixels);
 
-	void writeChannelYA(const USED *yPixels, \
-							const USED *aPixels);
+	void writeChannelYA(const FloatUsed *yPixels, \
+							const FloatUsed *aPixels);
 
-	void writeChannel(const USED *cPixels, \
+	void writeChannel(const FloatUsed *cPixels, \
 						const std::string &cName);
 
-	void writeChannel(const std::vector<const USED *> &cPixels, \
+	void writeChannel(const std::vector<const FloatUsed *> &cPixels, \
 						const std::vector<const std::string> &cNames);
 
 	inline void writeFile(const std::string &fileName) {

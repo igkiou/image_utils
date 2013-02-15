@@ -9,6 +9,10 @@
 
 namespace exr {
 
+const mex::MxArray EXRAttribute::toMxArray() const {
+
+}
+
 mex::MxArray EXRInputFile::getAttribute(const std::string &attributeName) {
 	const Imf::Attribute& attr = m_file.header[attributeName];
 	return const_cast<mxArray *>(attributeToMxArray(attr));
@@ -259,10 +263,10 @@ void setAttribute(Imf::Header& head, const mxArray* mxstruct) {
 	}
 }
 
-void EXRInputFile::readChannelRGBA(Imf::Array2D<USED> &rPixels, bool &rFlag, \
-								Imf::Array2D<USED> &gPixels, bool &gFlag, \
-								Imf::Array2D<USED> &bPixels, bool &bFlag, \
-								Imf::Array2D<USED> &aPixels, bool &aFlag) const {
+void EXRInputFile::readChannelRGBA(Imf::Array2D<FloatUsed> &rPixels, bool &rFlag, \
+								Imf::Array2D<FloatUsed> &gPixels, bool &gFlag, \
+								Imf::Array2D<FloatUsed> &bPixels, bool &bFlag, \
+								Imf::Array2D<FloatUsed> &aPixels, bool &aFlag) const {
 
 	int width, height;
 	getDimensions(width, height);
@@ -334,8 +338,8 @@ void EXRInputFile::readChannelRGBA(Imf::Array2D<USED> &rPixels, bool &rFlag, \
 
 }
 
-void EXRInputFile::readChannelYA(Imf::Array2D<USED> &yPixels, bool &yFlag, \
-								Imf::Array2D<USED> &aPixels, bool &aFlag) const {
+void EXRInputFile::readChannelYA(Imf::Array2D<FloatUsed> &yPixels, bool &yFlag, \
+								Imf::Array2D<FloatUsed> &aPixels, bool &aFlag) const {
 
 	int width, height;
 	getDimensions(width, height);
@@ -377,7 +381,7 @@ void EXRInputFile::readChannelYA(Imf::Array2D<USED> &yPixels, bool &yFlag, \
 
 }
 
-void EXRInputFile::readChannel(Imf::Array2D<USED> &cPixels, bool &cFlag, \
+void EXRInputFile::readChannel(Imf::Array2D<FloatUsed> &cPixels, bool &cFlag, \
 							const std::string &cName) const {
 
 	int width, height;
@@ -406,7 +410,7 @@ void EXRInputFile::readChannel(Imf::Array2D<USED> &cPixels, bool &cFlag, \
 }
 
 
-void EXRInputFile::readChannel(std::vector<Imf::Array2D<USED> > &cPixels, \
+void EXRInputFile::readChannel(std::vector<Imf::Array2D<FloatUsed> > &cPixels, \
 							std::vector<bool> &cFlags, \
 							const std::vector<std::string> &cNames) const {
 
@@ -437,12 +441,12 @@ void EXRInputFile::readChannel(std::vector<Imf::Array2D<USED> > &cPixels, \
 	m_file.readPixels(dw.min.y, dw.max.y);
 }
 
-void EXROutputFile::writeChannelRGBA(const USED *rPixels, \
-										const USED *gPixels, \
-										const USED *bPixels, \
-										const USED *aPixels) {
+void EXROutputFile::writeChannelRGBA(const FloatUsed *rPixels, \
+										const FloatUsed *gPixels, \
+										const FloatUsed *bPixels, \
+										const FloatUsed *aPixels) {
 
-	std::vector<const USED *> cPixels;
+	std::vector<const FloatUsed *> cPixels;
 	cPixels.push_back(rPixels);
 	cPixels.push_back(gPixels);
 	cPixels.push_back(bPixels);
@@ -455,10 +459,10 @@ void EXROutputFile::writeChannelRGBA(const USED *rPixels, \
 	writeChannel(cPixels, cNames);
 }
 
-void EXROutputFile::writeChannelYA(const USED *yPixels, \
-										const USED *aPixels) {
+void EXROutputFile::writeChannelYA(const FloatUsed *yPixels, \
+										const FloatUsed *aPixels) {
 
-	std::vector<const USED *> cPixels;
+	std::vector<const FloatUsed *> cPixels;
 	cPixels.push_back(yPixels);
 	cPixels.push_back(aPixels);
 	std::vector<const std::string> cNames;
@@ -467,17 +471,17 @@ void EXROutputFile::writeChannelYA(const USED *yPixels, \
 	writeChannel(cPixels, cNames);
 }
 
-void EXROutputFile::writeChannel(const USED *cPixels, \
+void EXROutputFile::writeChannel(const FloatUsed *cPixels, \
 									const std::string &cName) {
 
-	std::vector<const USED *> ccPixels;
+	std::vector<const FloatUsed *> ccPixels;
 	ccPixels.push_back(cPixels);
 	std::vector<const std::string> cNames;
 	cNames.push_back(cName);
 	writeChannel(ccPixels, cNames);
 }
 
-void EXROutputFile::writeChannel(const std::vector<const USED *> &cPixels, \
+void EXROutputFile::writeChannel(const std::vector<const FloatUsed *> &cPixels, \
 								const std::vector<const std::string> &cNames) {
 	Assert((!m_createdFrameBuffer) && (!m_wroteFile));
 	Assert(cPixels.size() == cNames.size());
