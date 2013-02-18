@@ -33,16 +33,16 @@
 namespace mex {
 
 #ifdef NDEBUG
-#define Assert(cond) ((void) 0)
-#define AssertEx(cond, explanation) ((void) 0)
+#define mexAssert(cond) ((void) 0)
+#define mexAssertEx(cond, explanation) ((void) 0)
 #else
-#define Assert(cond) do { \
+#define mexAssert(cond) do { \
 		if (!(cond)) \
 		mexErrMsgIdAndTxt("MATLAB:mex", "Assertion \"%s\" failed in %s:%i\n", \
 		#cond, __FILE__, __LINE__); \
 	} while (0)
 
-#define AssertEx(cond, explanation) do { \
+#define mexAssertEx(cond, explanation) do { \
 		if (!(cond)) \
 		mexErrMsgIdAndTxt(\
 		"MATLAB:mex", "Assertion \"%s\" failed in %s:%i (" explanation ")\n", \
@@ -66,7 +66,7 @@ public:
 
 	inline U operator[] (const T& key) const {
 		typename std::map<T, U>::const_iterator it = m_map.find(key);
-		AssertEx(it == m_map.end(), "Value not found.");
+		mexAssertEx(it == m_map.end(), "Value not found.");
 		return (*it).second;
 	}
 
@@ -264,7 +264,7 @@ public:
 
 	explicit MxNumeric(const PMxArrayNative array)
 					: MxArray(array) {
-		Assert(m_kClass == mxGetClassID(array));
+		mexAssert(m_kClass == mxGetClassID(array));
 	}
 
 	MxNumeric(const int numRows, const int numColumns)
@@ -278,7 +278,7 @@ public:
 	 * in the case of T = int.
 	 */
 //	MxNumeric(const std::vector<int> &dims)
-//		: MxArray(), \
+//		: MxArray(),
 //		  m_mxClassID(MxClassID<T>()) {
 //		const int numDims = dims.size();
 //		mwSize *tempDims = (mwSize *) malloc(numDims * sizeof(mwSize));
@@ -440,7 +440,7 @@ public:
 
 	MxString(const PMxArrayNative array)
 		: MxArray(array) {
-		Assert(m_kClass == mxGetClassID(array));
+		mexAssert(m_kClass == mxGetClassID(array));
 	}
 
 	MxString(const std::string& strVar) {
@@ -679,7 +679,7 @@ public:
 
 	explicit MxStruct(const PMxArrayNative array)
 					: MxArray(array) {
-		Assert(m_kClass == mxGetClassID(array));
+		mexAssert(m_kClass == mxGetClassID(array));
 	}
 
 	MxStruct(const std::string& scalarName, const PMxArrayNative& scalarVar)
@@ -700,7 +700,7 @@ public:
 			const std::vector<PMxArrayNative>& vecVar)
 			: MxArray() {
 		int numFields = vecName.size();
-		Assert(vecVar.size() == numFields);
+		mexAssert(vecVar.size() == numFields);
 		if (numFields > 0) {
 			const char* temp = vecName[0].c_str();
 			m_array = mxCreateStructMatrix(1, 1, 1, &(temp));
@@ -716,7 +716,7 @@ public:
 			const std::vector<MxArray *>& vecVar)
 			: MxArray() {
 		int numFields = vecName.size();
-		Assert(vecVar.size() == numFields);
+		mexAssert(vecVar.size() == numFields);
 		if (numFields > 0) {
 			const char* temp = vecName[0].c_str();
 			m_array = mxCreateStructMatrix(1, 1, 1, &(temp));
@@ -742,7 +742,7 @@ public:
 
 	void addField(const std::vector<std::string>& vecName,
 				const std::vector<PMxArrayNative>& vecVar) {
-		Assert(vecVar.size() == numFields);
+		mexAssert(vecVar.size() == numFields);
 		for (int iter = 0, numFields = vecName.size(); iter < numFields;
 			++iter) {
 			mxAddField(m_array, vecName[iter].c_str());
@@ -752,7 +752,7 @@ public:
 
 	void addField(const std::vector<std::string>& vecName,
 			const std::vector<MxArray *>& vecVar) {
-		Assert(vecVar.size() == numFields);
+		mexAssert(vecVar.size() == numFields);
 		for (int iter = 0, numFields = vecName.size(); iter < numFields;
 			++iter) {
 			mxAddField(m_array, vecName[iter].c_str());

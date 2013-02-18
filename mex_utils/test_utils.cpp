@@ -18,6 +18,7 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[]) {
 	plhs[1] = mex::MxNumeric<float>(temp.data(), height, width).get_array();
 	temp = mex::MxNumeric<float>(height, width);
 	plhs[2] = temp.get_array();
+	temp[1] = 5.0;
 	plhs[3] = mxCreateNumericMatrix(height, width, mex::MxClassId<bool>(), mxREAL);
 	mex::MxNumeric<int> foo(height, width);
 	foo.data()[0] = 10;
