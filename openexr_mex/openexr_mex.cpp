@@ -134,12 +134,23 @@ static const mex::ConstMap<Imf::Envmap, std::string> EXRAttribute::envmapTypeToS
 	(Imf::ENVMAP_CUBE,		"cube")
 	(Imf::NUM_ENVMAPTYPES,	"unknown");
 
+
+void EXRAttribute::buildMxArray() {
+	switch(m_type) {
+		case EAttributeV2d: {
+			std::vector<double> temp;
+			temp.push_back(m_pAttribute->value().x);
+			temp.push_back(m_pAttribute->value().y);
+			m_pArray = mex::MxNumeric<double>(temp);
+		}
+
+	}
+
+}
+
+
 class EXRTypedAttribute<Imath::Vec2<T> > {
 	inline const mex::MxArray toMxArray() const {
-		std::vector<T> temp;
-		temp.push_back(m_attr->value().x);
-		temp.push_back(m_attr->value().y);
-		return mex::MxNumeric<T>(temp);
 	}
 class EXRTypedAttribute<std::vector<T> > {
 protected:

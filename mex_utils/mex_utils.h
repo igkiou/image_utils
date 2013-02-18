@@ -246,7 +246,8 @@ protected:
 template <typename T>
 class MxNumeric : public MxArray {
 public:
-	static const mxClassID m_kClass = MxClassId<T>();
+//	static const mxClassID m_kClass = MxClassId<T>();
+	static const mxClassID m_kClass;
 
 	MxNumeric()
 			: MxArray() {	}
@@ -268,7 +269,8 @@ public:
 
 	MxNumeric(const int numRows, const int numColumns)
 			: MxArray() {
-		m_array = mxCreateNumericMatrix(numRows, numColumns, m_kClass, mxREAL);
+		m_array = mxCreateNumericMatrix(numRows, numColumns, m_kClass,
+										mxREAL);
 	}
 
 	/*
@@ -318,7 +320,8 @@ public:
 
 	MxNumeric(const T* arrVar, const int numRows, const int numColumns)
 			: MxArray() {
-		m_array = mxCreateNumericMatrix(numRows, numColumns, m_kClass, mxREAL);
+		m_array = mxCreateNumericMatrix(numRows, numColumns, m_kClass,
+										mxREAL);
 		T *val = (T *) mxGetData(m_array);
 		memcpy(val, arrVar, numRows * numColumns * sizeof(T));
 	}
@@ -397,6 +400,29 @@ public:
 		return std::vector<T>(pData, pData + numel);
 	}
 };
+
+template <>
+const mxClassID MxNumeric<unsigned char>::m_kClass = mxUINT8_CLASS;
+template <>
+const mxClassID MxNumeric<char>::m_kClass = mxINT8_CLASS;
+template <>
+const mxClassID MxNumeric<short>::m_kClass = mxINT16_CLASS;
+template <>
+const mxClassID MxNumeric<unsigned short>::m_kClass = mxUINT16_CLASS;
+template <>
+const mxClassID MxNumeric<int>::m_kClass = mxINT32_CLASS;
+template <>
+const mxClassID MxNumeric<unsigned int>::m_kClass = mxUINT32_CLASS;
+template <>
+const mxClassID MxNumeric<long>::m_kClass = mxINT64_CLASS;
+template <>
+const mxClassID MxNumeric<unsigned long>::m_kClass = mxUINT64_CLASS;
+template <>
+const mxClassID MxNumeric<float>::m_kClass = mxSINGLE_CLASS;
+template <>
+const mxClassID MxNumeric<double>::m_kClass = mxDOUBLE_CLASS;
+template <>
+const mxClassID MxNumeric<bool>::m_kClass = mxLOGICAL_CLASS;
 
 class MxString: public MxArray {
 public:
@@ -520,7 +546,8 @@ public:
 	MxCell(const std::vector<PMxArrayNative>& vecVar)
 		: MxArray() {
 		m_array = mxCreateCellMatrix(vecVar.size(), 1);
-		for (int iter = 0, numElements = vecVar.size(); iter < numElements; ++iter) {
+		for (int iter = 0, numElements = vecVar.size(); iter < numElements;
+			++iter) {
 			mxSetCell(m_array, iter, vecVar[iter]);
 		}
 	}
@@ -528,7 +555,8 @@ public:
 	MxCell(const std::vector<MxArray *>& vecVar)
 		: MxArray() {
 		m_array = mxCreateCellMatrix(vecVar.size(), 1);
-		for (int iter = 0, numElements = vecVar.size(); iter < numElements; ++iter) {
+		for (int iter = 0, numElements = vecVar.size(); iter < numElements;
+			++iter) {
 			mxSetCell(m_array, iter, vecVar[iter]->get_array());
 		}
 	}
@@ -536,12 +564,14 @@ public:
 	MxCell(const std::vector<const MxArray *>& vecVar)
 		: MxArray() {
 		m_array = mxCreateCellMatrix(vecVar.size(), 1);
-		for (int iter = 0, numElements = vecVar.size(); iter < numElements; ++iter) {
+		for (int iter = 0, numElements = vecVar.size(); iter < numElements;
+			++iter) {
 			mxSetCell(m_array, iter, vecVar[iter]->get_array());
 		}
 	}
 
-	MxCell(const PMxArrayNative* arrVar, const int numRows, const int numColumns)
+	MxCell(const PMxArrayNative* arrVar, const int numRows,
+			const int numColumns)
 		: MxArray() {
 		m_array = mxCreateCellMatrix(numRows, numColumns);
 		int numElements = numRows * numColumns;
@@ -585,7 +615,8 @@ public:
 		}
 	}
 
-	MxCell(const PMxArrayNative* arrVar, const int numDims, const mwSize *dims)
+	MxCell(const PMxArrayNative* arrVar, const int numDims,
+		const mwSize *dims)
 		: MxArray() {
 		m_array = mxCreateCellArray(numDims, dims);
 		int numElements = 1;
@@ -615,7 +646,8 @@ public:
 
 	inline const std::vector<PMxArrayNative> vectorize() const {
 		std::vector<PMxArrayNative> retArg;
-		for (int iter = 0, numel = getNumberOfElements(); iter < numel; ++iter) {
+		for (int iter = 0, numel = getNumberOfElements(); iter < numel;
+			++iter) {
 			retArg.push_back((mxGetCell(m_array, iter)));
 		}
 		return retArg;
@@ -623,7 +655,8 @@ public:
 
 	inline std::vector<PMxArrayNative> vectorize() {
 		std::vector<PMxArrayNative> retArg;
-		for (int iter = 0, numel = getNumberOfElements(); iter < numel; ++iter) {
+		for (int iter = 0, numel = getNumberOfElements(); iter < numel;
+			++iter) {
 			retArg.push_back((mxGetCell(m_array, iter)));
 		}
 		return retArg;

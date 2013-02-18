@@ -74,11 +74,25 @@ public:
 
 	EXRAttribute()
 				: m_type(EAttributeTypeInvalid),
-				  m_pAttribute() {	}
+				  m_pAttribute(),
+				  m_attributeIsBuilt(false),
+				  m_pArray(),
+				  m_arrayIsBuilt(false) {	}
 
-	explicit EXRAttribute(const Imf::Attribute* attribute)
-				: m_type(attributeNameToAttributeType(attribute->typeName())), \
-				  m_pAttribute(attribute) {	}
+	explicit EXRAttribute(const Imf::Attribute* pAttribute)
+				: m_type(stringToAttributeType(pAttribute->typeName())),
+				  m_pAttribute(pAttribute),
+				  m_attributeIsBuilt(true),
+				  m_pArray(),
+				  m_arrayIsBuilt(false) {	}
+
+	explicit EXRAttribute(const mex::MxArray* pArray,
+							const std::string& attributeName)
+				: m_type(attributeNameToAttributeType(attributeName)),
+				  m_pAttribute(),
+				  m_attributeIsBuilt(false),
+				  m_pArray(pArray),
+				  m_arrayIsBuilt(true) {	}
 
 	inline const EAttributeType get_type() const {
 		return m_type;
@@ -88,20 +102,20 @@ public:
 		return m_type;
 	}
 
-	inline const Imf::Attribute* get_attribute() const {
+	inline const Imf::Attribute* get_pAttribute() const {
 		return m_pAttribute;
 	}
 
-	inline Imf::Attribute* get_attribute() {
+	inline Imf::Attribute* get_pAttribute() {
 		return m_pAttribute;
 	}
 
-	inline const mex::MxArray get_attribute() const {
-		return m_array;
+	inline const mex::MxArray* get_pArray() const {
+		return m_pArray;
 	}
 
-	inline mex::MxArray get_array() {
-		return m_array;
+	inline mex::MxArray* get_pArray() {
+		return m_pArray;
 	}
 
 	void buildMxArray();
@@ -110,17 +124,16 @@ public:
 
 private:
 	EAttributeType m_type;
-	Imf::Attribute *m_pAttribute;
-	mex::MxArray m_array;
+	Imf::Attribute* m_pAttribute;
+	bool m_attributeIsBuilt;
+	mex::MxArray* m_pArray;
+	bool m_arrayIsBuilt;
 };
 
 class EXRInputFile {
-private:
-	Imf::InputFile m_file;
-
 public:
-	EXRInputFile(const std::string &fileName)
-				: m_file(fileName.c_str()) {	}
+	explicit EXRInputFile(const std::string& fileName)
+							: m_file(fileName.c_str()) {	}
 
 	inline int getWidth() const {
 		Imath::Box2i dw = m_file.header().dataWindow();
@@ -132,7 +145,7 @@ public:
 		return dw.max.y - dw.min.y + 1;
 	}
 
-	inline void getDimensions(int &width, int &height) const {
+	inline void getDimensions(int& width, int& height) const {
 		Imath::Box2i dw = m_file.header().dataWindow();
 		width = dw.max.x - dw.min.x + 1;
 		height = dw.max.y - dw.min.y + 1;
@@ -140,25 +153,29 @@ public:
 
 	inline int getNumberOfChannels() const {
 		int numChannels = 0;
-		for (Imf::ChannelList::ConstIterator channelIter = m_file.header().channels().begin(), \
-				channelEnd = m_file.header().channels().end(); \
-				channelIter != channelEnd; \
-				++channelIter, ++numChannels);
+		for (Imf::ChannelList::ConstIterator
+				channelIter = m_file.header().channels().begin(),
+				channelEnd = m_file.header().channels().end();
+				channelIter != channelEnd;
+				++channelIter, ++numChannels) {
+			continue;
+		}
 		return numChannels;
 	}
 
-	inline std::vector<std::string>& getChannelNames() const {
+	inline std::vector<std::string> getChannelNames() const {
 		std::vector<std::string> channelNames(0);
-		for (Imf::ChannelList::ConstIterator channelIter = m_file.header().channels().begin(), \
-				channelEnd = m_file.header().channels().end(); \
-				channelIter != channelEnd; \
+		for (Imf::ChannelList::ConstIterator
+				channelIter = m_file.header().channels().begin(),
+				channelEnd = m_file.header().channels().end();
+				channelIter != channelEnd;
 				++channelIter) {
 			channelNames.push_back(std::string(channelIter.name()));
 		}
 		return channelNames;
 	}
 
-	mex::MxArray getAttribute(const std::string &attributeName) const;
+	mex::MxArray getAttribute(const std::string& attributeName) const;
 	mex::MxArray getAttribute() const;
 
 	/*
@@ -167,36 +184,33 @@ public:
 	 * TODO: Change these to word directly with pointers to float, as in
 	 * writeChannel in EXROutputFile.
 	 */
-	void readChannelRGBA(Imf::Array2D<FloatUsed> &rPixels, bool &rFlag, \
-						Imf::Array2D<FloatUsed> &gPixels, bool &gFlag, \
-						Imf::Array2D<FloatUsed> &bPixels, bool &bFlag, \
-						Imf::Array2D<FloatUsed> &aPixels, bool &aFlag) const;
+	void readChannelRGBA(Imf::Array2D<FloatUsed>& rPixels, bool& rFlag,
+						Imf::Array2D<FloatUsed>& gPixels, bool& gFlag,
+						Imf::Array2D<FloatUsed>& bPixels, bool& bFlag,
+						Imf::Array2D<FloatUsed>& aPixels, bool& aFlag) const;
 
-	void readChannelYA(Imf::Array2D<FloatUsed> &yPixels, bool &yFlag, \
-					Imf::Array2D<FloatUsed> &aPixels, bool &aFlag) const;
+	void readChannelYA(Imf::Array2D<FloatUsed>& yPixels, bool& yFlag,
+						Imf::Array2D<FloatUsed>& aPixels, bool& aFlag) const;
 
-	void readChannel(Imf::Array2D<FloatUsed> &cPixels, bool &cFlag, \
-					const std::string &cName) const;
+	void readChannel(Imf::Array2D<FloatUsed>& cPixels, bool& cFlag,
+					const std::string& cName) const;
 
-	void readChannel(std::vector<Imf::Array2D<FloatUsed> > &cPixels, \
-					std::vector<bool> &cFlags, \
-					const std::vector<std::string> &cNames) const;
+	void readChannel(std::vector<Imf::Array2D<FloatUsed> >& cPixels,
+					std::vector<bool>& cFlags,
+					const std::vector<std::string>& cNames) const;
 
 	virtual ~EXRInputFile() {	}
+
+private:
+	Imf::InputFile m_file;
 };
 
 class EXROutputFile {
-private:
-	Imf::Header m_header;
-	Imf::FrameBuffer m_frameBuffer;
-	bool m_createdFrameBuffer;
-	bool m_wroteFile;
-
 public:
 	EXROutputFile(const int width, const int height)
-				: m_header(width, height), \
-				  m_frameBuffer(), \
-				  m_createdFrameBuffer(false), \
+				: m_header(width, height),
+				  m_frameBuffer(),
+				  m_createdFrameBuffer(false),
 				  m_wroteFile(false) {	}
 
 	inline int getWidth() const {
@@ -209,7 +223,7 @@ public:
 		return dw.max.y - dw.min.y + 1;
 	}
 
-	inline void getDimensions(int &width, int &height) const {
+	inline void getDimensions(int& width, int& height) const {
 		Imath::Box2i dw = m_header.dataWindow();
 		width = dw.max.x - dw.min.x + 1;
 		height = dw.max.y - dw.min.y + 1;
@@ -217,18 +231,22 @@ public:
 
 	inline int getNumberOfChannels() const {
 			int numChannels = 0;
-			for (Imf::ChannelList::ConstIterator channelIter = m_header.channels().begin(), \
-					channelEnd = m_header.channels().end(); \
-					channelIter != channelEnd; \
-					++channelIter, ++numChannels);
+			for (Imf::ChannelList::ConstIterator
+					channelIter = m_header.channels().begin(),
+					channelEnd = m_header.channels().end();
+					channelIter != channelEnd;
+					++channelIter, ++numChannels) {
+				continue;
+			}
 			return numChannels;
 		}
 
 	inline std::vector<std::string>& getChannelNames() const {
 		std::vector<std::string> channelNames(0);
-		for (Imf::ChannelList::ConstIterator channelIter = m_header.channels().begin(), \
-				channelEnd = m_header.channels().end(); \
-				channelIter != channelEnd; \
+		for (Imf::ChannelList::ConstIterator
+				channelIter = m_header.channels().begin(),
+				channelEnd = m_header.channels().end();
+				channelIter != channelEnd;
 				++channelIter) {
 			channelNames.push_back(std::string(channelIter.name()));
 		}
@@ -248,35 +266,40 @@ public:
 	}
 
 	inline void addChannel(const std::string& channelName) {
-		m_header.channels().insert(channelName.c_str(), Imf::Channel(EXRFloatUsed));
+		m_header.channels().insert(channelName.c_str(),
+									Imf::Channel(EXRFloatUsed));
 	}
 
-	inline void addChannel(const std::vector<const std::string> &channelNames) {
-		for (int iter = 0, numChannels = channelNames.size(); \
-			iter < numChannels; \
+	inline void addChannel(const std::vector<const std::string>&
+							channelNames) {
+		for (int iter = 0, numChannels = channelNames.size();
+			iter < numChannels;
 			++iter) {
-			m_header.channels().insert(channelNames[iter].c_str(), Imf::Channel(EXRFloatUsed));
+			m_header.channels().insert(channelNames[iter].c_str(),
+										Imf::Channel(EXRFloatUsed));
 		}
 	}
 
-	void setAttribute(const std::string &attrName, const mex::MxArray &mxarr);
-	void setAttribute(const mex::MxArray &mxstruct);
+	void setAttribute(const std::string& attrName,
+						const mex::MxArray& mxarr);
 
-	void writeChannelRGBA(const FloatUsed *rPixels, \
-							const FloatUsed *gPixels, \
-							const FloatUsed *bPixels, \
-							const FloatUsed *aPixels);
+	void setAttribute(const mex::MxArray& mxstruct);
 
-	void writeChannelYA(const FloatUsed *yPixels, \
-							const FloatUsed *aPixels);
+	void writeChannelRGBA(const FloatUsed* rPixels,
+							const FloatUsed* gPixels,
+							const FloatUsed* bPixels,
+							const FloatUsed* aPixels);
 
-	void writeChannel(const FloatUsed *cPixels, \
-						const std::string &cName);
+	void writeChannelYA(const FloatUsed* yPixels,
+						const FloatUsed* aPixels);
 
-	void writeChannel(const std::vector<const FloatUsed *> &cPixels, \
-						const std::vector<const std::string> &cNames);
+	void writeChannel(const FloatUsed* cPixels,
+						const std::string& cName);
 
-	inline void writeFile(const std::string &fileName) {
+	void writeChannel(const std::vector<const FloatUsed*>& cPixels,
+						const std::vector<const std::string>& cNames);
+
+	inline void writeFile(const std::string& fileName) {
 		Assert((m_createdFrameBuffer) && (!m_wroteFile));
 		int height = getHeight();
 		Imf::OutputFile outFile(fileName.c_str(), m_header);
@@ -286,6 +309,12 @@ public:
 	}
 
 	virtual ~EXROutputFile() {	}
+
+private:
+	Imf::Header m_header;
+	Imf::FrameBuffer m_frameBuffer;
+	bool m_createdFrameBuffer;
+	bool m_wroteFile;
 };
 
 }	/* namespace exr */
