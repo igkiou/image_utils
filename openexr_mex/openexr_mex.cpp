@@ -717,8 +717,8 @@ void EXROutputFile::writeChannel(const FloatUsed *cPixels, \
 
 void EXROutputFile::writeChannel(const std::vector<const FloatUsed *> &cPixels, \
 								const std::vector<const std::string> &cNames) {
-	Assert((!m_createdFrameBuffer) && (!m_wroteFile));
-	Assert(cPixels.size() == cNames.size());
+	mexAssert((!m_createdFrameBuffer) && (!m_wroteFile));
+	mexAssert(cPixels.size() == cNames.size());
 	int channels = cPixels.size();
 	int width, height;
 	getDimensions(width, height);

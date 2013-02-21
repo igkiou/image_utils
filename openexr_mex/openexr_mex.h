@@ -75,24 +75,27 @@ public:
 	EXRAttribute()
 				: m_type(EAttributeTypeInvalid),
 				  m_pAttribute(),
-				  m_attributeIsBuilt(false),
+				  m_attributeInitialized(false),
 				  m_pArray(),
-				  m_arrayIsBuilt(false) {	}
+				  m_arrayInitialized(false),
+				  m_isBuilt(false) {	}
 
 	explicit EXRAttribute(const Imf::Attribute* pAttribute)
 				: m_type(stringToAttributeType(pAttribute->typeName())),
 				  m_pAttribute(pAttribute),
-				  m_attributeIsBuilt(true),
+				  m_attributeInitialized(true),
 				  m_pArray(),
-				  m_arrayIsBuilt(false) {	}
+				  m_arrayInitialized(false),
+				  m_isBuilt(false) {	}
 
 	explicit EXRAttribute(const mex::MxArray* pArray,
 							const std::string& attributeName)
 				: m_type(attributeNameToAttributeType(attributeName)),
 				  m_pAttribute(),
-				  m_attributeIsBuilt(false),
+				  m_attributeInitialized(false),
 				  m_pArray(pArray),
-				  m_arrayIsBuilt(true) {	}
+				  m_arrayInitialized(true),
+				  m_isBuilt(false) {	}
 
 	inline const EAttributeType get_type() const {
 		return m_type;
@@ -125,9 +128,10 @@ public:
 private:
 	EAttributeType m_type;
 	Imf::Attribute* m_pAttribute;
-	bool m_attributeIsBuilt;
+	bool m_attributeInitialized;
 	mex::MxArray* m_pArray;
-	bool m_arrayIsBuilt;
+	bool m_arrayInitialized;
+	bool m_isBuilt;
 };
 
 class EXRInputFile {
@@ -300,7 +304,7 @@ public:
 						const std::vector<const std::string>& cNames);
 
 	inline void writeFile(const std::string& fileName) {
-		Assert((m_createdFrameBuffer) && (!m_wroteFile));
+		mexAssert((m_createdFrameBuffer) && (!m_wroteFile));
 		int height = getHeight();
 		Imf::OutputFile outFile(fileName.c_str(), m_header);
 		outFile.setFrameBuffer(m_frameBuffer);
