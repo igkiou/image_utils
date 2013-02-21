@@ -144,14 +144,14 @@ static const mex::ConstMap<Imf::Envmap, std::string> envmapTypeToString
 // VT
 template <typename T>
 mex::MxArray* toMxArray(
-					const Imf::TypedAttribute<T>* pAttribute) {
+	const Imf::TypedAttribute<T>* pAttribute) {
 	return new mex::MxNumeric<T>(pAttribute->value());
 }
 
 // V2T
 template <typename T>
 mex::MxArray* toMxArray<Imath::Vec2<T> >(
-					const Imf::TypedAttribute<Imath::Vec2<T> >* pAttribute) {
+	const Imf::TypedAttribute<Imath::Vec2<T> >* pAttribute) {
 	std::vector<T> temp;
 	temp.push_back(pAttribute->value().x);
 	temp.push_back(pAttribute->value().y);
@@ -162,15 +162,15 @@ mex::MxArray* toMxArray<Imath::Vec2<T> >(
 template <typename T>
 mex::MxArray* toMxArray<Imath::Box<Imath::Vec2<T> > >(
 	const Imf::TypedAttribute<Imath::Box<Imath::Vec2<T> > >* pAttribute) {
-	std::vector<mex::MxArray> temp;
+	std::vector<mex::MxArray *> temp;
 	std::vector<T> tempV;
 	tempV.push_back(pAttribute->value().min.x);
 	tempV.push_back(pAttribute->value().min.y);
-	temp.push_back(mex::MxNumeric<T>(tempV));
+	temp.push_back(new mex::MxNumeric<T>(tempV));
 	tempV.clear();
 	tempV.push_back(pAttribute->value().max.x);
 	tempV.push_back(pAttribute->value().max.y);
-	temp.push_back(mex::MxNumeric<T>(tempV));
+	temp.push_back(new mex::MxNumeric<T>(tempV));
 	return new mex::MxCell(temp);
 }
 
@@ -193,7 +193,7 @@ template <>
 mex::MxArray* toMxArray<Imf::Envmap>(
 	const Imf::TypedAttribute<Imf::Envmap>* pAttribute) {
 	return new mex::MxString(
-						EXRAttribute::envmapTypeToString[pAttribute->value()]);
+							envmapTypeToString[pAttribute->value()]);
 }
 
 // Chromaticities
@@ -203,28 +203,28 @@ mex::MxArray* toMxArray<Imf::Chromaticities>(
 	/*
 	 * TODO: Change this to return struct instead.
 	 */
-	mex::MxArray* temp[8];
-	temp[0] = mex::MxString("red");
-	temp[1] = mex::MxString("green");
-	temp[2] = mex::MxString("blue");
-	temp[3] = mex::MxString("white");
+	std::vector<mex::MxArray*> temp;
+	temp.push_back(new mex::MxString("red"));
+	temp.push_back(new mex::MxString("green"));
+	temp.push_back(new mex::MxString("blue"));
+	temp.push_back(new mex::MxString("white"));
 	std::vector<float> tempV;
 	tempV.push_back(pAttribute->value().red.x);
 	tempV.push_back(pAttribute->value().red.y);
-	temp[4] = mex::MxNumeric<float>(tempV);
+	temp.push_back(new mex::MxNumeric<float>(tempV));
 	tempV.clear();
 	tempV.push_back(pAttribute->value().green.x);
 	tempV.push_back(pAttribute->value().green.y);
-	temp[5] = mex::MxNumeric<float>(tempV);
+	temp.push_back(new mex::MxNumeric<float>(tempV));
 	tempV.clear();
 	tempV.push_back(pAttribute->value().blue.x);
 	tempV.push_back(pAttribute->value().blue.y);
-	temp[6] = mex::MxNumeric<float>(tempV);
+	temp.push_back(new mex::MxNumeric<float>(tempV));
 	tempV.clear();
 	tempV.push_back(pAttribute->value().white.x);
 	tempV.push_back(pAttribute->value().white.y);
-	temp[7] = mex::MxNumeric<float>(tempV);
-	return new MxCell(temp, 3, 2);
+	temp.push_back(new mex::MxNumeric<float>(tempV));
+	return new mex::MxCell(temp/*, 3, 2*/);
 }
 
 // LineOrder
@@ -245,14 +245,75 @@ mex::MxArray* toMxArray<Imf::Compression>(
 template <>
 mex::MxArray* toMxArray<Imf::ChannelList>(
 	const Imf::TypedAttribute<Imf::ChannelList>* pAttribute) {
-	std::vector<mex::MxString> temp;
+	std::vector<mex::MxArray*> temp;
 	for (Imf::ChannelList::ConstIterator chIt = pAttribute->value().begin(), \
 		chEnd = pAttribute->value().end(); \
 		chIt != chEnd; \
 		++chIt) {
-		temp.push_back(mex::MxString(chIt.name()));
+		temp.push_back(new mex::MxString(chIt.name()));
 	}
 	return new mex::MxCell(temp);
+}
+
+//typedef enum EAttributeType {
+//	EAttributeString,
+//	EAttributeBox2d,
+//	EAttributeBox2f,
+//	EAttributeBox2i,
+//	EAttributeV2d,
+//	EAttributeV2f,
+//	EAttributeV2i,
+//	EAttributeVectord,
+//	EAttributeVectorf,
+//	EAttributeVectori,
+//	EAttributeDouble,
+//	EAttributeFloat,
+//	EAttributeInt,
+//	EAttributeTypeLength,
+//	EAttributeTypeInvalid = -1
+//} EAttributeType;
+
+void EXRAttribute::buildMxArray() {
+	switch(m_type) {
+		case EAttributeChannelList: {
+			m_pArray = toMxArray<Imf::ChannelList>(
+					static_cast<Imf::TypedAttribute<Imf::ChannelList>*>(
+																m_pAttribute));
+			break;
+		}
+		case EAttributeCompression: {
+			m_pArray = toMxArray<Imf::Compression>(
+					static_cast<Imf::TypedAttribute<Imf::Compression>*>(
+																m_pAttribute));
+			break;
+		}
+		case EAttributeLineOrder: {
+			m_pArray = toMxArray<Imf::LineOrder>(
+					static_cast<Imf::TypedAttribute<Imf::LineOrder>*>(
+																m_pAttribute));
+			break;
+		}
+		case EAttributeChromaticities: {
+			m_pArray = toMxArray<Imf::Chromaticities>(
+					static_cast<Imf::TypedAttribute<Imf::Chromaticities>*>(
+																m_pAttribute));
+			break;
+		}
+		case EAttributeEnvmap: {
+			m_pArray = toMxArray<Imf::Envmap>(
+					static_cast<Imf::TypedAttribute<Imf::Envmap>*>(
+																m_pAttribute));
+			break;
+		}
+		case EAttributeString: {
+			m_pArray = toMxArray<std::string>(
+					static_cast<Imf::TypedAttribute<std::string>*>(
+																m_pAttribute));
+			break;
+		}
+
+	}
+
 }
 
 } /* namespace */
@@ -285,16 +346,6 @@ explicit EXRAttribute::EXRAttribute(const mex::MxArray* pArray,
 									  m_pArray(pArray),
 									  m_arrayInitialized(true),
 									  m_isBuilt(false) {	}
-
-void EXRAttribute::buildMxArray() {
-	switch(m_type) {
-		case EAttributeV2d: {
-
-		}
-
-	}
-
-}
 
 
 mex::MxArray EXRInputFile::getAttribute(const std::string &attributeName) {
