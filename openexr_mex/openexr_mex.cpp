@@ -255,67 +255,6 @@ mex::MxArray* toMxArray<Imf::ChannelList>(
 	return new mex::MxCell(temp);
 }
 
-//typedef enum EAttributeType {
-//	EAttributeString,
-//	EAttributeBox2d,
-//	EAttributeBox2f,
-//	EAttributeBox2i,
-//	EAttributeV2d,
-//	EAttributeV2f,
-//	EAttributeV2i,
-//	EAttributeVectord,
-//	EAttributeVectorf,
-//	EAttributeVectori,
-//	EAttributeDouble,
-//	EAttributeFloat,
-//	EAttributeInt,
-//	EAttributeTypeLength,
-//	EAttributeTypeInvalid = -1
-//} EAttributeType;
-
-void EXRAttribute::buildMxArray() {
-	switch(m_type) {
-		case EAttributeChannelList: {
-			m_pArray = toMxArray<Imf::ChannelList>(
-					static_cast<Imf::TypedAttribute<Imf::ChannelList>*>(
-																m_pAttribute));
-			break;
-		}
-		case EAttributeCompression: {
-			m_pArray = toMxArray<Imf::Compression>(
-					static_cast<Imf::TypedAttribute<Imf::Compression>*>(
-																m_pAttribute));
-			break;
-		}
-		case EAttributeLineOrder: {
-			m_pArray = toMxArray<Imf::LineOrder>(
-					static_cast<Imf::TypedAttribute<Imf::LineOrder>*>(
-																m_pAttribute));
-			break;
-		}
-		case EAttributeChromaticities: {
-			m_pArray = toMxArray<Imf::Chromaticities>(
-					static_cast<Imf::TypedAttribute<Imf::Chromaticities>*>(
-																m_pAttribute));
-			break;
-		}
-		case EAttributeEnvmap: {
-			m_pArray = toMxArray<Imf::Envmap>(
-					static_cast<Imf::TypedAttribute<Imf::Envmap>*>(
-																m_pAttribute));
-			break;
-		}
-		case EAttributeString: {
-			m_pArray = toMxArray<std::string>(
-					static_cast<Imf::TypedAttribute<std::string>*>(
-																m_pAttribute));
-			break;
-		}
-
-	}
-
-}
-
 } /* namespace */
 
 EXRAttribute::EXRAttribute()
@@ -346,6 +285,126 @@ explicit EXRAttribute::EXRAttribute(const mex::MxArray* pArray,
 									  m_pArray(pArray),
 									  m_arrayInitialized(true),
 									  m_isBuilt(false) {	}
+
+void EXRAttribute::buildMxArray() {
+	switch(m_type) {
+		case EAttributeChannelList: {
+			m_pArray = toMxArray<Imf::ChannelList>(
+					static_cast<Imf::TypedAttribute<Imf::ChannelList>*>(
+																m_pAttribute));
+			return;
+		}
+		case EAttributeCompression: {
+			m_pArray = toMxArray<Imf::Compression>(
+					static_cast<Imf::TypedAttribute<Imf::Compression>*>(
+																m_pAttribute));
+			return;
+		}
+		case EAttributeLineOrder: {
+			m_pArray = toMxArray<Imf::LineOrder>(
+					static_cast<Imf::TypedAttribute<Imf::LineOrder>*>(
+																m_pAttribute));
+			return;
+		}
+		case EAttributeChromaticities: {
+			m_pArray = toMxArray<Imf::Chromaticities>(
+					static_cast<Imf::TypedAttribute<Imf::Chromaticities>*>(
+																m_pAttribute));
+			return;
+		}
+		case EAttributeEnvmap: {
+			m_pArray = toMxArray<Imf::Envmap>(
+					static_cast<Imf::TypedAttribute<Imf::Envmap>*>(
+																m_pAttribute));
+			return;
+		}
+		case EAttributeString: {
+			m_pArray = toMxArray<std::string>(
+					static_cast<Imf::TypedAttribute<std::string>*>(
+																m_pAttribute));
+			return;
+		}
+		case EAttributeBox2d: {
+			m_pArray = toMxArray<Imath::Box2d>(
+					static_cast<Imf::TypedAttribute<Imath::Box2d>*>(
+																m_pAttribute));
+			return;
+		}
+		case EAttributeBox2f: {
+			m_pArray = toMxArray<Imath::Box2f>(
+					static_cast<Imf::TypedAttribute<Imath::Box2f>*>(
+																m_pAttribute));
+			return;
+		}
+		case EAttributeBox2i: {
+			m_pArray = toMxArray<Imath::Box2i>(
+					static_cast<Imf::TypedAttribute<Imath::Box2i>*>(
+																m_pAttribute));
+			return;
+		}
+		case EAttributeV2d: {
+			m_pArray = toMxArray<Imath::V2d>(
+					static_cast<Imf::TypedAttribute<Imath::V2d>*>(
+																m_pAttribute));
+			return;
+		}
+		case EAttributeV2f: {
+			m_pArray = toMxArray<Imath::V2f>(
+					static_cast<Imf::TypedAttribute<Imath::V2f>*>(
+																m_pAttribute));
+			return;
+		}
+		case EAttributeV2i: {
+			m_pArray = toMxArray<Imath::V2i>(
+					static_cast<Imf::TypedAttribute<Imath::V2i>*>(
+																m_pAttribute));
+			return;
+		}
+		case EAttributeVectord: {
+			m_pArray = toMxArray<std::vector<double> >(
+					static_cast<Imf::TypedAttribute<std::vector<double> >*>(
+																m_pAttribute));
+			return;
+		}
+		case EAttributeVectorf: {
+			m_pArray = toMxArray<std::vector<float> >(
+					static_cast<Imf::TypedAttribute<std::vector<float> >*>(
+																m_pAttribute));
+			return;
+		}
+		case EAttributeVectori: {
+			m_pArray = toMxArray<std::vector<int> >(
+					static_cast<Imf::TypedAttribute<std::vector<int> >*>(
+																m_pAttribute));
+			return;
+		}
+		case EAttributeDouble: {
+			m_pArray = toMxArray<double>(
+					static_cast<Imf::TypedAttribute<double>*>(
+																m_pAttribute));
+			return;
+		}
+		case EAttributeFloat: {
+			m_pArray = toMxArray<float>(
+					static_cast<Imf::TypedAttribute<float>*>(
+																m_pAttribute));
+			return;
+		}
+		case EAttributeInt: {
+			m_pArray = toMxArray<int>(
+					static_cast<Imf::TypedAttribute<int>*>(
+																m_pAttribute));
+			return;
+		}
+		default: {
+			mexAssertEx(0, "Unknown attribute type");
+			return;
+		}
+
+	}
+}
+
+
 
 
 mex::MxArray EXRInputFile::getAttribute(const std::string &attributeName) {
