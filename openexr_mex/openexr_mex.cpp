@@ -9,7 +9,9 @@
 
 namespace exr {
 
-static const mex::ConstMap<std::string, EAttributeType> EXRAttribute::attributeNameToAttributeType
+namespace {
+
+static const mex::ConstMap<std::string, EAttributeType> registeredAttributeNameToAttributeType
 	= mex::ConstMap<std::string, EAttributeType>
 	("gain",				EAttributeFloat)
 	("wavelength",			EAttributeFloat)
@@ -33,16 +35,16 @@ static const mex::ConstMap<std::string, EAttributeType> EXRAttribute::attributeN
 	("expTime",				EAttributeFloat)
 	("aperture",			EAttributeFloat)
 	("isoSpeed",			EAttributeFloat)
-	("multExpTimes",		EAttributeVf)
-	("multApertures",		EAttributeVf)
-	("multIsoSpeeds",		EAttributeVf)
-	("multGains",			EAttributeVf)
+	("multExpTimes",		EAttributeVectorf)
+	("multApertures",		EAttributeVectorf)
+	("multIsoSpeeds",		EAttributeVectorf)
+	("multGains",			EAttributeVectorf)
 	("envmap",				EAttributeEnvmap)
 	("unknown",				EAttributeTypeInvalid);
 
-static const mex::ConstMap<std::string, EAttributeType> EXRAttribute::stringToAttributeType
+static const mex::ConstMap<std::string, EAttributeType> stringToAttributeType
 	= mex::ConstMap<std::string, EAttributeType>
-	("chlist",			EAttributeChannelList)
+	("channelList",		EAttributeChannelList)
 	("compression",		EAttributeCompression)
 	("lineOrder",		EAttributeLineOrder)
 	("chromaticities",	EAttributeChromaticities)
@@ -54,17 +56,17 @@ static const mex::ConstMap<std::string, EAttributeType> EXRAttribute::stringToAt
 	("v2d",				EAttributeV2d)
 	("v2f",				EAttributeV2f)
 	("v2i",				EAttributeV2i)
-	("vd",				EAttributeVd)
-	("vf",				EAttributeVf)
-	("vi",				EAttributeVi)
+	("vd",				EAttributeVectord)
+	("vf",				EAttributeVectorf)
+	("vi",				EAttributeVectori)
 	("double",			EAttributeDouble)
 	("float",			EAttributeFloat)
 	("int",				EAttributeInt)
 	("unknown",			EAttributeTypeInvalid);
 
-static const mex::ConstMap<EAttributeType, std::string> EXRAttribute::attributeTypeToString
+static const mex::ConstMap<EAttributeType, std::string> attributeTypeToString
 	= mex::ConstMap<EAttributeType, std::string>
-	(EAttributeChannelList, 	"chlist")
+	(EAttributeChannelList, 	"channelList")
 	(EAttributeCompression,		"compression")
 	(EAttributeLineOrder,		"lineOrder")
 	(EAttributeChromaticities,	"chromaticities")
@@ -76,15 +78,15 @@ static const mex::ConstMap<EAttributeType, std::string> EXRAttribute::attributeT
 	(EAttributeV2d,				"v2d")
 	(EAttributeV2f,				"v2f")
 	(EAttributeV2i,				"v2i")
-	(EAttributeVd,				"vd")
-	(EAttributeVf,				"vf")
-	(EAttributeVi,				"vi")
+	(EAttributeVectord,			"vectord")
+	(EAttributeVectorf,			"vectorf")
+	(EAttributeVectori,			"vectori")
 	(EAttributeDouble,			"double")
 	(EAttributeFloat,			"float")
 	(EAttributeInt,				"int")
 	(EAttributeTypeInvalid,		"unknown");
 
-static const mex::ConstMap<std::string, Imf::Compression> EXRAttribute::stringToCompressionType
+static const mex::ConstMap<std::string, Imf::Compression> stringToCompressionType
 	= mex::ConstMap<std::string, Imf::Compression>
 	("no", 		Imf::NO_COMPRESSION)
 	("rle",		Imf::RLE_COMPRESSION)
@@ -96,7 +98,7 @@ static const mex::ConstMap<std::string, Imf::Compression> EXRAttribute::stringTo
 	("b44a",	Imf::B44A_COMPRESSION)
 	("unknown",	Imf::NUM_COMPRESSION_METHODS);
 
-static const mex::ConstMap<Imf::Compression, std::string> EXRAttribute::compressionTypeToString
+static const mex::ConstMap<Imf::Compression, std::string> compressionTypeToString
 	= mex::ConstMap<Imf::Compression, std::string>
 	(Imf::NO_COMPRESSION, 			"no")
 	(Imf::RLE_COMPRESSION,			"rle")
@@ -108,32 +110,181 @@ static const mex::ConstMap<Imf::Compression, std::string> EXRAttribute::compress
 	(Imf::B44A_COMPRESSION,			"b44a")
 	(Imf::NUM_COMPRESSION_METHODS,	"unknown");
 
-static const mex::ConstMap<std::string, Imf::LineOrder> EXRAttribute::stringToLineOrderType
+static const mex::ConstMap<std::string, Imf::LineOrder> stringToLineOrderType
 	= mex::ConstMap<std::string, Imf::LineOrder>
 	("increasing_y", 	Imf::INCREASING_Y)
 	("decreasing_y",	Imf::DECREASING_Y)
 	("random_y",		Imf::RANDOM_Y)
 	("unknown",			Imf::NUM_LINEORDERS);
 
-static const mex::ConstMap<Imf::LineOrder, std::string> EXRAttribute::lineOrderTypeToString
+static const mex::ConstMap<Imf::LineOrder, std::string> lineOrderTypeToString
 	= mex::ConstMap<Imf::LineOrder, std::string>
 	(Imf::INCREASING_Y,		"increasing_y")
 	(Imf::DECREASING_Y,		"decreasing_y")
 	(Imf::RANDOM_Y,			"random_y")
 	(Imf::NUM_LINEORDERS,	"unknown");
 
-static const mex::ConstMap<std::string, Imf::Envmap> EXRAttribute::stringToEnvmapType
+static const mex::ConstMap<std::string, Imf::Envmap> stringToEnvmapType
 	= mex::ConstMap<std::string, Imf::Envmap>
 	("latlong", Imf::ENVMAP_LATLONG)
 	("cube",	Imf::ENVMAP_CUBE)
 	("unknown",	Imf::NUM_ENVMAPTYPES);
 
-static const mex::ConstMap<Imf::Envmap, std::string> EXRAttribute::envmapTypeToString
+static const mex::ConstMap<Imf::Envmap, std::string> envmapTypeToString
 	= mex::ConstMap<Imf::Envmap, std::string>
 	(Imf::ENVMAP_LATLONG, 	"latlong")
 	(Imf::ENVMAP_CUBE,		"cube")
 	(Imf::NUM_ENVMAPTYPES,	"unknown");
 
+/*
+ * TODO: Perhaps use copy elision here to avoid using pointers, and return
+ * object directly?
+ */
+
+// VT
+template <typename T>
+mex::MxArray* toMxArray(
+					const Imf::TypedAttribute<T>* pAttribute) {
+	return new mex::MxNumeric<T>(pAttribute->value());
+}
+
+// V2T
+template <typename T>
+mex::MxArray* toMxArray<Imath::Vec2<T> >(
+					const Imf::TypedAttribute<Imath::Vec2<T> >* pAttribute) {
+	std::vector<T> temp;
+	temp.push_back(pAttribute->value().x);
+	temp.push_back(pAttribute->value().y);
+	return new mex::MxNumeric<T>(temp);
+}
+
+// Box2T
+template <typename T>
+mex::MxArray* toMxArray<Imath::Box<Imath::Vec2<T> > >(
+	const Imf::TypedAttribute<Imath::Box<Imath::Vec2<T> > >* pAttribute) {
+	std::vector<mex::MxArray> temp;
+	std::vector<T> tempV;
+	tempV.push_back(pAttribute->value().min.x);
+	tempV.push_back(pAttribute->value().min.y);
+	temp.push_back(mex::MxNumeric<T>(tempV));
+	tempV.clear();
+	tempV.push_back(pAttribute->value().max.x);
+	tempV.push_back(pAttribute->value().max.y);
+	temp.push_back(mex::MxNumeric<T>(tempV));
+	return new mex::MxCell(temp);
+}
+
+// VectorT
+template <typename T>
+mex::MxArray* toMxArray<std::vector<T> >(
+	const Imf::TypedAttribute<std::vector<T> >* pAttribute) {
+	return new mex::MxNumeric<T>(pAttribute->value());
+}
+
+// String
+template <>
+mex::MxArray* toMxArray<std::string>(
+	const Imf::TypedAttribute<std::string>* pAttribute) {
+	return new mex::MxString(pAttribute->value());
+}
+
+// Envmap
+template <>
+mex::MxArray* toMxArray<Imf::Envmap>(
+	const Imf::TypedAttribute<Imf::Envmap>* pAttribute) {
+	return new mex::MxString(
+						EXRAttribute::envmapTypeToString[pAttribute->value()]);
+}
+
+// Chromaticities
+template <>
+mex::MxArray* toMxArray<Imf::Chromaticities>(
+	const Imf::TypedAttribute<Imf::Chromaticities>* pAttribute) {
+	/*
+	 * TODO: Change this to return struct instead.
+	 */
+	mex::MxArray* temp[8];
+	temp[0] = mex::MxString("red");
+	temp[1] = mex::MxString("green");
+	temp[2] = mex::MxString("blue");
+	temp[3] = mex::MxString("white");
+	std::vector<float> tempV;
+	tempV.push_back(pAttribute->value().red.x);
+	tempV.push_back(pAttribute->value().red.y);
+	temp[4] = mex::MxNumeric<float>(tempV);
+	tempV.clear();
+	tempV.push_back(pAttribute->value().green.x);
+	tempV.push_back(pAttribute->value().green.y);
+	temp[5] = mex::MxNumeric<float>(tempV);
+	tempV.clear();
+	tempV.push_back(pAttribute->value().blue.x);
+	tempV.push_back(pAttribute->value().blue.y);
+	temp[6] = mex::MxNumeric<float>(tempV);
+	tempV.clear();
+	tempV.push_back(pAttribute->value().white.x);
+	tempV.push_back(pAttribute->value().white.y);
+	temp[7] = mex::MxNumeric<float>(tempV);
+	return new MxCell(temp, 3, 2);
+}
+
+// LineOrder
+template <>
+mex::MxArray* toMxArray<Imf::LineOrder>(
+	const Imf::TypedAttribute<Imf::LineOrder>* pAttribute) {
+	return new mex::MxString(lineOrderTypeToString[pAttribute->value()]);
+}
+
+// Compression
+template <>
+mex::MxArray* toMxArray<Imf::Compression>(
+	const Imf::TypedAttribute<Imf::Compression>* pAttribute) {
+	return new mex::MxString(compressionTypeToString[pAttribute->value()]);
+}
+
+// ChannelList
+template <>
+mex::MxArray* toMxArray<Imf::ChannelList>(
+	const Imf::TypedAttribute<Imf::ChannelList>* pAttribute) {
+	std::vector<mex::MxString> temp;
+	for (Imf::ChannelList::ConstIterator chIt = pAttribute->value().begin(), \
+		chEnd = pAttribute->value().end(); \
+		chIt != chEnd; \
+		++chIt) {
+		temp.push_back(mex::MxString(chIt.name()));
+	}
+	return new mex::MxCell(temp);
+}
+
+} /* namespace */
+
+EXRAttribute::EXRAttribute()
+						: m_type(EAttributeTypeInvalid),
+						  m_pAttribute(),
+						  m_attributeInitialized(false),
+						  m_pArray(),
+						  m_arrayInitialized(false),
+						  m_isBuilt(false) {	}
+
+explicit EXRAttribute::EXRAttribute(const Imf::Attribute* pAttribute)
+									: m_type(
+											stringToAttributeType(
+													pAttribute->typeName())),
+									  m_pAttribute(pAttribute),
+									  m_attributeInitialized(true),
+									  m_pArray(),
+									  m_arrayInitialized(false),
+									  m_isBuilt(false) {	}
+
+explicit EXRAttribute::EXRAttribute(const mex::MxArray* pArray,
+									const std::string& attributeName)
+									: m_type(
+											registeredAttributeNameToAttributeType(
+													attributeName)),
+									  m_pAttribute(),
+									  m_attributeInitialized(false),
+									  m_pArray(pArray),
+									  m_arrayInitialized(true),
+									  m_isBuilt(false) {	}
 
 void EXRAttribute::buildMxArray() {
 	switch(m_type) {
@@ -144,107 +295,6 @@ void EXRAttribute::buildMxArray() {
 	}
 
 }
-
-namespace {
-
-template <typename T>
-mex::MxArray* toMxArray(const Imf::TypedAttribute<Imath::Vec2<T> >* pAttribute) {
-		std::vector<T> temp;
-		temp.push_back(pAttribute->value().x);
-		temp.push_back(pAttribute->value().y);
-		return new mex::MxNumeric<T>(temp);
-}
-
-
-}
-class EXRTypedAttribute<std::vector<T> > {
-protected:
-	EAttributeType m_type;
-	Imf::TypedAttribute<std::vector<T> > *m_attr;
-
-public:
-	EXRTypedAttribute(const Imf::TypedAttribute<std::vector<T> > * attr)
-					: m_type(EXRAttribute<std::vector<T> >()), \
-					  m_attr(attr) {	}
-
-	inline const mex::MxArray toMxArray() const {
-		return mex::MxNumeric<T>(m_attr->value());
-	}
-
-	inline mex::MxArray toMxArray() {
-		return const_cast<mex::MxArray>(static_cast<const EXRTypedAttribute<std::vector<T> > &>(*this).toMxArray());
-	}
-};
-
-class EXRTypedAttribute<Imath::Box<Imath::Vec2<T> > > {
-	inline const mex::MxArray toMxArray() const {
-		std::vector<mex::MxArray> temp;
-		std::vector<T> tempV;
-		tempV.push_back(m_attr->value().min.x);
-		tempV.push_back(m_attr->value().min.y);
-		temp.push_back(mex::MxNumeric<T>(tempV));
-		tempV.clear();
-		tempV.push_back(m_attr->value().max.x);
-		tempV.push_back(m_attr->value().max.y);
-		temp.push_back(mex::MxNumeric<T>(tempV));
-		return mex::MxCell(temp);
-	}
-class EXRTypedAttribute<std::string> {
-inline const mex::MxArray toMxArray() const {
-		return mex::MxString(m_attr->value());
-	}
-class EXRTypedAttribute<Imf::Envmap> {
-	inline const mex::MxArray toMxArray() const {
-		return mex::MxString(envmapTypeToString[m_attr->value()]);
-	}
-class EXRTypedAttribute<Imf::Chromaticities> {
-	/*
-	 * TODO: Change this to return struct instead.
-	 */
-	inline const mex::MxArray toMxArray() const {
-		mex::MxArray* temp[8];
-		temp[0] = mex::MxString("red");
-		temp[1] = mex::MxString("green");
-		temp[2] = mex::MxString("blue");
-		temp[3] = mex::MxString("white");
-		std::vector<float> tempV;
-		tempV.push_back(m_attr->value().red.x);
-		tempV.push_back(m_attr->value().red.y);
-		temp[4] = mex::MxNumeric<float>(tempV);
-		tempV.clear();
-		tempV.push_back(m_attr->value().green.x);
-		tempV.push_back(m_attr->value().green.y);
-		temp[5] = mex::MxNumeric<float>(tempV);
-		tempV.clear();
-		tempV.push_back(m_attr->value().blue.x);
-		tempV.push_back(m_attr->value().blue.y);
-		temp[6] = mex::MxNumeric<float>(tempV);
-		tempV.clear();
-		tempV.push_back(m_attr->value().white.x);
-		tempV.push_back(m_attr->value().white.y);
-		temp[7] = mex::MxNumeric<float>(tempV);
-		return MxCell(temp, 3, 2);
-	}
-class EXRTypedAttribute<Imf::LineOrder> {
-	inline const mex::MxArray toMxArray() const {
-		return mex::MxString(lineOrderTypeToString[m_attr->value()]);
-	}
-class EXRTypedAttribute<Imf::Compression> {
-	inline const mex::MxArray toMxArray() const {
-		return mex::MxString(compressionTypeToString[m_attr->value()]);
-	}
-class EXRTypedAttribute<Imf::ChannelList> {
-	inline const mex::MxArray toMxArray() const {
-		std::vector<mex::MxString> temp;
-		for (Imf::ChannelList::ConstIterator chIt = m_attr->value().begin(), \
-			chEnd = m_attr->value().end(); \
-			chIt != chEnd; \
-			++chIt) {
-			temp.push_back(mex::MxString(chIt.name()));
-		}
-		return mex::MxCell(temp);
-	}
-
 
 
 mex::MxArray EXRInputFile::getAttribute(const std::string &attributeName) {

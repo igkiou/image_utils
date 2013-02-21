@@ -50,9 +50,9 @@ typedef enum EAttributeType {
 	EAttributeV2d,
 	EAttributeV2f,
 	EAttributeV2i,
-	EAttributeVd,
-	EAttributeVf,
-	EAttributeVi,
+	EAttributeVectord,
+	EAttributeVectorf,
+	EAttributeVectori,
 	EAttributeDouble,
 	EAttributeFloat,
 	EAttributeInt,
@@ -62,40 +62,22 @@ typedef enum EAttributeType {
 
 class EXRAttribute {
 public:
-	static const mex::ConstMap<std::string, EAttributeType> attributeNameToAttributeType;
-	static const mex::ConstMap<std::string, EAttributeType> stringToAttributeType;
-	static const mex::ConstMap<EAttributeType, std::string> attributeTypeToString;
-	static const mex::ConstMap<std::string, Imf::Compression> stringToCompressionType;
-	static const mex::ConstMap<Imf::Compression, std::string> compressionTypeToString;
-	static const mex::ConstMap<std::string, Imf::LineOrder> stringToLineOrderType;
-	static const mex::ConstMap<Imf::LineOrder, std::string> lineOrderTypeToString;
-	static const mex::ConstMap<std::string, Imf::Envmap> stringToEnvmapType;
-	static const mex::ConstMap<Imf::Envmap, std::string> envmapTypeToString;
+//	static const mex::ConstMap<std::string, EAttributeType> registeredAttributeNameToAttributeType;
+//	static const mex::ConstMap<std::string, EAttributeType> stringToAttributeType;
+//	static const mex::ConstMap<EAttributeType, std::string> attributeTypeToString;
+//	static const mex::ConstMap<std::string, Imf::Compression> stringToCompressionType;
+//	static const mex::ConstMap<Imf::Compression, std::string> compressionTypeToString;
+//	static const mex::ConstMap<std::string, Imf::LineOrder> stringToLineOrderType;
+//	static const mex::ConstMap<Imf::LineOrder, std::string> lineOrderTypeToString;
+//	static const mex::ConstMap<std::string, Imf::Envmap> stringToEnvmapType;
+//	static const mex::ConstMap<Imf::Envmap, std::string> envmapTypeToString;
 
-	EXRAttribute()
-				: m_type(EAttributeTypeInvalid),
-				  m_pAttribute(),
-				  m_attributeInitialized(false),
-				  m_pArray(),
-				  m_arrayInitialized(false),
-				  m_isBuilt(false) {	}
+	EXRAttribute();
 
-	explicit EXRAttribute(const Imf::Attribute* pAttribute)
-				: m_type(stringToAttributeType(pAttribute->typeName())),
-				  m_pAttribute(pAttribute),
-				  m_attributeInitialized(true),
-				  m_pArray(),
-				  m_arrayInitialized(false),
-				  m_isBuilt(false) {	}
+	explicit EXRAttribute(const Imf::Attribute* pAttribute);
 
 	explicit EXRAttribute(const mex::MxArray* pArray,
-							const std::string& attributeName)
-				: m_type(attributeNameToAttributeType(attributeName)),
-				  m_pAttribute(),
-				  m_attributeInitialized(false),
-				  m_pArray(pArray),
-				  m_arrayInitialized(true),
-				  m_isBuilt(false) {	}
+						const std::string& attributeName);
 
 	inline const EAttributeType get_type() const {
 		return m_type;
