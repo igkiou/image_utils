@@ -77,7 +77,7 @@ public:
 	explicit EXRAttribute(const Imf::Attribute* pAttribute);
 
 	explicit EXRAttribute(const mex::MxArray* pArray,
-						const std::string& attributeName);
+						const EAttributeType eAttributeType);
 
 	inline const EAttributeType get_type() const {
 		return m_type;
@@ -110,9 +110,9 @@ public:
 private:
 	EAttributeType m_type;
 	Imf::Attribute* m_pAttribute;
-	bool m_attributeInitialized;
+	bool m_isAttributeInitialized;
 	mex::MxArray* m_pArray;
-	bool m_arrayInitialized;
+	bool m_isArrayInitialized;
 	bool m_isBuilt;
 };
 
