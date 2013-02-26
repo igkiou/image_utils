@@ -162,6 +162,10 @@ public:
 					: m_array(array),
 					  m_isInit(true) {	}
 
+	explicit MxArray(const MxArrayNative* array)
+					: m_array(array),
+					  m_isInit(true) {	}
+
 	virtual ~MxArray() {}
 
 	inline mxClassID getInternalClass() {
@@ -295,6 +299,11 @@ public:
 	}
 
 	explicit MxNumeric(const PMxArrayNative array)
+					: MxArray(array) {
+		mexAssert(m_kClass == mxGetClassID(array));
+	}
+
+	explicit MxNumeric(const MxArrayNative* array)
 					: MxArray(array) {
 		mexAssert(m_kClass == mxGetClassID(array));
 	}
@@ -490,6 +499,11 @@ public:
 		mexAssert(m_kClass == mxGetClassID(array));
 	}
 
+	explicit MxString(const MxArrayNative* array)
+					: MxArray(array) {
+		mexAssert(m_kClass == mxGetClassID(array));
+	}
+
 	explicit MxString(const std::string& strVar)
 					: MxArray() {
 		m_array = mxCreateString(strVar.c_str());
@@ -560,6 +574,11 @@ public:
 			mxSetCell(m_array, 0, array);
 		}
 		m_isInit = true;
+	}
+
+	explicit MxCell(const MxArrayNative* array)
+				: MxArray(array) {
+		mexAssert(m_kClass == mxGetClassID(array));
 	}
 
 	MxCell(const int numRows, const int numColumns)
@@ -750,6 +769,11 @@ public:
 	}
 
 	explicit MxStruct(const PMxArrayNative array)
+					: MxArray(array) {
+		mexAssert(m_kClass == mxGetClassID(array));
+	}
+
+	explicit MxStruct(const MxArrayNative* array)
 					: MxArray(array) {
 		mexAssert(m_kClass == mxGetClassID(array));
 	}
