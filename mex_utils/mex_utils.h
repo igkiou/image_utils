@@ -158,7 +158,7 @@ public:
 		return *this;
 	}
 
-	explicit MxArray(const PMxArrayNative array)
+	explicit MxArray(const MxArrayNative* array)
 					: m_array(array),
 					  m_isInit(true) {	}
 
@@ -294,7 +294,7 @@ public:
 		return *this;
 	}
 
-	explicit MxNumeric(const PMxArrayNative array)
+	explicit MxNumeric(const MxArrayNative* array)
 					: MxArray(array) {
 		mexAssert(m_kClass == mxGetClassID(array));
 	}
@@ -485,7 +485,7 @@ public:
 		return *this;
 	}
 
-	explicit MxString(const PMxArrayNative array)
+	explicit MxString(const MxArrayNative* array)
 					: MxArray(array) {
 		mexAssert(m_kClass == mxGetClassID(array));
 	}
@@ -551,7 +551,7 @@ public:
 		return *this;
 	}
 
-	explicit MxCell(const PMxArrayNative array)
+	explicit MxCell(const MxArrayNative* array)
 				: MxArray() {
 		if (m_kClass == mxGetClassID(array)) {
 			m_array = array;
@@ -749,7 +749,7 @@ public:
 		return *this;
 	}
 
-	explicit MxStruct(const PMxArrayNative array)
+	explicit MxStruct(const MxArrayNative* array)
 					: MxArray(array) {
 		mexAssert(m_kClass == mxGetClassID(array));
 	}
