@@ -7,18 +7,16 @@ DEBUG_MODE = 1
 # USE_GCC = 1
 include gcc.mk
 
-all: read write get set
+all: read write get
 
 get: exrget.$(MEXEXT)
 read: exrread.$(MEXEXT)
-set: exrset.$(MEXEXT)
 write: exrwrite_sub.$(MEXEXT)
 
-
-%.$(MEXEXT): %.o ImfExtraAttributes.o ImfVectorAttribute.o openexr_mex.o
+%.$(MEXEXT): %.o ImfVectorAttribute.o openexr_mex.o
 	$(CC) $(LDFLAGS) $(INCLUDES) $(LIBS) $(CFLAGS) -o $@ $^
 
-%.o: %.cpp openexr_mex.h ImfExtraAttributes.h ImfVectorAttribute.h
+%.o: %.cpp openexr_mex.h ImfVectorAttribute.h
 	$(CC) $(INCLUDES) $(CFLAGS) -c -o $@ $<
 	
 clean:

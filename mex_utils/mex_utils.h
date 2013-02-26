@@ -24,6 +24,7 @@
 
 /*
  * TODO: Add struct array support.
+ * TODO: Add support for initialization by const mxArray*.
  * TODO: Is giving access to a data element with [] im MxCell and MxStruct
  * equivalent to using mxSetCell and mxSetField, respectively?
  * TODO: Provide cast from base MxArray to other types?
@@ -64,6 +65,10 @@ public:
 	}
 
 	operator std::map<T, U>() { return m_map; }
+
+	inline const std::map<T, U>& get_map() const {
+		return m_map;
+	}
 
 	inline U operator[] (const T& key) const {
 		typename std::map<T, U>::const_iterator it = m_map.find(key);
@@ -143,9 +148,9 @@ public:
 		: m_array(),
 		  m_isInit(false) {	}
 
-	explicit MxArray(const MxArray& other)
-					: m_array(other.m_array),
-					  m_isInit(true) {	}
+	MxArray(const MxArray& other)
+		: m_array(other.m_array),
+		  m_isInit(true) {	}
 
 	/*
 	 * Only copies pointer, does not do "deep copy".
@@ -287,8 +292,8 @@ public:
 	MxNumeric()
 			: MxArray() {	}
 
-	explicit MxNumeric(const MxNumeric<T>& mxNumeric)
-					: MxArray(mxNumeric) {	}
+	MxNumeric(const MxNumeric<T>& mxNumeric)
+			: MxArray(mxNumeric) {	}
 
 	MxNumeric<T>& operator=(const MxNumeric<T>& mxNumeric) {
 		if (this != &mxNumeric) {
@@ -483,8 +488,8 @@ class MxString: public MxArray {
 public:
 	static const mxClassID m_kClass = mxCHAR_CLASS;
 
-	explicit MxString(const MxString& mxString)
-					: MxArray(mxString) {	}
+	MxString(const MxString& mxString)
+			: MxArray(mxString) {	}
 
 	MxString& operator=(const MxString& mxString) {
 		if (this != &mxString) {
@@ -504,7 +509,7 @@ public:
 //		mexAssert(m_kClass == mxGetClassID(array));
 //	}
 
-	explicit MxString(const std::string& strVar)
+	MxString(const std::string& strVar)
 					: MxArray() {
 		m_array = mxCreateString(strVar.c_str());
 		m_isInit = true;
@@ -554,8 +559,8 @@ class MxCell : public MxArray {
 public:
 	static const mxClassID m_kClass = mxCELL_CLASS;
 
-	explicit MxCell(const MxCell& mxCell)
-				: MxArray(mxCell) {	}
+	MxCell(const MxCell& mxCell)
+		: MxArray(mxCell) {	}
 
 	MxCell& operator=(const MxCell& mxCell) {
 		if (this != &mxCell) {
@@ -722,9 +727,9 @@ public:
 		return mxGetCell(m_array, i);
 	}
 
-//	inline const PMxArrayNative operator[] (int i) const {
-//		return mxGetCell(m_array, i);
-//	}
+	inline const PMxArrayNative operator[] (int i) const {
+		return mxGetCell(m_array, i);
+	}
 
 	inline const PMxArrayNative* data() const {
 		return (PMxArrayNative *) mxGetData(m_array);
@@ -757,8 +762,8 @@ class MxStruct : public MxArray {
 public:
 	static const mxClassID m_kClass = mxSTRUCT_CLASS;
 
-	explicit MxStruct(const MxStruct& mxStruct)
-		: MxArray(mxStruct) {	}
+	MxStruct(const MxStruct& mxStruct)
+			: MxArray(mxStruct) {	}
 
 	MxStruct& operator=(const MxStruct& mxStruct) {
 		if (this != &mxStruct) {
@@ -877,17 +882,17 @@ public:
 		return mxGetFieldByNumber(m_array, 0, i);
 	}
 
-//	inline const PMxArrayNative operator[] (int i) const {
-//		return mxGetFieldByNumber(m_array, 0, i);
-//	}
+	inline const PMxArrayNative operator[] (int i) const {
+		return mxGetFieldByNumber(m_array, 0, i);
+	}
 
 	inline PMxArrayNative operator[] (const std::string& name) {
 		return mxGetField(m_array, 0, name.c_str());
 	}
 
-//	inline const PMxArrayNative operator[] (const std::string& name) const {
-//		return mxGetField(m_array, 0, name.c_str());
-//	}
+	inline const PMxArrayNative operator[] (const std::string& name) const {
+		return mxGetField(m_array, 0, name.c_str());
+	}
 
 	inline int getFieldNumber(const std::string& name) const {
 		return mxGetFieldNumber(m_array, name.c_str());

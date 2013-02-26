@@ -1,6 +1,6 @@
 MATLABDIR = /usr/local/matlabR2010a
 
-MATLABARCH = glnx86
+MATLABARCH = glnxa64
 MEXEXT = $(shell $(MATLABDIR)/bin/mexext)
 MAPFILE = mexFunction.map
 
@@ -15,7 +15,13 @@ INCLUDES = $(EXRINCLUDE) $(MATLABINCLUDE) -I../mex_utils
 
 CC = g++
 MEXFLAGS = -DUSE_MATLAB_INTERFACE -DMATLAB_MEX_FILE -D_GNU_SOURCE -DNDEBUG -fexceptions -fno-omit-frame-pointer
-GENERALFLAGS = -fPIC -W -Wall -Wextra -g -pedantic
+GENERALFLAGS = -fPIC -W -Wall -Wextra -g -pedantic -Wcast-align -Wcast-qual \
+				-Wctor-dtor-privacy -Wdisabled-optimization -Wformat=2 \
+				-Winit-self -Wlogical-op -Wmissing-declarations \
+				-Wmissing-include-dirs 
+				#-Woverloaded-virtual -Wredundant-decls -Wshadow \
+				-Wsign-conversion -Wsign-promo -Wstrict-null-sentinel \
+				-Wstrict-overflow=5 -Wswitch-default -Wundef
 OPTIMFLAGS = -march=native -O3 -ffast-math -fopenmp -pthread
 REPORTSFLAGS = -Winline -Wimplicit
 DEBUGFLAG = -g

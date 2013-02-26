@@ -17,16 +17,26 @@
 #include "ImathBox.h"
 #include "ImfArray.h"
 #include "ImfAttribute.h"
+#include "ImfBoxAttribute.h"
 #include "ImfChannelList.h"
-#include "ImfCompression.h"
-#include "ImfExtraAttributes.h"
+#include "ImfChannelListAttribute.h"
+#include "ImfChromaticitiesAttribute.h"
+#include "ImfCompressionAttribute.h"
+#include "ImfEnvmapAttribute.h"
+//#include "ImfExtraAttributes.h"
+#include "ImfFloatAttribute.h"
+#include "ImfFrameBuffer.h"
 #include "ImfHeader.h"
 #include "ImfInputFile.h"
+#include "ImfLineOrderAttribute.h"
 #include "ImfOutputFile.h"
 #include "ImfPixelType.h"
 #include "ImfRgba.h"
 #include "ImfRgbaFile.h"
-#include "ImfStandardAttributes.h"
+//#include "ImfStandardAttributes.h"
+#include "ImfStringAttribute.h"
+#include "ImfVecAttribute.h"
+#include "ImfVectorAttribute.h"
 
 #include "mex_utils.h"
 
@@ -46,13 +56,10 @@ typedef enum EAttributeType {
 	EAttributeChromaticities,
 	EAttributeEnvmap,
 	EAttributeString,
-	EAttributeBox2d,
 	EAttributeBox2f,
 	EAttributeBox2i,
-	EAttributeV2d,
 	EAttributeV2f,
 	EAttributeV2i,
-	EAttributeVectord,
 	EAttributeVectorf,
 	EAttributeVectori,
 	EAttributeDouble,
@@ -122,12 +129,12 @@ public:
 	mex::MxArray* getAttribute(const mex::MxString& attributeName) const;
 	mex::MxArray* getAttribute() const;
 
-	void readChannelRGB() const;
-	void readChannelY() const;
-	void readChannel(const std::string& channelName) const;
-	void readChannel(const std::vector<std::string>& channelNames) const;
+	void readChannelRGB();
+	void readChannelY();
+	void readChannel(const std::string& channelName);
+	void readChannel(const std::vector<std::string>& channelNames);
 
-	inline mex::MxNumeric<FloatUsed> readFile() const;
+	mex::MxNumeric<FloatUsed> readFile();
 
 	virtual ~EXRInputFile() {
 		if (m_createdFrameBuffer) {

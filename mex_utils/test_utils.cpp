@@ -7,6 +7,24 @@
 
 #include "mex_utils.h"
 
+mex::MxString test() {
+	return mex::MxString("gkiou");
+}
+
+mex::MxString test2() {
+	mex::MxString ret("gkiou");
+	mex::MxString ret2(ret);
+	return ret2;
+}
+
+std::string test3() {
+	return std::string("gkiou");
+}
+
+//mex::MxArray test3() {
+//	return mex::MxArray(NULL);
+//}
+
 void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[]) {
 
 	int height = 10;
@@ -23,10 +41,16 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[]) {
 	mex::MxNumeric<int> foo(height, width);
 	foo.data()[0] = 10;
 	plhs[4] = foo.get_array();
-	mexPrintf("M %d N %d size %d numel %d.\n", foo.M(), foo.N(), foo.size(), foo.numel());
-	plhs[5] = mex::MxString(std::string("gkiou")).get_array();
-	plhs[6] = mex::MxString("gkiou").get_array();
 	std::vector<bool> dummy(10, false);
-	plhs[7] = mex::MxNumeric<bool>(dummy).get_array();
-	plhs[8] = mex::MxNumeric<bool>(dummy).get_array();
+	plhs[5] = mex::MxNumeric<bool>(dummy).get_array();
+	mexPrintf("M %d N %d size %d numel %d.\n", foo.M(), foo.N(), foo.size(), foo.numel());
+	plhs[6] = mex::MxString(std::string("gkiou")).get_array();
+	plhs[7] = mex::MxString("gkiou").get_array();
+	std::string gkiou("gkiou");
+	plhs[8] = mex::MxString(gkiou).get_array();
+	mex::MxString gkiou2("gkiou");
+	plhs[9] = mex::MxString(gkiou2).get_array();
+//	plhs[10] = test().get_array();
+	plhs[11] = test2().get_array();
 }
+

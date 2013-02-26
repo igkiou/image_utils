@@ -13,7 +13,7 @@ INCLUDES = $(MATLABINCLUDE)
 
 CC = g++
 MEXFLAGS = -DUSE_MATLAB_INTERFACE -DMATLAB_MEX_FILE -D_GNU_SOURCE -DNDEBUG -fexceptions -fno-omit-frame-pointer
-GENERALFLAGS = -fPIC -W -Wall -Wextra -g -pedantic
+GENERALFLAGS = -fPIC -W -Wall -Wextra -g -pedantic 
 OPTIMFLAGS = -march=native -O3 -ffast-math -fopenmp -pthread
 REPORTSFLAGS = -Winline -Wimplicit
 DEBUGFLAG = -g
