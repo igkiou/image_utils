@@ -37,7 +37,7 @@ namespace exr {
  */
 
 typedef float FloatUsed;
-typedef Imf::FLOAT EXRFloatUsed;
+const Imf::PixelType kEXRFloatUsed = Imf::FLOAT;
 
 typedef enum EAttributeType {
 	EAttributeChannelList = 0,

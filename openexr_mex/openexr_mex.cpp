@@ -75,7 +75,7 @@ void EXRInputFile::readChannel(const std::vector<std::string>& channelNames) con
 		if (m_file.header().channels().findChannel(channelNames[iter].c_str())) {
 			m_foundChannel.push_back(true);
 			m_frameBuffer.insert(channelNames[iter].c_str(),
-							Imf::Slice(EXRFloatUsed,
+							Imf::Slice(kEXRFloatUsed,
 									(char *) (&((*tempBuffer)[0][0]) - dw.min.x - dw.min.y * width), \
 									sizeof((*tempBuffer)[0][0]) * 1, \
 									sizeof((*tempBuffer)[0][0]) * width, \
@@ -436,9 +436,9 @@ void EXROutputFile::writeChannel(const mex::MxNumeric<FloatUsed>& channelPixels,
 
 	for (int iterChannel = 0; iterChannel < numChannels; ++iterChannel) {
 		m_header.channels().insert(channelNames[iterChannel].c_str(),
-								Imf::Channel(EXRFloatUsed));
+								Imf::Channel(kEXRFloatUsed));
 		m_frameBuffer.insert(channelNames[iterChannel].c_str(),
-							Imf::Slice(EXRFloatUsed,
+							Imf::Slice(kEXRFloatUsed,
 									(char *) &channelPixels[width * height * iterChannel],
 									sizeof(FloatUsed) * 1,
 									sizeof(FloatUsed) * width));
