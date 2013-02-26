@@ -162,9 +162,9 @@ public:
 					: m_array(array),
 					  m_isInit(true) {	}
 
-	explicit MxArray(const MxArrayNative* array)
-					: m_array(array),
-					  m_isInit(true) {	}
+//	explicit MxArray(const MxArrayNative* array)
+//					: m_array(array),
+//					  m_isInit(true) {	}
 
 	virtual ~MxArray() {}
 
@@ -303,10 +303,10 @@ public:
 		mexAssert(m_kClass == mxGetClassID(array));
 	}
 
-	explicit MxNumeric(const MxArrayNative* array)
-					: MxArray(array) {
-		mexAssert(m_kClass == mxGetClassID(array));
-	}
+//	explicit MxNumeric(const MxArrayNative* array)
+//					: MxArray(array) {
+//		mexAssert(m_kClass == mxGetClassID(array));
+//	}
 
 	MxNumeric(const int numRows, const int numColumns)
 			: MxArray() {
@@ -499,10 +499,10 @@ public:
 		mexAssert(m_kClass == mxGetClassID(array));
 	}
 
-	explicit MxString(const MxArrayNative* array)
-					: MxArray(array) {
-		mexAssert(m_kClass == mxGetClassID(array));
-	}
+//	explicit MxString(const MxArrayNative* array)
+//					: MxArray(array) {
+//		mexAssert(m_kClass == mxGetClassID(array));
+//	}
 
 	explicit MxString(const std::string& strVar)
 					: MxArray() {
@@ -576,10 +576,10 @@ public:
 		m_isInit = true;
 	}
 
-	explicit MxCell(const MxArrayNative* array)
-				: MxArray(array) {
-		mexAssert(m_kClass == mxGetClassID(array));
-	}
+//	explicit MxCell(const MxArrayNative* array)
+//				: MxArray(array) {
+//		mexAssert(m_kClass == mxGetClassID(array));
+//	}
 
 	MxCell(const int numRows, const int numColumns)
 		: MxArray() {
@@ -773,10 +773,10 @@ public:
 		mexAssert(m_kClass == mxGetClassID(array));
 	}
 
-	explicit MxStruct(const MxArrayNative* array)
-					: MxArray(array) {
-		mexAssert(m_kClass == mxGetClassID(array));
-	}
+//	explicit MxStruct(const MxArrayNative* array)
+//					: MxArray(array) {
+//		mexAssert(m_kClass == mxGetClassID(array));
+//	}
 
 	MxStruct(const std::string& scalarName, const PMxArrayNative& scalarVar)
 			: MxArray() {
