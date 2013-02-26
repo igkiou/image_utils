@@ -92,25 +92,25 @@ public:
 	explicit MxClassId(const MxClassId& mxClassId)
 					: m_class(mxClassId.m_kClass) {	}
 
-	inline const mxClassID get_class() const {
-		return m_class;
-	}
+//	inline const mxClassID get_class() const {
+//		return m_class;
+//	}
 
 	inline mxClassID get_class() {
 		return m_class;
 	}
 
-	inline const mxClassID operator()() const {
-		return m_class;
-	}
+//	inline const mxClassID operator()() const {
+//		return m_class;
+//	}
 
 	inline mxClassID operator()() {
 		return m_class;
 	}
 
-	inline operator const mxClassID() const {
-		return m_class;
-	}
+//	inline operator const mxClassID() const {
+//		return m_class;
+//	}
 
 	inline operator mxClassID() {
 		return m_class;
@@ -168,9 +168,9 @@ public:
 		return mxGetClassID(m_array);
 	}
 
-	inline const mxClassID getInternalClass() const {
-		return mxGetClassID(m_array);
-	}
+//	inline const mxClassID getInternalClass() const {
+//		return mxGetClassID(m_array);
+//	}
 
 	/*
  	 * TODO: These were removed as unsafe versions of specialized versions of
@@ -185,9 +185,9 @@ public:
 //	}
 
 	/* getter */
-	inline const PMxArrayNative get_array() const {
-		return m_array;
-	}
+//	inline const PMxArrayNative get_array() const {
+//		return m_array;
+//	}
 
 	inline PMxArrayNative get_array() {
 		return m_array;
@@ -703,9 +703,9 @@ public:
 		return mxGetCell(m_array, i);
 	}
 
-	inline const PMxArrayNative operator[] (int i) const {
-		return mxGetCell(m_array, i);
-	}
+//	inline const PMxArrayNative operator[] (int i) const {
+//		return mxGetCell(m_array, i);
+//	}
 
 	inline const PMxArrayNative* data() const {
 		return (PMxArrayNative *) mxGetData(m_array);
@@ -853,17 +853,17 @@ public:
 		return mxGetFieldByNumber(m_array, 0, i);
 	}
 
-	inline const PMxArrayNative operator[] (int i) const {
-		return mxGetFieldByNumber(m_array, 0, i);
-	}
+//	inline const PMxArrayNative operator[] (int i) const {
+//		return mxGetFieldByNumber(m_array, 0, i);
+//	}
 
 	inline PMxArrayNative operator[] (const std::string& name) {
 		return mxGetField(m_array, 0, name.c_str());
 	}
 
-	inline const PMxArrayNative operator[] (const std::string& name) const {
-		return mxGetField(m_array, 0, name.c_str());
-	}
+//	inline const PMxArrayNative operator[] (const std::string& name) const {
+//		return mxGetField(m_array, 0, name.c_str());
+//	}
 
 	inline int getFieldNumber(const std::string& name) const {
 		return mxGetFieldNumber(m_array, name.c_str());
