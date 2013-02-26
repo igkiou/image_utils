@@ -17,6 +17,7 @@
 /*
  * TODO: Maybe include these inside mex namespace, to make sure mex:: needs to
  * be used? Check if this actually works.
+ * TODO: Add a nargin/out checker.
  */
 #include "mex.h"
 #include "matrix.h"
@@ -70,11 +71,11 @@ public:
 		return (*it).second;
 	}
 
-	inline const std::map<T, U>::const_iterator begin() const {
+	inline const typename std::map<T, U>::const_iterator begin() const {
 		return m_map.begin();
 	}
 
-	inline const std::map<T, U>::const_iterator end() const {
+	inline const typename std::map<T, U>::const_iterator end() const {
 		return m_map.end();
 	}
 
@@ -260,6 +261,10 @@ public:
 		return retArg;
 	}
 
+	inline bool isEmpty() {
+		return mxIsEmpty(m_array);
+	}
+
 	inline void destroy() {
 		mxDestroyArray(m_array);
 	}
@@ -406,7 +411,7 @@ public:
 		m_isInit = true;
 	}
 
-	inline explicit void clone(const MxNumeric<T>& mxNumeric) {
+	inline void clone(const MxNumeric<T>& mxNumeric) {
 		mexAssert(getDimensions() == mxNumeric.getDimensions());
 		memcpy(data(), mxNumeric.data(), getNumberOfElements() * sizeof(T));
 	}
@@ -497,7 +502,7 @@ public:
 		m_isInit = true;
 	}
 
-	inline explicit void clone(const MxString& mxString) {
+	inline void clone(const MxString& mxString) {
 		mexAssert(getDimensions() == mxString.getDimensions());
 		mxChar *destination = (mxChar *) mxGetData(m_array);
 		mxChar *origin = (mxChar *) mxGetData(mxString.get_array());

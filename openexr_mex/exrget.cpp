@@ -5,6 +5,7 @@
  *      Author: igkiou
  */
 
+#include "mex_utils.h"
 #include "openexr_mex.h"
 
 void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[]) {
@@ -21,27 +22,16 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[]) {
 		mexErrMsgTxt("Too many output arguments.");
 	}
 
-	if (!mxIsChar(prhs[0])) {
-		mexErrMsgTxt("First argument must be a string.");
-	}
-	const int lengthFileName = mxGetNumberOfElements(prhs[0]) + 1;
-	char* fileName = (char *) mxMalloc(lengthFileName * sizeof(char));
-	mxGetString(prhs[0], fileName, lengthFileName);
-	InputFile in(fileName);
-	Header head = in.header();
-
-	if (nrhs >= 2) {
-		if (!mxIsChar(prhs[1])) {
-			mexErrMsgTxt("Second argument must be a string.");
-		}
-		const int lengthAttributeName = mxGetNumberOfElements(prhs[1]) + 1;
-		char* attributeName = (char *) mxMalloc(lengthAttributeName * sizeof(char));
-		mxGetString(prhs[1], attributeName, lengthAttributeName);
-		plhs[0] = exr::getAttribute(head, attributeName);
-		mxFree(attributeName);
+	mex::MxString fileName(prhs[0]);
+	exr::EXRInputFile file(fileName);
+	if (nlhs >= 2) {
+		mex::MxString attributeName(prhs[1]);
+		mex::MxArray* temp = file.getAttribute(attributeName);
+		plhs[0] = temp->get_array();
+		delete temp;
 	} else {
-		plhs[0] = exr::getAttribute(head);
+		mex::MxStruct* temp = file.getAttribute();
+		plhs[0] = temp->get_array();
+		delete temp;
 	}
-
-	mxFree(fileName);
 }

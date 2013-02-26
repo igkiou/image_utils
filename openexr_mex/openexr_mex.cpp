@@ -89,7 +89,7 @@ void EXRInputFile::readChannel(const std::vector<std::string>& channelNames) con
 	m_createdFrameBuffer = true;
 }
 
-mex::MxNumeric<FloatUsed>* EXRInputFile::readFile() const {
+mex::MxNumeric<FloatUsed> EXRInputFile::readFile() const {
 
 	mexAssert((m_createdFrameBuffer) && (!m_readFile));
 	Imath::Box2i dw = m_file.header().dataWindow();
@@ -98,17 +98,17 @@ mex::MxNumeric<FloatUsed>* EXRInputFile::readFile() const {
 	int width, height, numChannels;
 	getDimensions(width, height);
 	numChannels = m_foundChannel.size();
-	mex::MxNumeric<FloatUsed>* retArg;
+	mex::MxNumeric<FloatUsed> retArg;
 	if (numChannels == 1) {
-		retArg = new mex::MxNumeric<FloatUsed>(height, width);
+		retArg = mex::MxNumeric<FloatUsed>(height, width);
 	} else {
 		int dimensions[3];
 		dimensions[0] = height;
 		dimensions[1] = width;
 		dimensions[2] = numChannels;
-		retArg = new mex::MxNumeric<FloatUsed>(3, dimensions);
+		retArg = mex::MxNumeric<FloatUsed>(3, dimensions);
 	}
-	copyArray2DtoMxArray(*retArg, m_pixelBuffer, width, height, numChannels);
+	copyArray2DtoMxArray(retArg, m_pixelBuffer, width, height, numChannels);
 	m_readFile = true;
 	return retArg;
 }
@@ -168,14 +168,14 @@ const mex::ConstMap<Imf::Envmap, std::string> envmapTypeToString
 
 // VT
 template <typename T>
-explicit mex::MxNumeric<T> toMxArray(
+mex::MxNumeric<T> toMxArray(
 	const Imf::TypedAttribute<T>& attribute) {
 	return mex::MxNumeric<T>(attribute.value());
 }
 
 // V2T
 template <typename T>
-explicit mex::MxNumeric<T> toMxArray<Imath::Vec2<T> >(
+mex::MxNumeric<T> toMxArray<Imath::Vec2<T> >(
 	const Imf::TypedAttribute<Imath::Vec2<T> >& attribute) {
 	std::vector<T> temp;
 	temp.push_back(attribute.value().x);
@@ -185,14 +185,14 @@ explicit mex::MxNumeric<T> toMxArray<Imath::Vec2<T> >(
 
 // VectorT
 template <typename T>
-explicit mex::MxNumeric<T> toMxArray<std::vector<T> >(
+mex::MxNumeric<T> toMxArray<std::vector<T> >(
 	const Imf::TypedAttribute<std::vector<T> >& attribute) {
 	return mex::MxNumeric<T>(attribute.value());
 }
 
 // Box2T
 template <typename T>
-explicit mex::MxCell toMxArray(
+mex::MxCell toMxArray(
 	const Imf::TypedAttribute<Imath::Box<Imath::Vec2<T> > >& attribute) {
 	std::vector<mex::MxArray *> temp;
 	std::vector<T> tempV;
@@ -207,7 +207,7 @@ explicit mex::MxCell toMxArray(
 }
 
 // Chromaticities
-explicit mex::MxStruct toMxArray(
+mex::MxStruct toMxArray(
 	const Imf::TypedAttribute<Imf::Chromaticities>& attribute) {
 	std::vector<std::string> chromaticityNames;
 	chromaticityNames.push_back(std::string("red"));
@@ -237,31 +237,31 @@ explicit mex::MxStruct toMxArray(
 }
 
 // String
-explicit mex::MxString toMxArray(
+mex::MxString toMxArray(
 	const Imf::TypedAttribute<std::string>& attribute) {
 	return mex::MxString(attribute.value());
 }
 
 // Envmap
-explicit mex::MxString toMxArray(
+mex::MxString toMxArray(
 	const Imf::TypedAttribute<Imf::Envmap>& attribute) {
 	return mex::MxString(envmapTypeToString[attribute.value()]);
 }
 
 // LineOrder
-explicit mex::MxString toMxArray(
+mex::MxString toMxArray(
 	const Imf::TypedAttribute<Imf::LineOrder>& attribute) {
 	return mex::MxString(lineOrderTypeToString[attribute.value()]);
 }
 
 // Compression
-explicit mex::MxString toMxArray(
+mex::MxString toMxArray(
 	const Imf::TypedAttribute<Imf::Compression>& attribute) {
 	return mex::MxString(compressionTypeToString[attribute.value()]);
 }
 
 // ChannelList
-explicit mex::MxCell toMxArray(
+mex::MxCell toMxArray(
 	const Imf::TypedAttribute<Imf::ChannelList>& attribute) {
 	std::vector<mex::MxArray*> channelNames;
 	for (Imf::ChannelList::ConstIterator chIt = attribute.value().begin(), \
@@ -381,9 +381,6 @@ mex::MxArray* EXRInputFile::getAttribute(const mex::MxString& attributeName) con
 	}
 }
 
-/*
- * TODO: Add deletes here as appropriate.
- */
 mex::MxArray* EXRInputFile::getAttribute() const {
 
 	std::vector<std::string> nameVec;
@@ -393,14 +390,20 @@ mex::MxArray* EXRInputFile::getAttribute() const {
 		nameVec.push_back(std::string(attIt.name()));
 		arrayVec.push_back(getAttribute(mex::MxString(attIt.name())));
 	}
-	return new mex::MxStruct(nameVec, arrayVec);
+	mex::MxArray* retArg = new mex::MxStruct(nameVec, arrayVec);
+	for (int iter = 0, numAttributes = arrayVec.size();
+		iter < numAttributes;
+		++iter) {
+		delete arrayVec[iter];
+	}
+	return retArg;
 }
 
 
 /*
  * Output file handling.
  */
-void EXROutputFile::writeChannelRGB(const mex::MxNumeric<FloatUsed>* rgbPixels) {
+void EXROutputFile::writeChannelRGB(const mex::MxNumeric<FloatUsed>& rgbPixels) {
 
 	std::vector<std::string> rgbNames;
 	rgbNames.push_back(std::string("R"));
@@ -409,20 +412,20 @@ void EXROutputFile::writeChannelRGB(const mex::MxNumeric<FloatUsed>* rgbPixels) 
 	writeChannel(rgbPixels, rgbNames);
 }
 
-void EXROutputFile::writeChannelY(const mex::MxNumeric<FloatUsed>* yPixels) {
+void EXROutputFile::writeChannelY(const mex::MxNumeric<FloatUsed>& yPixels) {
 	writeChannel(yPixels, std::vector<std::string>(1, std::string("Y")));
 }
 
-void EXROutputFile::writeChannel(const mex::MxNumeric<FloatUsed>* channelPixels,
-								const std::string &channelName) {
+void EXROutputFile::writeChannel(const mex::MxNumeric<FloatUsed>& channelPixels,
+									const std::string& channelName) {
 
 	writeChannel(channelPixels, std::vector<std::string>(1, channelName));
 }
 
-void EXROutputFile::writeChannel(const mex::MxNumeric<FloatUsed>* channelPixels,
-								const std::vector<std::string> &channelNames) {
+void EXROutputFile::writeChannel(const mex::MxNumeric<FloatUsed>& channelPixels,
+									const std::vector<std::string>& channelNames) {
 	mexAssert((!m_createdFrameBuffer) && (!m_wroteFile));
-	std::vector<int> dimensions = channelPixels->getDimensions();
+	std::vector<int> dimensions = channelPixels.getDimensions();
 	int width, height;
 	getDimensions(width, height);
 	int numChannels = channelNames.size();
@@ -436,9 +439,9 @@ void EXROutputFile::writeChannel(const mex::MxNumeric<FloatUsed>* channelPixels,
 								Imf::Channel(EXRFloatUsed));
 		m_frameBuffer.insert(channelNames[iterChannel].c_str(),
 							Imf::Slice(EXRFloatUsed,
-									(char *) channelPixels[iterChannel],
-									sizeof(*channelPixels[iterChannel]) * 1,
-									sizeof(*channelPixels[iterChannel]) * width));
+									(char *) &channelPixels[width * height * iterChannel],
+									sizeof(FloatUsed) * 1,
+									sizeof(FloatUsed) * width));
 	}
 	m_createdFrameBuffer = true;
 }
@@ -507,14 +510,14 @@ const mex::ConstMap<std::string, Imf::Envmap> stringToEnvmapType
 
 // VT
 template <typename T>
-explicit Imf::TypedAttribute<T> toAttribute(
+Imf::TypedAttribute<T> toAttribute(
 	const mex::MxNumeric<T>& mxNumeric) {
 	return Imf::TypedAttribute<T>(mxNumeric[0]);
 }
 
 // V2T
 template <typename T>
-explicit Imf::TypedAttribute<Imath::Vec2<T> > toAttribute<Imath::Vec2<T> >(
+Imf::TypedAttribute<Imath::Vec2<T> > toAttribute<Imath::Vec2<T> >(
 	const mex::MxNumeric<T>& mxNumeric) {
 	mex::MxNumeric<T>* pTemp = (mex::MxNumeric<T>*) mxNumeric;
 	return Imf::TypedAttribute<Imath::Vec2<T> >(
@@ -524,14 +527,14 @@ explicit Imf::TypedAttribute<Imath::Vec2<T> > toAttribute<Imath::Vec2<T> >(
 
 // VectorT
 template <typename T>
-explicit Imf::TypedAttribute<std::vector<T> > toAttribute<std::vector<T> >(
+Imf::TypedAttribute<std::vector<T> > toAttribute<std::vector<T> >(
 	const mex::MxNumeric<T>& mxNumeric) {
 	return Imf::TypedAttribute<std::vector<T> >(mxNumeric.vectorize());
 }
 
 // Box2T
 template <typename T>
-explicit Imf::TypedAttribute<Imath::Box<Imath::Vec2<T> > > toAttribute(
+Imf::TypedAttribute<Imath::Box<Imath::Vec2<T> > > toAttribute(
 	const mex::MxCell& mxCell) {
 	mex::MxNumeric<T> minArray = mex::MxNumeric<T>(mxCell[0]);
 	Imath::Vec2<T> minVec(minArray[0], minArray[1]);
@@ -542,7 +545,7 @@ explicit Imf::TypedAttribute<Imath::Box<Imath::Vec2<T> > > toAttribute(
 }
 
 // Chromaticities
-explicit Imf::TypedAttribute<Imf::Chromaticities> toAttribute(
+Imf::TypedAttribute<Imf::Chromaticities> toAttribute(
 	const mex::MxStruct& mxStruct) {
 	mex::MxNumeric<float> redMx(mxStruct[std::string("red")]);
 	Imath::V2f red(redMx[0], redMx[1]);
@@ -557,14 +560,14 @@ explicit Imf::TypedAttribute<Imf::Chromaticities> toAttribute(
 
 // String
 template <typename T>
-explicit Imf::TypedAttribute<T> toAttribute(
+Imf::TypedAttribute<T> toAttribute(
 	const mex::MxString& mxString) {
 	return Imf::TypedAttribute<T>(mxString.string());
 }
 
 // Envmap
 template <>
-explicit Imf::TypedAttribute<Imf::Envmap> toAttribute<Imf::Envmap>(
+Imf::TypedAttribute<Imf::Envmap> toAttribute<Imf::Envmap>(
 	const mex::MxString& mxString) {
 	return Imf::TypedAttribute<Imf::Envmap>(stringToEnvmapType(
 															mxString.string()));
@@ -572,7 +575,7 @@ explicit Imf::TypedAttribute<Imf::Envmap> toAttribute<Imf::Envmap>(
 
 // LineOrder
 template <>
-explicit Imf::TypedAttribute<Imf::LineOrder> toAttribute<Imf::LineOrder>(
+Imf::TypedAttribute<Imf::LineOrder> toAttribute<Imf::LineOrder>(
 	const mex::MxString& mxString) {
 	return Imf::TypedAttribute<Imf::LineOrder>(stringToLineOrderType(
 															mxString.string()));
@@ -580,7 +583,7 @@ explicit Imf::TypedAttribute<Imf::LineOrder> toAttribute<Imf::LineOrder>(
 
 // Compression
 template <>
-explicit Imf::TypedAttribute<Imf::Compression> toAttribute<Imf::Compression>(
+Imf::TypedAttribute<Imf::Compression> toAttribute<Imf::Compression>(
 	const mex::MxString& mxString) {
 	return Imf::TypedAttribute<Imf::Compression>(stringToCompressionType(
 															mxString.string()));

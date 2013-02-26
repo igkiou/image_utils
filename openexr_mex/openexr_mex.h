@@ -116,6 +116,9 @@ public:
 		return channelNames;
 	}
 
+	/*
+	 * TODO: Find way to do these without pointers. Maybe pass as argument?
+	 */
 	mex::MxArray* getAttribute(const mex::MxString& attributeName) const;
 	mex::MxArray* getAttribute() const;
 
@@ -124,7 +127,7 @@ public:
 	void readChannel(const std::string& channelName) const;
 	void readChannel(const std::vector<std::string>& channelNames) const;
 
-	inline mex::MxNumeric<FloatUsed>* readFile() const;
+	inline mex::MxNumeric<FloatUsed> readFile() const;
 
 	virtual ~EXRInputFile() {
 		if (m_createdFrameBuffer) {
@@ -171,12 +174,12 @@ public:
 					const mex::MxString& attributeName);
 	void setAttribute(const mex::MxStruct& attributes);
 
-	void writeChannelRGB(const mex::MxNumeric<FloatUsed>* rgbPixels);
-	void writeChannelY(const mex::MxNumeric<FloatUsed>* yPixels);
-	void writeChannel(const mex::MxNumeric<FloatUsed>* channelPixels,
-					const std::string &channelName);
-	void writeChannel(const mex::MxNumeric<FloatUsed>* channelPixels,
-					const std::vector<std::string> &channelNames);
+	void writeChannelRGB(const mex::MxNumeric<FloatUsed>& rgbPixels);
+	void writeChannelY(const mex::MxNumeric<FloatUsed>& yPixels);
+	void writeChannel(const mex::MxNumeric<FloatUsed>& channelPixels,
+						const std::string& channelName);
+	void writeChannel(const mex::MxNumeric<FloatUsed>& channelPixels,
+						const std::vector<std::string>& channelNames);
 
 	void writeFile(const mex::MxString& fileName);
 

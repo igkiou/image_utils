@@ -5,6 +5,8 @@
  *      Author: igkiou
  */
 
+#include <sstream>
+
 #include "mex_utils.h"
 #include "openexr_mex.h"
 
@@ -13,8 +15,8 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[]) {
 	/* Check number of input arguments */
 	if (nrhs > 5) {
 		mexErrMsgTxt("Four or fewer input arguments are required.");
-	} else if (nrhs < 3) {
-		mexErrMsgTxt("At least three input arguments are required.");
+	} else if (nrhs < 2) {
+		mexErrMsgTxt("At least two input arguments are required.");
 	}
 
 	/* Check number of output arguments */
@@ -22,109 +24,37 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[]) {
 		mexErrMsgTxt("Too many output arguments.");
 	}
 
-	if (!mxIsSingle(prhs[0])) {
-		mexErrMsgTxt("First argument must be of type single.");
-	}
-
 	mex::MxNumeric<exr::FloatUsed> image(prhs[0]);
-	const int numDims = image.getNumberOfDimensions();
-	const std::vector<int> dims = image.dims();
-	const mwSize *dims = mxGetDimensions(prhs[0]);
-	const int width = dims[0];
-	const int height = dims[1];
-	exr::EXROutputFile outFile(width, height);
-
+	std::vector<int> dimensions = image.getDimensions();
+	mexAssert((dimensions.size() == 2) && (dimensions.size() == 3));
+	int numChannels = (dimensions.size() == 2)?(1):(dimensions[2]);
+	exr::EXROutputFile file(dimensions[1], dimensions[0]);
 	if (nrhs >= 4) {
-		outFile.setAttribute(mex::MxArray(prhs[3]));
+		mex::MxStruct attributes(prhs[3]);
+		file.setAttribute(attributes);
 	}
-
-	if (numDims == 2) {
-		/* Luminance image. */
-		outFile.addChannelY();
-
-		const float *y = (float *) mxGetData(prhs[0]);
-		/* Second argument must be alpha. */
-		if (!mxIsEmpty(prhs[1])) {
-			if (!mxIsSingle(prhs[1])) {
-				mexErrMsgTxt("Second argument must be of type single.");
-			} else if (mxGetNumberOfDimensions(prhs[1]) != 2) {
-				mexErrMsgTxt("Second argument must be two-dimensional.");
-			} else if (mxGetM(prhs[1]) != width) {
-				mexErrMsgTxt("Width of second argument does not match width of first argument.");
-			} else if (mxGetN(prhs[1]) != height) {
-				mexErrMsgTxt("Height of second argument does not match height of first argument.");
-			}
+	if ((nrhs >= 3) && (!mex::MxArray(prhs[2]).isEmpty())) {
+		mex::MxCell channelNameArray(prhs[2]);
+		mexAssert(numChannels == channelNameArray.getNumberOfElements());
+		std::vector<std::string> channelNames;
+		for (int iter = 0; 	iter < numChannels; ++iter) {
+			channelNames.push_back(mex::MxString(channelNameArray[iter]).string());
 		}
-		const float *a = (float *) mxGetData(prhs[1]);
-		outFile.writeChannelYA(y, a);
-
-	} else if ((numDims == 3) && (dims[2] == 3)) {
-		/* RGB image. */
-		outFile.addChannelRGB();
-
-		const float *r = (float *) mxGetData(prhs[0]);
-		const float *g = &r[width * height];
-		const float *b = &r[2 * width * height];
-
-		/* Second argument must be alpha. */
-		if (!mxIsEmpty(prhs[1])) {
-			if (!mxIsSingle(prhs[1])) {
-				mexErrMsgTxt("Second argument must be of type single.");
-			} else if (mxGetNumberOfDimensions(prhs[1]) != 2) {
-				mexErrMsgTxt("Second argument must be two-dimensional.");
-			} else if (mxGetM(prhs[1]) != width) {
-				mexErrMsgTxt("Width of second argument does not match width of first argument.");
-			} else if (mxGetN(prhs[1]) != height) {
-				mexErrMsgTxt("Height of second argument does not match height of first argument.");
-			}
-		}
-		const float *a = (float *) mxGetData(prhs[1]);
-		outFile.writeChannelRGBA(r, g, b, a);
-	} else if (numDims == 3) {
-		/* Multi-channel image. */
-
-		int numChannels = dims[2];
-		/* Second argument must be channel names. */
-		std::vector<const std::string> cNames;
-		if (mxIsEmpty(prhs[1])) {
-			for (int iterChannel = 0; iterChannel < numChannels; ++iterChannel) {
-				std::ostringstream temp;
-				temp << iterChannel;
-				cNames.push_back(temp.str());
-			}
-		} else {
-			if (mxGetNumberOfElements(prhs[1]) != numChannels) {
-				mexErrMsgTxt("Second argument must be of same length as multi-dimensional image.");
-			}
-			for (int iterChannel = 0; iterChannel < numChannels; ++iterChannel) {
-				mxArray *temp = (mxArray *) mxGetCell(prhs[1], iterChannel);
-				if (!mxIsChar(temp)) {
-					mexErrMsgTxt("All of the contents of second argument must be strings.");
-				}
-				char *tempName = mxArrayToString(temp);
-				cNames.push_back(std::string(tempName));
-				mxFree(tempName);
-			}
-		}
-		outFile.addChannel(cNames);
-
-		std::vector<const float *> ccPixels;
-		const float *c = (float *) mxGetData(prhs[0]);
-		for (int iterChannel = 0; iterChannel < numChannels; ++iterChannel) {
-			ccPixels.push_back(&c[iterChannel * width * height]);
-		}
-		outFile.writeChannel(ccPixels, cNames);
-
+		file.writeChannel(image, channelNames);
 	} else {
-		mexErrMsgTxt("First argument must be two- or three-dimensional.");
+		if (numChannels == 1) {
+			file.writeChannelY(image);
+		} else if (numChannels == 3) {
+			file.writeChannelRGB(image);
+		} else {
+			std::vector<std::string> channelNames;
+			for (int iter = 0; 	iter < numChannels; ++iter) {
+				std::stringstream temp;
+				temp << iter;
+				channelNames.push_back(temp.str());
+			}
+			file.writeChannel(image, channelNames);
+		}
 	}
-
-
-	if (!mxIsChar(prhs[2])) {
-		mexErrMsgTxt("Third argument must be a string.");
-	}
-	char* fileName = mxArrayToString(prhs[2]);
-	outFile.writeFile(std::string(fileName));
-	mxFree(fileName);
-
+	file.writeFile(mex::MxString(prhs[1]));
 }
