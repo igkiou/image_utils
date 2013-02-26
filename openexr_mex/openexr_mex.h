@@ -144,8 +144,6 @@ private:
 	bool m_readFile;
 };
 
-const mex::ConstMap<std::string, EAttributeType> registeredAttributeNameToAttributeType;
-
 class EXROutputFile {
 public:
 	EXROutputFile(const int width, const int height)
