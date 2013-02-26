@@ -5,6 +5,7 @@
  *      Author: igkiou
  */
 
+#include "mex_utils.h"
 #include "openexr_mex.h"
 
 void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[]) {
@@ -25,19 +26,21 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[]) {
 		mexErrMsgTxt("First argument must be of type single.");
 	}
 
-	const int numDims = mxGetNumberOfDimensions(prhs[0]);
+	mex::MxNumeric<exr::FloatUsed> image(prhs[0]);
+	const int numDims = image.getNumberOfDimensions();
+	const std::vector<int> dims = image.dims();
 	const mwSize *dims = mxGetDimensions(prhs[0]);
 	const int width = dims[0];
 	const int height = dims[1];
 	exr::EXROutputFile outFile(width, height);
 
 	if (nrhs >= 4) {
-		outFile.setAttribute(prhs[3]);
+		outFile.setAttribute(mex::MxArray(prhs[3]));
 	}
 
 	if (numDims == 2) {
 		/* Luminance image. */
-		outFile.addChannelYA();
+		outFile.addChannelY();
 
 		const float *y = (float *) mxGetData(prhs[0]);
 		/* Second argument must be alpha. */
@@ -57,7 +60,7 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[]) {
 
 	} else if ((numDims == 3) && (dims[2] == 3)) {
 		/* RGB image. */
-		outFile.addChannelRGBA();
+		outFile.addChannelRGB();
 
 		const float *r = (float *) mxGetData(prhs[0]);
 		const float *g = &r[width * height];

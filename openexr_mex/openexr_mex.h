@@ -32,10 +32,12 @@
 
 namespace exr {
 
+/*
+ * TODO: Design: Everything that could be called from mexfile is using MxArray.
+ */
+
 typedef float FloatUsed;
 typedef Imf::FLOAT EXRFloatUsed;
-
-static const int kEXRMaxStringLength = 32;
 
 typedef enum EAttributeType {
 	EAttributeChannelList = 0,
@@ -60,66 +62,19 @@ typedef enum EAttributeType {
 	EAttributeTypeInvalid = -1
 } EAttributeType;
 
-class EXRAttribute {
-public:
-//	static const mex::ConstMap<std::string, EAttributeType> registeredAttributeNameToAttributeType;
-//	static const mex::ConstMap<std::string, EAttributeType> stringToAttributeType;
-//	static const mex::ConstMap<EAttributeType, std::string> attributeTypeToString;
-//	static const mex::ConstMap<std::string, Imf::Compression> stringToCompressionType;
-//	static const mex::ConstMap<Imf::Compression, std::string> compressionTypeToString;
-//	static const mex::ConstMap<std::string, Imf::LineOrder> stringToLineOrderType;
-//	static const mex::ConstMap<Imf::LineOrder, std::string> lineOrderTypeToString;
-//	static const mex::ConstMap<std::string, Imf::Envmap> stringToEnvmapType;
-//	static const mex::ConstMap<Imf::Envmap, std::string> envmapTypeToString;
-
-	EXRAttribute();
-
-	explicit EXRAttribute(const Imf::Attribute* pAttribute);
-
-	explicit EXRAttribute(const mex::MxArray* pArray,
-						const EAttributeType eAttributeType);
-
-	inline const EAttributeType get_type() const {
-		return m_type;
-	}
-
-	inline EAttributeType get_type() {
-		return m_type;
-	}
-
-	inline const Imf::Attribute* get_pAttribute() const {
-		return m_pAttribute;
-	}
-
-	inline Imf::Attribute* get_pAttribute() {
-		return m_pAttribute;
-	}
-
-	inline const mex::MxArray* get_pArray() const {
-		return m_pArray;
-	}
-
-	inline mex::MxArray* get_pArray() {
-		return m_pArray;
-	}
-
-	void buildMxArray();
-
-	void buildAttribute();
-
-private:
-	EAttributeType m_type;
-	Imf::Attribute* m_pAttribute;
-	bool m_isAttributeInitialized;
-	mex::MxArray* m_pArray;
-	bool m_isArrayInitialized;
-	bool m_isBuilt;
-};
-
+/*
+ * TODO: Maybe replace remaining arguments of these functions to use directly
+ * MxArrays?
+ */
 class EXRInputFile {
 public:
-	explicit EXRInputFile(const std::string& fileName)
-							: m_file(fileName.c_str()) {	}
+	explicit EXRInputFile(const mex::MxString& fileName)
+							: m_file(fileName.c_str()),
+							  m_frameBuffer(),
+							  m_pixelBuffer(NULL),
+							  m_foundChannel(),
+							  m_createdFrameBuffer(false),
+							  m_readFile(false) {	}
 
 	inline int getWidth() const {
 		Imath::Box2i dw = m_file.header().dataWindow();
@@ -161,35 +116,32 @@ public:
 		return channelNames;
 	}
 
-	mex::MxArray getAttribute(const std::string& attributeName) const;
-	mex::MxArray getAttribute() const;
+	mex::MxArray* getAttribute(const mex::MxString& attributeName) const;
+	mex::MxArray* getAttribute() const;
 
-	/*
-	 * TODO: Find way to avoid code replication in these, similar to how it is
-	 * done in writeChannel in EXROutputFile.
-	 * TODO: Change these to word directly with pointers to float, as in
-	 * writeChannel in EXROutputFile.
-	 */
-	void readChannelRGBA(Imf::Array2D<FloatUsed>& rPixels, bool& rFlag,
-						Imf::Array2D<FloatUsed>& gPixels, bool& gFlag,
-						Imf::Array2D<FloatUsed>& bPixels, bool& bFlag,
-						Imf::Array2D<FloatUsed>& aPixels, bool& aFlag) const;
+	void readChannelRGB() const;
+	void readChannelY() const;
+	void readChannel(const std::string& channelName) const;
+	void readChannel(const std::vector<std::string>& channelNames) const;
 
-	void readChannelYA(Imf::Array2D<FloatUsed>& yPixels, bool& yFlag,
-						Imf::Array2D<FloatUsed>& aPixels, bool& aFlag) const;
+	inline mex::MxNumeric<FloatUsed>* readFile() const;
 
-	void readChannel(Imf::Array2D<FloatUsed>& cPixels, bool& cFlag,
-					const std::string& cName) const;
-
-	void readChannel(std::vector<Imf::Array2D<FloatUsed> >& cPixels,
-					std::vector<bool>& cFlags,
-					const std::vector<std::string>& cNames) const;
-
-	virtual ~EXRInputFile() {	}
+	virtual ~EXRInputFile() {
+		if (m_createdFrameBuffer) {
+			delete[] m_pixelBuffer;
+		}
+	}
 
 private:
 	Imf::InputFile m_file;
+	Imf::FrameBuffer m_frameBuffer;
+	Imf::Array2D<FloatUsed>* m_pixelBuffer;
+	std::vector<bool> m_foundChannel;
+	bool m_createdFrameBuffer;
+	bool m_readFile;
 };
+
+const mex::ConstMap<std::string, EAttributeType> registeredAttributeNameToAttributeType;
 
 class EXROutputFile {
 public:
@@ -215,84 +167,18 @@ public:
 		height = dw.max.y - dw.min.y + 1;
 	}
 
-	inline int getNumberOfChannels() const {
-			int numChannels = 0;
-			for (Imf::ChannelList::ConstIterator
-					channelIter = m_header.channels().begin(),
-					channelEnd = m_header.channels().end();
-					channelIter != channelEnd;
-					++channelIter, ++numChannels) {
-				continue;
-			}
-			return numChannels;
-		}
+	void setAttribute(const mex::MxArray& attribute,
+					const mex::MxString& attributeName);
+	void setAttribute(const mex::MxStruct& attributes);
 
-	inline std::vector<std::string>& getChannelNames() const {
-		std::vector<std::string> channelNames(0);
-		for (Imf::ChannelList::ConstIterator
-				channelIter = m_header.channels().begin(),
-				channelEnd = m_header.channels().end();
-				channelIter != channelEnd;
-				++channelIter) {
-			channelNames.push_back(std::string(channelIter.name()));
-		}
-		return channelNames;
-	}
+	void writeChannelRGB(const mex::MxNumeric<FloatUsed>* rgbPixels);
+	void writeChannelY(const mex::MxNumeric<FloatUsed>* yPixels);
+	void writeChannel(const mex::MxNumeric<FloatUsed>* channelPixels,
+					const std::string &channelName);
+	void writeChannel(const mex::MxNumeric<FloatUsed>* channelPixels,
+					const std::vector<std::string> &channelNames);
 
-	inline void addChannelRGBA() {
-		m_header.channels().insert("R", Imf::Channel(EXRFloatUsed));
-		m_header.channels().insert("G", Imf::Channel(EXRFloatUsed));
-		m_header.channels().insert("B", Imf::Channel(EXRFloatUsed));
-		m_header.channels().insert("A", Imf::Channel(EXRFloatUsed));
-	}
-
-	inline void addChannelYA() {
-		m_header.channels().insert("Y", Imf::Channel(EXRFloatUsed));
-		m_header.channels().insert("A", Imf::Channel(EXRFloatUsed));
-	}
-
-	inline void addChannel(const std::string& channelName) {
-		m_header.channels().insert(channelName.c_str(),
-									Imf::Channel(EXRFloatUsed));
-	}
-
-	inline void addChannel(const std::vector<const std::string>&
-							channelNames) {
-		for (int iter = 0, numChannels = channelNames.size();
-			iter < numChannels;
-			++iter) {
-			m_header.channels().insert(channelNames[iter].c_str(),
-										Imf::Channel(EXRFloatUsed));
-		}
-	}
-
-	void setAttribute(const std::string& attrName,
-						const mex::MxArray& mxarr);
-
-	void setAttribute(const mex::MxArray& mxstruct);
-
-	void writeChannelRGBA(const FloatUsed* rPixels,
-							const FloatUsed* gPixels,
-							const FloatUsed* bPixels,
-							const FloatUsed* aPixels);
-
-	void writeChannelYA(const FloatUsed* yPixels,
-						const FloatUsed* aPixels);
-
-	void writeChannel(const FloatUsed* cPixels,
-						const std::string& cName);
-
-	void writeChannel(const std::vector<const FloatUsed*>& cPixels,
-						const std::vector<const std::string>& cNames);
-
-	inline void writeFile(const std::string& fileName) {
-		mexAssert((m_createdFrameBuffer) && (!m_wroteFile));
-		int height = getHeight();
-		Imf::OutputFile outFile(fileName.c_str(), m_header);
-		outFile.setFrameBuffer(m_frameBuffer);
-		outFile.writePixels(height);
-		m_wroteFile = true;
-	}
+	void writeFile(const mex::MxString& fileName);
 
 	virtual ~EXROutputFile() {	}
 
