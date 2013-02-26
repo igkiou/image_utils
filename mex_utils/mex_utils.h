@@ -185,9 +185,9 @@ public:
 //	}
 
 	/* getter */
-//	inline const PMxArrayNative get_array() const {
-//		return m_array;
-//	}
+	inline const PMxArrayNative get_array() const {
+		return m_array;
+	}
 
 	inline PMxArrayNative get_array() {
 		return m_array;
