@@ -14,7 +14,7 @@ MATLABINCLUDE = -I$(MATLABDIR)/extern/include
 INCLUDES = $(EXRINCLUDE) $(MATLABINCLUDE) -I../mex_utils
 
 CC = g++
-MEXFLAGS = -DUSE_MATLAB_INTERFACE -DMATLAB_MEX_FILE -D_GNU_SOURCE -DNDEBUG -fexceptions -fno-omit-frame-pointer
+MEXFLAGS = -DUSE_MATLAB_INTERFACE -DMATLAB_MEX_FILE -D_GNU_SOURCE -fexceptions -fno-omit-frame-pointer
 GENERALFLAGS = -fPIC -W -Wall -Wextra -g -pedantic -Wcast-align -Wcast-qual \
 				-Wctor-dtor-privacy -Wdisabled-optimization -Wformat=2 \
 				-Winit-self -Wlogical-op -Wmissing-declarations \

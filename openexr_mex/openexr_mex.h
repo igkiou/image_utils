@@ -124,7 +124,10 @@ public:
 	}
 
 	/*
-	 * TODO: Find way to do these without pointers. Maybe pass as argument?
+	 * TODO: Find way to do these without pointers. Maybe pass as argument? Or,
+	 * hide these as private, and have internal functions that strips
+	 * type-specific info and only returns a base MxArray with the pointer
+	 * copied.
 	 */
 	mex::MxArray* getAttribute(const mex::MxString& attributeName) const;
 	mex::MxArray* getAttribute() const;

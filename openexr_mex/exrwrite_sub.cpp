@@ -24,17 +24,17 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[]) {
 		mexErrMsgTxt("Too many output arguments.");
 	}
 
-	mex::MxNumeric<exr::FloatUsed> image(prhs[0]);
+	mex::MxNumeric<exr::FloatUsed> image(const_cast<mxArray *>(prhs[0]));
 	std::vector<int> dimensions = image.getDimensions();
 	mexAssert((dimensions.size() == 2) && (dimensions.size() == 3));
 	int numChannels = (dimensions.size() == 2)?(1):(dimensions[2]);
 	exr::EXROutputFile file(dimensions[1], dimensions[0]);
 	if (nrhs >= 4) {
-		mex::MxStruct attributes(prhs[3]);
+		mex::MxStruct attributes(const_cast<mxArray *>(prhs[3]));
 		file.setAttribute(attributes);
 	}
-	if ((nrhs >= 3) && (!mex::MxArray(prhs[2]).isEmpty())) {
-		mex::MxCell channelNameArray(prhs[2]);
+	if ((nrhs >= 3) && (!mex::MxArray(const_cast<mxArray *>(prhs[2])).isEmpty())) {
+		mex::MxCell channelNameArray(const_cast<mxArray *>(prhs[2]));
 		mexAssert(numChannels == channelNameArray.getNumberOfElements());
 		std::vector<std::string> channelNames;
 		for (int iter = 0; 	iter < numChannels; ++iter) {
@@ -56,5 +56,5 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[]) {
 			file.writeChannel(image, channelNames);
 		}
 	}
-	file.writeFile(mex::MxString(prhs[1]));
+	file.writeFile(mex::MxString(const_cast<mxArray *>(prhs[1])));
 }

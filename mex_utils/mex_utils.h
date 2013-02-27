@@ -95,7 +95,7 @@ public:
 			: m_class(mxUNKNOWN_CLASS) {	}
 
 	explicit MxClassId(const MxClassId& mxClassId)
-					: m_class(mxClassId.m_kClass) {	}
+					: m_class(mxClassId.m_class) {	}
 
 //	inline const mxClassID get_class() const {
 //		return m_class;
@@ -125,31 +125,37 @@ private:
 	mxClassID m_class;
 };
 
-template <> MxClassId<unsigned char>::MxClassId() : m_class(mxUINT8_CLASS) {	}
-template <> MxClassId<char>::MxClassId() : m_class(mxINT8_CLASS) {	}
-template <> MxClassId<short>::MxClassId() : m_class(mxINT16_CLASS) {	}
-template <> MxClassId<unsigned short>::MxClassId() : m_class(mxUINT16_CLASS) {	}
-template <> MxClassId<int>::MxClassId() : m_class(mxINT32_CLASS) {	}
-template <> MxClassId<unsigned int>::MxClassId() : m_class(mxUINT32_CLASS) {	}
-template <> MxClassId<long>::MxClassId() : m_class(mxINT64_CLASS) {	}
-template <> MxClassId<unsigned long>::MxClassId() : m_class(mxUINT64_CLASS) {	}
-template <> MxClassId<float>::MxClassId() : m_class(mxSINGLE_CLASS) {	}
-template <> MxClassId<double>::MxClassId() : m_class(mxDOUBLE_CLASS) {	}
-template <> MxClassId<bool>::MxClassId() : m_class(mxLOGICAL_CLASS) {	}
+template <> inline MxClassId<unsigned char>::MxClassId() : m_class(mxUINT8_CLASS) {	}
+template <> inline MxClassId<char>::MxClassId() : m_class(mxINT8_CLASS) {	}
+template <> inline MxClassId<short>::MxClassId() : m_class(mxINT16_CLASS) {	}
+template <> inline MxClassId<unsigned short>::MxClassId() : m_class(mxUINT16_CLASS) {	}
+template <> inline MxClassId<int>::MxClassId() : m_class(mxINT32_CLASS) {	}
+template <> inline MxClassId<unsigned int>::MxClassId() : m_class(mxUINT32_CLASS) {	}
+template <> inline MxClassId<long>::MxClassId() : m_class(mxINT64_CLASS) {	}
+template <> inline MxClassId<unsigned long>::MxClassId() : m_class(mxUINT64_CLASS) {	}
+template <> inline MxClassId<float>::MxClassId() : m_class(mxSINGLE_CLASS) {	}
+template <> inline MxClassId<double>::MxClassId() : m_class(mxDOUBLE_CLASS) {	}
+template <> inline MxClassId<bool>::MxClassId() : m_class(mxLOGICAL_CLASS) {	}
 
 typedef mxArray MxArrayNative;
 typedef MxArrayNative* PMxArrayNative;
 
 class MxArray {
 public:
-	static const mxClassID m_kClass = mxUNKNOWN_CLASS;
+/*
+ * TODO: This was replaced with class member m_class to make the implementation
+ * header-file only. Find way to bring back.
+ */
+//	static const mxClassID m_kClass = mxUNKNOWN_CLASS;
 
 	MxArray()
 		: m_array(),
+		  m_class(mxUNKNOWN_CLASS),
 		  m_isInit(false) {	}
 
 	MxArray(const MxArray& other)
 		: m_array(other.m_array),
+		  m_class(mxUNKNOWN_CLASS),
 		  m_isInit(true) {	}
 
 	/*
@@ -165,6 +171,7 @@ public:
 
 	explicit MxArray(const PMxArrayNative array)
 					: m_array(array),
+					  m_class(mxUNKNOWN_CLASS),
 					  m_isInit(true) {	}
 
 //	explicit MxArray(const MxArrayNative* array)
@@ -200,6 +207,14 @@ public:
 
 	inline PMxArrayNative get_array() {
 		return m_array;
+	}
+
+	inline const mxClassID get_class() const {
+		return m_class;
+	}
+
+	inline mxClassID get_class() {
+		return m_class;
 	}
 
 	/*
@@ -279,7 +294,23 @@ public:
 	}
 
 protected:
+	MxArray(const mxClassID classID)
+		: m_array(),
+		  m_class(classID),
+		  m_isInit(false) {	}
+
+	MxArray(const MxArray& other, const mxClassID classID)
+		: m_array(other.m_array),
+		  m_class(classID),
+		  m_isInit(true) {	}
+
+	MxArray(const PMxArrayNative array, const mxClassID classID)
+			: m_array(array),
+			  m_class(classID),
+			  m_isInit(true) {	}
+
 	PMxArrayNative m_array;
+	mxClassID m_class;
 	bool m_isInit;
 };
 
@@ -287,35 +318,36 @@ template <typename T>
 class MxNumeric : public MxArray {
 public:
 //	static const mxClassID m_kClass = MxClassId<T>();
-	static const mxClassID m_kClass;
+//	static const mxClassID m_kClass;
 
 	MxNumeric()
-			: MxArray() {	}
+			: MxArray(MxClassId<T>().get_class()) {	}
 
 	MxNumeric(const MxNumeric<T>& mxNumeric)
-			: MxArray(mxNumeric) {	}
+			: MxArray(mxNumeric, MxClassId<T>().get_class()) {	}
 
 	MxNumeric<T>& operator=(const MxNumeric<T>& mxNumeric) {
 		if (this != &mxNumeric) {
 			this->m_array = mxNumeric.m_array;
+			this->m_class = mxNumeric.m_class;
 			this->m_isInit = mxNumeric.m_isInit;
 		}
 		return *this;
 	}
 
 	explicit MxNumeric(const PMxArrayNative array)
-					: MxArray(array) {
-		mexAssert(m_kClass == mxGetClassID(array));
+					: MxArray(array, MxClassId<T>().get_class()) {
+		mexAssert(m_class == mxGetClassID(array));
 	}
 
 //	explicit MxNumeric(const MxArrayNative* array)
 //					: MxArray(array) {
-//		mexAssert(m_kClass == mxGetClassID(array));
+//		mexAssert(m_class == mxGetClassID(array));
 //	}
 
 	MxNumeric(const int numRows, const int numColumns)
-			: MxArray() {
-		m_array = mxCreateNumericMatrix(numRows, numColumns, m_kClass,
+			: MxArray(MxClassId<T>().get_class()) {
+		m_array = mxCreateNumericMatrix(numRows, numColumns, m_class,
 										mxREAL);
 		m_isInit = true;
 	}
@@ -332,46 +364,46 @@ public:
 //		for (int iter = 0; iter < numDims; ++iter) {
 //			tempDims[iter] = dims[iter];
 //		}
-//		m_pArray = mxCreateNumericArray(numDims, tempDims, m_kClass, mxREAL);
+//		m_pArray = mxCreateNumericArray(numDims, tempDims, m_class, mxREAL);
 //		mxFree(tempDims);
 //	}
 
 	MxNumeric(const int numDims, const int *dims)
-			: MxArray() {
+			: MxArray(MxClassId<T>().get_class()) {
 		mwSize *tempDims = (mwSize *) malloc(numDims * sizeof(mwSize));
 		for (int iter = 0; iter < numDims; ++iter) {
 			tempDims[iter] = dims[iter];
 		}
-		m_array = mxCreateNumericArray(numDims, tempDims, m_kClass, mxREAL);
+		m_array = mxCreateNumericArray(numDims, tempDims, m_class, mxREAL);
 		mxFree(tempDims);
 		m_isInit = true;
 	}
 
 	MxNumeric(const int numDims, const mwSize *dims)
-			: MxArray() {
-		m_array = mxCreateNumericArray(numDims, dims, m_kClass, mxREAL);
+			: MxArray(MxClassId<T>().get_class()) {
+		m_array = mxCreateNumericArray(numDims, dims, m_class, mxREAL);
 		m_isInit = true;
 	}
 
 	explicit MxNumeric(const T scalarVar)
-					: MxArray() {
-		m_array = mxCreateNumericMatrix(1, 1, m_kClass, mxREAL);
+					: MxArray(MxClassId<T>().get_class()) {
+		m_array = mxCreateNumericMatrix(1, 1, m_class, mxREAL);
 		T *val = (T *) mxGetData(m_array);
 		*val = (T) scalarVar;
 		m_isInit = true;
 	}
 
 	explicit MxNumeric(const std::vector<T>& vecVar)
-					: MxArray() {
-		m_array = mxCreateNumericMatrix(vecVar.size(), 1, m_kClass, mxREAL);
+					: MxArray(MxClassId<T>().get_class()) {
+		m_array = mxCreateNumericMatrix(vecVar.size(), 1, m_class, mxREAL);
 		T *val = (T *) mxGetData(m_array);
 		std::copy(vecVar.begin(), vecVar.end(), val);
 		m_isInit = true;
 	}
 
 	MxNumeric(const T* arrVar, const int numRows, const int numColumns)
-			: MxArray() {
-		m_array = mxCreateNumericMatrix(numRows, numColumns, m_kClass,
+			: MxArray(MxClassId<T>().get_class()) {
+		m_array = mxCreateNumericMatrix(numRows, numColumns, m_class,
 										mxREAL);
 		T *val = (T *) mxGetData(m_array);
 		memcpy(val, arrVar, numRows * numColumns * sizeof(T));
@@ -379,13 +411,13 @@ public:
 	}
 
 	MxNumeric(const T* arrVar, const std::vector<int>& dims)
-			: MxArray() {
+			: MxArray(MxClassId<T>().get_class()) {
 		const int numDims = dims.size();
 		mwSize *tempDims = (mwSize *) malloc(numDims * sizeof(mwSize));
 		for (int iter = 0; iter < numDims; ++iter) {
 			tempDims[iter] = dims[iter];
 		}
-		m_array = mxCreateNumericArray(numDims, tempDims, m_kClass, mxREAL);
+		m_array = mxCreateNumericArray(numDims, tempDims, m_class, mxREAL);
 		mxFree(tempDims);
 		int numElements = 1;
 		for (int iter = 0; iter < numDims; ++iter) {
@@ -397,12 +429,12 @@ public:
 	}
 
 	MxNumeric(const T* arrVar, const int numDims, const int *dims)
-			: MxArray() {
+			: MxArray(MxClassId<T>().get_class()) {
 		mwSize *tempDims = (mwSize *) malloc(numDims * sizeof(mwSize));
 		for (int iter = 0; iter < numDims; ++iter) {
 			tempDims[iter] = dims[iter];
 		}
-		m_array = mxCreateNumericArray(numDims, tempDims, m_kClass, mxREAL);
+		m_array = mxCreateNumericArray(numDims, tempDims, m_class, mxREAL);
 		mxFree(tempDims);
 		int numElements = 1;
 		for (int iter = 0; iter < numDims; ++iter) {
@@ -414,8 +446,8 @@ public:
 	}
 
 	MxNumeric(const T* arrVar, const int numDims, const mwSize *dims)
-			: MxArray() {
-		m_array = mxCreateNumericArray(numDims, dims, m_kClass, mxREAL);
+			: MxArray(MxClassId<T>().get_class()) {
+		m_array = mxCreateNumericArray(numDims, dims, m_class, mxREAL);
 		int numElements = 1;
 		for (int iter = 0; iter < numDims; ++iter) {
 			numElements *= dims[iter];
@@ -461,62 +493,63 @@ public:
 	}
 };
 
-template <>
-const mxClassID MxNumeric<unsigned char>::m_kClass = mxUINT8_CLASS;
-template <>
-const mxClassID MxNumeric<char>::m_kClass = mxINT8_CLASS;
-template <>
-const mxClassID MxNumeric<short>::m_kClass = mxINT16_CLASS;
-template <>
-const mxClassID MxNumeric<unsigned short>::m_kClass = mxUINT16_CLASS;
-template <>
-const mxClassID MxNumeric<int>::m_kClass = mxINT32_CLASS;
-template <>
-const mxClassID MxNumeric<unsigned int>::m_kClass = mxUINT32_CLASS;
-template <>
-const mxClassID MxNumeric<long>::m_kClass = mxINT64_CLASS;
-template <>
-const mxClassID MxNumeric<unsigned long>::m_kClass = mxUINT64_CLASS;
-template <>
-const mxClassID MxNumeric<float>::m_kClass = mxSINGLE_CLASS;
-template <>
-const mxClassID MxNumeric<double>::m_kClass = mxDOUBLE_CLASS;
-template <>
-const mxClassID MxNumeric<bool>::m_kClass = mxLOGICAL_CLASS;
+//template <>
+//const mxClassID MxNumeric<unsigned char>::m_kClass = mxUINT8_CLASS;
+//template <>
+//const mxClassID MxNumeric<char>::m_kClass = mxINT8_CLASS;
+//template <>
+//const mxClassID MxNumeric<short>::m_kClass = mxINT16_CLASS;
+//template <>
+//const mxClassID MxNumeric<unsigned short>::m_kClass = mxUINT16_CLASS;
+//template <>
+//const mxClassID MxNumeric<int>::m_kClass = mxINT32_CLASS;
+//template <>
+//const mxClassID MxNumeric<unsigned int>::m_kClass = mxUINT32_CLASS;
+//template <>
+//const mxClassID MxNumeric<long>::m_kClass = mxINT64_CLASS;
+//template <>
+//const mxClassID MxNumeric<unsigned long>::m_kClass = mxUINT64_CLASS;
+//template <>
+//const mxClassID MxNumeric<float>::m_kClass = mxSINGLE_CLASS;
+//template <>
+//const mxClassID MxNumeric<double>::m_kClass = mxDOUBLE_CLASS;
+//template <>
+//const mxClassID MxNumeric<bool>::m_kClass = mxLOGICAL_CLASS;
 
 class MxString: public MxArray {
 public:
-	static const mxClassID m_kClass = mxCHAR_CLASS;
+//	static const mxClassID m_kClass = mxCHAR_CLASS;
 
 	MxString(const MxString& mxString)
-			: MxArray(mxString) {	}
+			: MxArray(mxString, mxCHAR_CLASS) {	}
 
 	MxString& operator=(const MxString& mxString) {
 		if (this != &mxString) {
 			this->m_array = mxString.m_array;
+			this->m_class = mxString.m_class;
 			this->m_isInit = mxString.m_isInit;
 		}
 		return *this;
 	}
 
 	explicit MxString(const PMxArrayNative array)
-					: MxArray(array) {
-		mexAssert(m_kClass == mxGetClassID(array));
+					: MxArray(array, mxCHAR_CLASS) {
+		mexAssert(m_class == mxGetClassID(array));
 	}
 
 //	explicit MxString(const MxArrayNative* array)
 //					: MxArray(array) {
-//		mexAssert(m_kClass == mxGetClassID(array));
+//		mexAssert(m_class == mxGetClassID(array));
 //	}
 
 	MxString(const std::string& strVar)
-					: MxArray() {
+					: MxArray(mxCHAR_CLASS) {
 		m_array = mxCreateString(strVar.c_str());
 		m_isInit = true;
 	}
 
 	explicit MxString(const char* charVar)
-					: MxArray() {
+					: MxArray(mxCHAR_CLASS) {
 		m_array = mxCreateString(charVar);
 		m_isInit = true;
 	}
@@ -557,22 +590,23 @@ public:
 
 class MxCell : public MxArray {
 public:
-	static const mxClassID m_kClass = mxCELL_CLASS;
+//	static const mxClassID m_kClass = mxCELL_CLASS;
 
 	MxCell(const MxCell& mxCell)
-		: MxArray(mxCell) {	}
+		: MxArray(mxCell, mxCELL_CLASS) {	}
 
 	MxCell& operator=(const MxCell& mxCell) {
 		if (this != &mxCell) {
 			this->m_array = mxCell.m_array;
+			this->m_class = mxCell.m_class;
 			this->m_isInit = mxCell.m_isInit;
 		}
 		return *this;
 	}
 
 	explicit MxCell(const PMxArrayNative array)
-				: MxArray() {
-		if (m_kClass == mxGetClassID(array)) {
+				: MxArray(mxCELL_CLASS) {
+		if (m_class == mxGetClassID(array)) {
 			m_array = array;
 		} else {
 			m_array = mxCreateCellMatrix(1, 1);
@@ -583,17 +617,17 @@ public:
 
 //	explicit MxCell(const MxArrayNative* array)
 //				: MxArray(array) {
-//		mexAssert(m_kClass == mxGetClassID(array));
+//		mexAssert(m_class == mxGetClassID(array));
 //	}
 
 	MxCell(const int numRows, const int numColumns)
-		: MxArray() {
+		: MxArray(mxCELL_CLASS) {
 		m_array = mxCreateCellMatrix(numRows, numColumns);
 		m_isInit = true;
 	}
 
 	explicit MxCell(const std::vector<int> &dims)
-				: MxArray() {
+				: MxArray(mxCELL_CLASS) {
 		const int numDims = dims.size();
 		mwSize *tempDims = (mwSize *) malloc(numDims * sizeof(mwSize));
 		for (int iter = 0; iter < numDims; ++iter) {
@@ -605,7 +639,7 @@ public:
 	}
 
 	MxCell(const int numDims, const int *dims)
-		: MxArray() {
+		: MxArray(mxCELL_CLASS) {
 		mwSize *tempDims = (mwSize *) malloc(numDims * sizeof(mwSize));
 		for (int iter = 0; iter < numDims; ++iter) {
 			tempDims[iter] = dims[iter];
@@ -616,7 +650,7 @@ public:
 	}
 
 	MxCell(const int numDims, const mwSize *dims)
-		: MxArray() {
+		: MxArray(mxCELL_CLASS) {
 		m_array = mxCreateCellArray(numDims, dims);
 		m_isInit = true;
 	}
@@ -626,7 +660,7 @@ public:
 	 * derived classes of MxArray.
 	 */
 	explicit MxCell(const MxArray& scalarVar)
-				: MxArray() {
+				: MxArray(mxCELL_CLASS) {
 		m_array = mxCreateCellMatrix(1, 1);
 		mxSetCell(m_array, 0, scalarVar.get_array());
 		m_isInit = true;
@@ -643,7 +677,7 @@ public:
 	}
 
 	explicit MxCell(const std::vector<MxArray *>& vecVar)
-				: MxArray() {
+				: MxArray(mxCELL_CLASS) {
 		m_array = mxCreateCellMatrix(vecVar.size(), 1);
 		for (int iter = 0, numElements = vecVar.size(); iter < numElements;
 			++iter) {
@@ -653,7 +687,7 @@ public:
 	}
 
 	explicit MxCell(const std::vector<const MxArray *>& vecVar)
-				: MxArray() {
+				: MxArray(mxCELL_CLASS) {
 		m_array = mxCreateCellMatrix(vecVar.size(), 1);
 		for (int iter = 0, numElements = vecVar.size(); iter < numElements;
 			++iter) {
@@ -664,7 +698,7 @@ public:
 
 	MxCell(const PMxArrayNative* arrVar, const int numRows,
 			const int numColumns)
-		: MxArray() {
+		: MxArray(mxCELL_CLASS) {
 		m_array = mxCreateCellMatrix(numRows, numColumns);
 		int numElements = numRows * numColumns;
 		for (int iter = 0; iter < numElements; ++iter) {
@@ -674,7 +708,7 @@ public:
 	}
 
 	MxCell(const PMxArrayNative* arrVar, const std::vector<int>& dims)
-		: MxArray() {
+		: MxArray(mxCELL_CLASS) {
 		const int numDims = dims.size();
 		mwSize *tempDims = (mwSize *) malloc(numDims * sizeof(mwSize));
 		for (int iter = 0; iter < numDims; ++iter) {
@@ -693,7 +727,7 @@ public:
 	}
 
 	MxCell(const PMxArrayNative* arrVar, const int numDims, const int *dims)
-		: MxArray() {
+		: MxArray(mxCELL_CLASS) {
 		mwSize *tempDims = (mwSize *) malloc(numDims * sizeof(mwSize));
 		for (int iter = 0; iter < numDims; ++iter) {
 			tempDims[iter] = dims[iter];
@@ -711,7 +745,7 @@ public:
 	}
 
 	MxCell(const PMxArrayNative* arrVar, const int numDims, const mwSize *dims)
-		: MxArray() {
+		: MxArray(mxCELL_CLASS) {
 		m_array = mxCreateCellArray(numDims, dims);
 		int numElements = 1;
 		for (int iter = 0; iter < numDims; ++iter) {
@@ -760,31 +794,32 @@ public:
 
 class MxStruct : public MxArray {
 public:
-	static const mxClassID m_kClass = mxSTRUCT_CLASS;
+//	static const mxClassID m_kClass = mxSTRUCT_CLASS;
 
 	MxStruct(const MxStruct& mxStruct)
-			: MxArray(mxStruct) {	}
+			: MxArray(mxStruct, mxSTRUCT_CLASS) {	}
 
 	MxStruct& operator=(const MxStruct& mxStruct) {
 		if (this != &mxStruct) {
 			this->m_array = mxStruct.m_array;
+			this->m_class = mxStruct.m_class;
 			this->m_isInit = mxStruct.m_isInit;
 		}
 		return *this;
 	}
 
 	explicit MxStruct(const PMxArrayNative array)
-					: MxArray(array) {
-		mexAssert(m_kClass == mxGetClassID(array));
+					: MxArray(array, mxSTRUCT_CLASS) {
+		mexAssert(m_class == mxGetClassID(array));
 	}
 
 //	explicit MxStruct(const MxArrayNative* array)
 //					: MxArray(array) {
-//		mexAssert(m_kClass == mxGetClassID(array));
+//		mexAssert(m_class == mxGetClassID(array));
 //	}
 
 	MxStruct(const std::string& scalarName, const PMxArrayNative& scalarVar)
-			: MxArray() {
+			: MxArray(mxSTRUCT_CLASS) {
 		const char* temp = scalarName.c_str();
 		m_array = mxCreateStructMatrix(1, 1, 1, &(temp));
 		mxSetField(m_array, 0, scalarName.c_str(), scalarVar);
@@ -792,7 +827,7 @@ public:
 	}
 
 	MxStruct(const std::string& scalarName, const MxArray& scalarVar)
-			: MxArray() {
+			: MxArray(mxSTRUCT_CLASS) {
 		const char* temp = scalarName.c_str();
 		m_array = mxCreateStructMatrix(1, 1, 1, &(temp));
 		mxSetField(m_array, 0, scalarName.c_str(), scalarVar.get_array());
@@ -801,7 +836,7 @@ public:
 
 	MxStruct(const std::vector<std::string>& vecName,
 			const std::vector<PMxArrayNative>& vecVar)
-			: MxArray() {
+			: MxArray(mxSTRUCT_CLASS) {
 		int numFields = vecName.size();
 		mexAssert(vecVar.size() == numFields);
 		if (numFields > 0) {
@@ -818,7 +853,7 @@ public:
 
 	MxStruct(const std::vector<std::string>& vecName,
 			const std::vector<MxArray *>& vecVar)
-			: MxArray() {
+			: MxArray(mxSTRUCT_CLASS) {
 		int numFields = vecName.size();
 		mexAssert(vecVar.size() == numFields);
 		if (numFields > 0) {
@@ -847,9 +882,9 @@ public:
 
 	void addField(const std::vector<std::string>& vecName,
 				const std::vector<PMxArrayNative>& vecVar) {
+		int numFields = vecName.size();
 		mexAssert(vecVar.size() == numFields);
-		for (int iter = 0, numFields = vecName.size(); iter < numFields;
-			++iter) {
+		for (int iter = 0; iter < numFields; ++iter) {
 			mxAddField(m_array, vecName[iter].c_str());
 			mxSetField(m_array, 0, vecName[iter].c_str(), vecVar[iter]);
 		}
@@ -857,16 +892,16 @@ public:
 
 	void addField(const std::vector<std::string>& vecName,
 			const std::vector<MxArray *>& vecVar) {
+		int numFields = vecName.size();
 		mexAssert(vecVar.size() == numFields);
-		for (int iter = 0, numFields = vecName.size(); iter < numFields;
-			++iter) {
+		for (int iter = 0; iter < numFields; ++iter) {
 			mxAddField(m_array, vecName[iter].c_str());
 			mxSetField(m_array, 0, vecName[iter].c_str(),
 					vecVar[iter]->get_array());
 		}
 	}
 
-	bool isField(const std::string& name) {
+	bool isField(const std::string& name) const {
 		return (mxGetFieldNumber(m_array, name.c_str()) != -1);
 	}
 
