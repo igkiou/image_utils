@@ -1,0 +1,3 @@
+[submodule "mex_utils"]
+	path = mex_utils
+	url = git@github.com:igkiou/mex_utils.git
