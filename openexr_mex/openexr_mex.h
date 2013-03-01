@@ -78,7 +78,7 @@ public:
 	explicit EXRInputFile(const mex::MxString& fileName)
 							: m_file(fileName.c_str()),
 							  m_frameBuffer(),
-							  m_pixelBuffer(NULL),
+							  m_pixelBuffer(),
 							  m_foundChannel(),
 							  m_createdFrameBuffer(false),
 							  m_readFile(false) {	}
@@ -139,16 +139,16 @@ public:
 
 	mex::MxNumeric<FloatUsed> readFile();
 
-	virtual ~EXRInputFile() {
+	~EXRInputFile() {
 		if (m_createdFrameBuffer) {
-			delete[] m_pixelBuffer;
+//			m_pixelBuffer.destroy();
 		}
 	}
 
 private:
 	Imf::InputFile m_file;
 	Imf::FrameBuffer m_frameBuffer;
-	Imf::Array2D<FloatUsed>* m_pixelBuffer;
+	mex::MxNumeric<FloatUsed> m_pixelBuffer;
 	std::vector<bool> m_foundChannel;
 	bool m_createdFrameBuffer;
 	bool m_readFile;
@@ -159,6 +159,8 @@ public:
 	EXROutputFile(const int width, const int height)
 				: m_header(width, height),
 				  m_frameBuffer(),
+				  m_pixelBuffer(),
+				  m_foundChannel(),
 				  m_createdFrameBuffer(false),
 				  m_wroteFile(false) {	}
 
@@ -191,11 +193,17 @@ public:
 
 	void writeFile(const mex::MxString& fileName);
 
-	virtual ~EXROutputFile() {	}
+	~EXROutputFile() {
+		if (m_createdFrameBuffer) {
+			m_pixelBuffer.destroy();
+		}
+	}
 
 private:
 	Imf::Header m_header;
 	Imf::FrameBuffer m_frameBuffer;
+	mex::MxNumeric<FloatUsed> m_pixelBuffer;
+	std::vector<bool> m_foundChannel;
 	bool m_createdFrameBuffer;
 	bool m_wroteFile;
 };

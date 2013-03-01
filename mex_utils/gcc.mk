@@ -12,7 +12,7 @@ MATLABINCLUDE = -I$(MATLABDIR)/extern/include
 INCLUDES = $(MATLABINCLUDE)
 
 CC = g++
-MEXFLAGS = -DUSE_MATLAB_INTERFACE -DMATLAB_MEX_FILE -D_GNU_SOURCE -DNDEBUG -fexceptions -fno-omit-frame-pointer
+MEXFLAGS = -DUSE_MATLAB_INTERFACE -DMATLAB_MEX_FILE -D_GNU_SOURCE -fexceptions -fno-omit-frame-pointer
 GENERALFLAGS = -fPIC -W -Wall -Wextra -g -pedantic 
 OPTIMFLAGS = -march=native -O3 -ffast-math -fopenmp -pthread
 REPORTSFLAGS = -Winline -Wimplicit

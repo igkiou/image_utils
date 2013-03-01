@@ -26,20 +26,20 @@ void copyArray2DtoMxArray(mex::MxNumeric<FloatUsed>& destination,
 				(dimensions[0] == height) &&
 				(dimensions[1] == width));
 	for (int iterChannel = 0; iterChannel < numChannels; ++iterChannel) {
-//		for (int iterWidth = 0; iterWidth < width; ++iterWidth) {
-//			for (int iterRow = 0; iterRow < height; ++iterRow) {
-//				destination[height * width * iterChannel
-//				            + height * iterWidth
-//				            + iterRow] =
-//				static_cast<FloatUsed>(origin[iterChannel][iterRow][iterWidth]);
-//			}
-//		}
-		FloatUsed* destinationData = destination.data()
-								+ height * width * iterChannel;
-		const Imf::Array2D<FloatUsed>* originData = origin + iterChannel;
-		memcpy(destinationData,
-			(*originData)[0],
-			height * width * sizeof(FloatUsed));
+		for (int iterWidth = 0; iterWidth < width; ++iterWidth) {
+			for (int iterRow = 0; iterRow < height; ++iterRow) {
+				destination[height * width * iterChannel
+				            + height * iterWidth
+				            + iterRow] =
+				static_cast<FloatUsed>(origin[iterChannel][iterRow][iterWidth]);
+			}
+		}
+//		FloatUsed* destinationData = destination.data()
+//								+ height * width * iterChannel;
+//		const Imf::Array2D<FloatUsed>* originData = origin + iterChannel;
+//		memcpy(destinationData,
+//			(*originData)[0],
+//			height * width * sizeof(FloatUsed));
 	}
 }
 
@@ -69,21 +69,29 @@ void EXRInputFile::readChannel(const std::vector<std::string>& channelNames) {
 	getDimensions(width, height);
 	Imath::Box2i dw = m_file.header().dataWindow();
 	int numChannels = channelNames.size();
-	m_pixelBuffer = new Imf::Array2D<FloatUsed>[numChannels];
+	std::vector<int> dimensions;
+	dimensions.push_back(width);
+	dimensions.push_back(height);
+	if (numChannels > 1) {
+		dimensions.push_back(numChannels);
+	}
+	m_pixelBuffer = mex::MxNumeric<FloatUsed>(dimensions.size(), &dimensions[0]);
+	m_foundChannel.clear();
 
 	for (int iter = 0; iter < numChannels; ++iter) {
-		Imf::Array2D<FloatUsed>* tempBuffer = &m_pixelBuffer[iter];
-		tempBuffer->resizeErase(height, width);
 		if (m_file.header().channels().findChannel(channelNames[iter].c_str())) {
+			FloatUsed* tempBuffer = &m_pixelBuffer[iter * width * height];
+			m_foundChannel.push_back(true);
 			m_frameBuffer.insert(channelNames[iter].c_str(),
 							Imf::Slice(kEXRFloatUsed,
-									(char *) (&((*tempBuffer)[0][0])
-												- dw.min.x - dw.min.y * width),
-									sizeof((*tempBuffer)[0][0]) * 1,
-									sizeof((*tempBuffer)[0][0]) * width,
+									(char *) (tempBuffer - dw.min.x - dw.min.y * width),
+									sizeof(*tempBuffer) * 1,
+									sizeof(*tempBuffer) * width,
 									1,
 									1,
 									FLT_MAX));
+		} else {
+			m_foundChannel.push_back(false);
 		}
 	}
 	m_createdFrameBuffer = true;
@@ -98,30 +106,22 @@ mex::MxNumeric<FloatUsed> EXRInputFile::readFile() {
 	int width, height, numChannels;
 	getDimensions(width, height);
 	numChannels = m_foundChannel.size();
-	mex::MxNumeric<FloatUsed> retArg;
-	if (numChannels == 1) {
-		retArg = mex::MxNumeric<FloatUsed>(height, width);
-	} else {
-		int dimensions[3];
-		dimensions[0] = height;
-		dimensions[1] = width;
-		dimensions[2] = numChannels;
-		retArg = mex::MxNumeric<FloatUsed>(3, dimensions);
+	std::vector<int> transposePermutation;
+	transposePermutation.push_back(2);
+	transposePermutation.push_back(1);
+	if (numChannels > 1) {
+		transposePermutation.push_back(3);
 	}
-	copyArray2DtoMxArray(retArg, m_pixelBuffer, width, height, numChannels);
+//	copyArray2DtoMxArray(retArg, m_pixelBuffer, width, height, numChannels);
 	m_readFile = true;
-	return retArg;
+	return m_pixelBuffer/*.permute(transposePermutation)*/;
 }
 
 namespace {
 
 /*
  * Routines to convert an Attribute to MxArray.
- */
-
-/*
  * TODO: Find reason why DoubleAttribute and IntAttribute are not in Imf.
- * TODO: Change all to use strings, not char *.
  */
 
 const mex::ConstMap<std::string, EAttributeType> stringToAttributeType
@@ -145,28 +145,28 @@ const mex::ConstMap<std::string, EAttributeType> stringToAttributeType
 
 const mex::ConstMap<Imf::Compression, std::string> compressionTypeToString
 	= mex::ConstMap<Imf::Compression, std::string>
-	(Imf::NO_COMPRESSION, 			"no")
-	(Imf::RLE_COMPRESSION,			"rle")
-	(Imf::ZIPS_COMPRESSION,			"zips")
-	(Imf::ZIP_COMPRESSION,			"zip")
-	(Imf::PIZ_COMPRESSION,			"piz")
-	(Imf::PXR24_COMPRESSION,		"pxr24")
-	(Imf::B44_COMPRESSION,			"b44")
-	(Imf::B44A_COMPRESSION,			"b44a")
-	(Imf::NUM_COMPRESSION_METHODS,	"unknown");
+	(Imf::NO_COMPRESSION, 			std::string("no"))
+	(Imf::RLE_COMPRESSION,			std::string("rle"))
+	(Imf::ZIPS_COMPRESSION,			std::string("zips"))
+	(Imf::ZIP_COMPRESSION,			std::string("zip"))
+	(Imf::PIZ_COMPRESSION,			std::string("piz"))
+	(Imf::PXR24_COMPRESSION,		std::string("pxr24"))
+	(Imf::B44_COMPRESSION,			std::string("b44"))
+	(Imf::B44A_COMPRESSION,			std::string("b44a"))
+	(Imf::NUM_COMPRESSION_METHODS,	std::string("unknown"));
 
 const mex::ConstMap<Imf::LineOrder, std::string> lineOrderTypeToString
 	= mex::ConstMap<Imf::LineOrder, std::string>
-	(Imf::INCREASING_Y,		"increasing_y")
-	(Imf::DECREASING_Y,		"decreasing_y")
-	(Imf::RANDOM_Y,			"random_y")
-	(Imf::NUM_LINEORDERS,	"unknown");
+	(Imf::INCREASING_Y,		std::string("increasing_y"))
+	(Imf::DECREASING_Y,		std::string("decreasing_y"))
+	(Imf::RANDOM_Y,			std::string("random_y"))
+	(Imf::NUM_LINEORDERS,	std::string("unknown"));
 
 const mex::ConstMap<Imf::Envmap, std::string> envmapTypeToString
 	= mex::ConstMap<Imf::Envmap, std::string>
-	(Imf::ENVMAP_LATLONG, 	"latlong")
-	(Imf::ENVMAP_CUBE,		"cube")
-	(Imf::NUM_ENVMAPTYPES,	"unknown");
+	(Imf::ENVMAP_LATLONG, 	std::string("latlong"))
+	(Imf::ENVMAP_CUBE,		std::string("cube"))
+	(Imf::NUM_ENVMAPTYPES,	std::string("unknown"));
 
 // VT
 template <typename T>
@@ -197,47 +197,68 @@ mex::MxNumeric<T> toMxArray(
  * TODO: Change this to struct.
  */
 template <typename T>
-mex::MxCell toMxArray(
+mex::MxStruct toMxArray(
 	const Imf::TypedAttribute<Imath::Box<Imath::Vec2<T> > >& attribute) {
-	std::vector<mex::MxArray *> temp;
-	std::vector<T> tempV;
-	tempV.push_back(attribute.value().min.x);
-	tempV.push_back(attribute.value().min.y);
-	temp.push_back(new mex::MxNumeric<T>(tempV));
-	tempV.clear();
-	tempV.push_back(attribute.value().max.x);
-	tempV.push_back(attribute.value().max.y);
-	temp.push_back(new mex::MxNumeric<T>(tempV));
-	return mex::MxCell(temp);
+	std::vector<std::string> boxNames;
+	std::vector<mex::MxArray *> boxMx;
+
+	/* min */
+	boxNames.push_back(std::string("min"));
+	std::vector<T> min;
+	min.push_back(attribute.value().min.x);
+	min.push_back(attribute.value().min.y);
+	mex::MxNumeric<T> minMx(min);
+	boxMx.push_back(&minMx);
+
+	/* max */
+	boxNames.push_back(std::string("max"));
+	std::vector<T> max;
+	max.push_back(attribute.value().max.x);
+	max.push_back(attribute.value().max.y);
+	mex::MxNumeric<T> maxMx(max);
+	boxMx.push_back(&maxMx);
+
+	return mex::MxStruct(boxNames, boxMx);
 }
 
 // Chromaticities
 mex::MxStruct toMxArray(
 	const Imf::TypedAttribute<Imf::Chromaticities>& attribute) {
 	std::vector<std::string> chromaticityNames;
-	chromaticityNames.push_back(std::string("red"));
-	chromaticityNames.push_back(std::string("green"));
-	chromaticityNames.push_back(std::string("blue"));
-	chromaticityNames.push_back(std::string("white"));
 	std::vector<mex::MxArray*> chromaticityValues;
-	std::vector<float> temp(2, 0);
-	temp[0] = attribute.value().red.x;
-	temp[0] = attribute.value().red.y;
-	chromaticityValues.push_back(new mex::MxNumeric<float>(temp));
-	temp[0] = attribute.value().green.x;
-	temp[0] = attribute.value().green.y;
-	chromaticityValues.push_back(new mex::MxNumeric<float>(temp));
-	temp[0] = attribute.value().blue.x;
-	temp[0] = attribute.value().blue.y;
-	chromaticityValues.push_back(new mex::MxNumeric<float>(temp));
-	temp[0] = attribute.value().white.x;
-	temp[0] = attribute.value().white.y;
-	chromaticityValues.push_back(new mex::MxNumeric<float>(temp));
-	for (int iter = 0, numChromaticities = chromaticityValues.size();
-		iter < numChromaticities;
-		++iter) {
-		delete chromaticityValues[iter];
-	}
+
+	/* red */
+	chromaticityNames.push_back(std::string("red"));
+	std::vector<float> red(2, 0);
+	red[0] = attribute.value().red.x;
+	red[1] = attribute.value().red.y;
+	mex::MxNumeric<float> redMx(red);
+	chromaticityValues.push_back(&redMx);
+
+	/* green */
+	chromaticityNames.push_back(std::string("green"));
+	std::vector<float> green(2, 0);
+	green[0] = attribute.value().green.x;
+	green[1] = attribute.value().green.y;
+	mex::MxNumeric<float> greenMx(green);
+	chromaticityValues.push_back(&greenMx);
+
+	/* blue */
+	chromaticityNames.push_back(std::string("blue"));
+	std::vector<float> blue(2, 0);
+	blue[0] = attribute.value().blue.x;
+	blue[1] = attribute.value().blue.y;
+	mex::MxNumeric<float> blueMx(blue);
+	chromaticityValues.push_back(&blueMx);
+
+	/* white */
+	chromaticityNames.push_back(std::string("white"));
+	std::vector<float> white(2, 0);
+	white[0] = attribute.value().white.x;
+	white[1] = attribute.value().white.y;
+	mex::MxNumeric<float> whiteMx(white);
+	chromaticityValues.push_back(&whiteMx);
+
 	return mex::MxStruct(chromaticityNames, chromaticityValues);
 }
 
@@ -275,187 +296,98 @@ mex::MxCell toMxArray(
 		++iter) {
 		channelNames.push_back(new mex::MxString(iter.name()));
 	}
+	mex::MxCell retArg(channelNames);
 	for (int iter = 0, numChannels = channelNames.size();
 		iter < numChannels;
 		++iter) {
 		delete channelNames[iter];
 	}
-	return mex::MxCell(channelNames);
+	return retArg;
 }
 
 } /* namespace */
 
 mex::MxArray* EXRInputFile::getAttribute(const mex::MxString& attributeName) const {
 	const Imf::Attribute& attribute = m_file.header()[attributeName.c_str()];
-	mexPrintf("type %s %s ", attribute.typeName(), attributeName.c_str());
+//	mexPrintf("type %s %s %d ", attribute.typeName(), attributeName.c_str(), stringToAttributeType["chlist"]);
 	const EAttributeType type = stringToAttributeType[std::string(attribute.typeName())];
 //	const EAttributeType type = EAttributeCompression;
-	mexPrintf("type %d ", type);
+//	mexPrintf("type %d ", type);
 	switch(type) {
 		case EAttributeChannelList: {
-		try {
 			return new mex::MxCell(toMxArray(
-					dynamic_cast<const Imf::TypedAttribute<Imf::ChannelList>&>(
+					static_cast<const Imf::TypedAttribute<Imf::ChannelList>&>(
 																attribute)));
-		} catch (std::bad_cast& e) {
-			mexPrintf("type %s %s ", attributeName.c_str(), attribute.typeName());
-			mexAssertEx(0, "assert error");
-			return NULL;
-		}
 		}
 		case EAttributeCompression: {
-		try {
 			return new mex::MxString(toMxArray(
-					dynamic_cast<const Imf::TypedAttribute<Imf::Compression>&>(
+					static_cast<const Imf::TypedAttribute<Imf::Compression>&>(
 																attribute)));
-		} catch (std::bad_cast& e) {
-			mexPrintf("type %s %s ", attributeName.c_str(), attribute.typeName());
-			mexAssertEx(0, "assert error");
-			return NULL;
-		}
 		}
 		case EAttributeLineOrder: {
-		try {
 			return new mex::MxString(toMxArray(
-					dynamic_cast<const Imf::TypedAttribute<Imf::LineOrder>&>(
+					static_cast<const Imf::TypedAttribute<Imf::LineOrder>&>(
 																attribute)));
-		} catch (std::bad_cast& e) {
-			mexPrintf("type %s %s ", attributeName.c_str(), attribute.typeName());
-			mexAssertEx(0, "assert error");
-			return NULL;
-		}
 		}
 		case EAttributeEnvmap: {
-		try {
 			return new mex::MxString(toMxArray(
-					dynamic_cast<const Imf::TypedAttribute<Imf::Envmap>&>(
+					static_cast<const Imf::TypedAttribute<Imf::Envmap>&>(
 																attribute)));
-		} catch (std::bad_cast& e) {
-			mexPrintf("type %s %s ", attributeName.c_str(), attribute.typeName());
-			mexAssertEx(0, "assert error");
-			return NULL;
-		}
 		}
 		case EAttributeString: {
-		try {
 			return new mex::MxString(toMxArray(
-					dynamic_cast<const Imf::TypedAttribute<std::string>&>(
+					static_cast<const Imf::TypedAttribute<std::string>&>(
 																attribute)));
-		} catch (std::bad_cast& e) {
-			mexPrintf("type %s %s ", attributeName.c_str(), attribute.typeName());
-			mexAssertEx(0, "assert error");
-			return NULL;
-		}
 		}
 		case EAttributeChromaticities: {
-		try {
 			return new mex::MxStruct(toMxArray(
-					dynamic_cast<const Imf::TypedAttribute<Imf::Chromaticities>&>(
+					static_cast<const Imf::TypedAttribute<Imf::Chromaticities>&>(
 																attribute)));
-		} catch (std::bad_cast& e) {
-			mexPrintf("type %s %s ", attributeName.c_str(), attribute.typeName());
-			mexAssertEx(0, "assert error");
-			return NULL;
-		}
 		}
 		case EAttributeBox2f: {
-		try {
-			return new mex::MxCell(toMxArray(
-					dynamic_cast<const Imf::TypedAttribute<Imath::Box2f>&>(
+			return new mex::MxStruct(toMxArray(
+					static_cast<const Imf::TypedAttribute<Imath::Box2f>&>(
 																attribute)));
-		} catch (std::bad_cast& e) {
-			mexPrintf("type %s %s ", attributeName.c_str(), attribute.typeName());
-			mexAssertEx(0, "assert error");
-			return NULL;
-		}
 		}
 		case EAttributeBox2i: {
-		try {
-			return new mex::MxCell(toMxArray(
-					dynamic_cast<const Imf::TypedAttribute<Imath::Box2i>&>(
+			return new mex::MxStruct(toMxArray(
+					static_cast<const Imf::TypedAttribute<Imath::Box2i>&>(
 																attribute)));
-		} catch (std::bad_cast& e) {
-			mexPrintf("type %s %s ", attributeName.c_str(), attribute.typeName());
-			mexAssertEx(0, "assert error");
-			return NULL;
-		}
 		}
 		case EAttributeVectorf: {
-		try {
 			return new mex::MxNumeric<float>(toMxArray(
-					dynamic_cast<const Imf::TypedAttribute<std::vector<float> >&>(
+					static_cast<const Imf::TypedAttribute<std::vector<float> >&>(
 																attribute)));
-		} catch (std::bad_cast& e) {
-			mexPrintf("type %s %s ", attributeName.c_str(), attribute.typeName());
-			mexAssertEx(0, "assert error");
-			return NULL;
-		}
 		}
 		case EAttributeVectori: {
-		try {
 			return new mex::MxNumeric<int>(toMxArray(
-					dynamic_cast<const Imf::TypedAttribute<std::vector<int> >&>(
+					static_cast<const Imf::TypedAttribute<std::vector<int> >&>(
 																attribute)));
-		} catch (std::bad_cast& e) {
-			mexPrintf("type %s %s ", attributeName.c_str(), attribute.typeName());
-			mexAssertEx(0, "assert error");
-			return NULL;
-		}
 		}
 		case EAttributeV2f: {
-		try {
 			return new mex::MxNumeric<float>(toMxArray(
-					dynamic_cast<const Imf::TypedAttribute<Imath::V2f>&>(
+					static_cast<const Imf::TypedAttribute<Imath::V2f>&>(
 																attribute)));
-		} catch (std::bad_cast& e) {
-			mexPrintf("type %s %s ", attributeName.c_str(), attribute.typeName());
-			mexAssertEx(0, "assert error");
-			return NULL;
-		}
 		}
 		case EAttributeV2i: {
-		try {
 			return new mex::MxNumeric<int>(toMxArray(
-					dynamic_cast<const Imf::TypedAttribute<Imath::V2i>&>(
+					static_cast<const Imf::TypedAttribute<Imath::V2i>&>(
 																attribute)));
-		} catch (std::bad_cast& e) {
-			mexPrintf("type %s %s ", attributeName.c_str(), attribute.typeName());
-			mexAssertEx(0, "assert error");
-			return NULL;
-		}
 		}
 		case EAttributeDouble: {
-		try {
 			return new mex::MxNumeric<double>(toMxArray(
-					dynamic_cast<const Imf::TypedAttribute<double>&>(
+					static_cast<const Imf::TypedAttribute<double>&>(
 																attribute)));
-		} catch (std::bad_cast& e) {
-			mexPrintf("type %s %s ", attributeName.c_str(), attribute.typeName());
-			mexAssertEx(0, "assert error");
-			return NULL;
-		}
 		}
 		case EAttributeFloat: {
-		try {
 			return new mex::MxNumeric<float>(toMxArray(
-					dynamic_cast<const Imf::TypedAttribute<float>&>(
+					static_cast<const Imf::TypedAttribute<float>&>(
 																attribute)));
-		} catch (std::bad_cast& e) {
-			mexPrintf("type %s %s ", attributeName.c_str(), attribute.typeName());
-			mexAssertEx(0, "assert error");
-			return NULL;
-		}
 		}
 		case EAttributeInt: {
-		try {
 			return new mex::MxNumeric<int>(toMxArray(
-					dynamic_cast<const Imf::TypedAttribute<int>&>(
+					static_cast<const Imf::TypedAttribute<int>&>(
 																attribute)));
-		} catch (std::bad_cast& e) {
-			mexPrintf("type %s %s ", attributeName.c_str(), attribute.typeName());
-			mexAssertEx(0, "assert error");
-			return NULL;
-		}
 		}
 		default: {
 			mexAssertEx(0, "Unknown attribute type");
@@ -548,47 +480,47 @@ namespace {
 
 const mex::ConstMap<EAttributeType, std::string> attributeTypeToString
 	= mex::ConstMap<EAttributeType, std::string>
-	(EAttributeChannelList, 	"channelList")
-	(EAttributeCompression,		"compression")
-	(EAttributeLineOrder,		"lineOrder")
-	(EAttributeChromaticities,	"chromaticities")
-	(EAttributeEnvmap,			"envmap")
-	(EAttributeString,			"string")
-	(EAttributeBox2f,			"box2f")
-	(EAttributeBox2i,			"box2i")
-	(EAttributeV2f,				"v2f")
-	(EAttributeV2i,				"v2i")
-	(EAttributeVectorf,			"vectorf")
-	(EAttributeVectori,			"vectori")
-	(EAttributeDouble,			"double")
-	(EAttributeFloat,			"float")
-	(EAttributeInt,				"int")
-	(EAttributeTypeInvalid,		"unknown");
+	(EAttributeChannelList, 	std::string(Imf::ChannelListAttribute::staticTypeName()))
+	(EAttributeCompression,		std::string(Imf::CompressionAttribute::staticTypeName()))
+	(EAttributeLineOrder,		std::string(Imf::LineOrderAttribute::staticTypeName()))
+	(EAttributeChromaticities,	std::string(Imf::ChromaticitiesAttribute::staticTypeName()))
+	(EAttributeEnvmap,			std::string(Imf::EnvmapAttribute::staticTypeName()))
+	(EAttributeString,			std::string(Imf::StringAttribute::staticTypeName()))
+	(EAttributeBox2f,			std::string(Imf::Box2fAttribute::staticTypeName()))
+	(EAttributeBox2i,			std::string(Imf::Box2iAttribute::staticTypeName()))
+	(EAttributeV2f,				std::string(Imf::V2fAttribute::staticTypeName()))
+	(EAttributeV2i,				std::string(Imf::V2iAttribute::staticTypeName()))
+	(EAttributeVectorf,			std::string(Imf::VfAttribute::staticTypeName()))
+	(EAttributeVectori,			std::string(Imf::ViAttribute::staticTypeName()))
+	(EAttributeDouble,			std::string(Imf::TypedAttribute<double>::staticTypeName()))
+	(EAttributeFloat,			std::string(Imf::FloatAttribute::staticTypeName()))
+	(EAttributeInt,				std::string(Imf::TypedAttribute<int>::staticTypeName()))
+	(EAttributeTypeInvalid,		std::string("unknown"));
 
 const mex::ConstMap<std::string, Imf::Compression> stringToCompressionType
 	= mex::ConstMap<std::string, Imf::Compression>
-	("no", 		Imf::NO_COMPRESSION)
-	("rle",		Imf::RLE_COMPRESSION)
-	("zips",	Imf::ZIPS_COMPRESSION)
-	("zip",		Imf::ZIP_COMPRESSION)
-	("piz",		Imf::PIZ_COMPRESSION)
-	("pxr24",	Imf::PXR24_COMPRESSION)
-	("b44",		Imf::B44_COMPRESSION)
-	("b44a",	Imf::B44A_COMPRESSION)
-	("unknown",	Imf::NUM_COMPRESSION_METHODS);
+	(std::string("no"), 		Imf::NO_COMPRESSION)
+	(std::string("rle"),		Imf::RLE_COMPRESSION)
+	(std::string("zips"),		Imf::ZIPS_COMPRESSION)
+	(std::string("zip"),		Imf::ZIP_COMPRESSION)
+	(std::string("piz"),		Imf::PIZ_COMPRESSION)
+	(std::string("pxr24"),		Imf::PXR24_COMPRESSION)
+	(std::string("b44"),		Imf::B44_COMPRESSION)
+	(std::string("b44a"),		Imf::B44A_COMPRESSION)
+	(std::string("unknown"),	Imf::NUM_COMPRESSION_METHODS);
 
 const mex::ConstMap<std::string, Imf::LineOrder> stringToLineOrderType
 	= mex::ConstMap<std::string, Imf::LineOrder>
-	("increasing_y", 	Imf::INCREASING_Y)
-	("decreasing_y",	Imf::DECREASING_Y)
-	("random_y",		Imf::RANDOM_Y)
-	("unknown",			Imf::NUM_LINEORDERS);
+	(std::string("increasing_y"), 	Imf::INCREASING_Y)
+	(std::string("decreasing_y"),	Imf::DECREASING_Y)
+	(std::string("random_y"),		Imf::RANDOM_Y)
+	(std::string("unknown"),			Imf::NUM_LINEORDERS);
 
 const mex::ConstMap<std::string, Imf::Envmap> stringToEnvmapType
 	= mex::ConstMap<std::string, Imf::Envmap>
-	("latlong", Imf::ENVMAP_LATLONG)
-	("cube",	Imf::ENVMAP_CUBE)
-	("unknown",	Imf::NUM_ENVMAPTYPES);
+	(std::string("latlong"), Imf::ENVMAP_LATLONG)
+	(std::string("cube"),	Imf::ENVMAP_CUBE)
+	(std::string("unknown"),	Imf::NUM_ENVMAPTYPES);
 
 // VT
 template <typename T>
@@ -642,13 +574,13 @@ Imf::TypedAttribute<std::vector<int> > toAttribute<std::vector<int> >(
 // Box2T
 template <typename T>
 Imf::TypedAttribute<Imath::Box<Imath::Vec2<T> > > toAttribute(
-	const mex::MxCell& mxCell) {
-	mex::MxNumeric<T> minArray = mex::MxNumeric<T>(mxCell[0]);
-	Imath::Vec2<T> minVec(minArray[0], minArray[1]);
-	mex::MxNumeric<T> maxArray = mex::MxNumeric<T>(mxCell[1]);
-	Imath::Vec2<T> maxVec(maxArray[0], maxArray[1]);
+	const mex::MxStruct& mxStruct) {
+	mex::MxNumeric<T> minMx = mex::MxNumeric<T>(mxStruct[std::string("min")]);
+	Imath::Vec2<T> min(minMx[0], minMx[1]);
+	mex::MxNumeric<T> maxMx = mex::MxNumeric<T>(mxStruct[std::string("max")]);
+	Imath::Vec2<T> max(maxMx[0], maxMx[1]);
 	return Imf::TypedAttribute<Imath::Box<Imath::Vec2<T> > >(
-								Imath::Box<Imath::Vec2<T> >(minVec, maxVec));
+								Imath::Box<Imath::Vec2<T> >(min, max));
 }
 
 // Chromaticities
@@ -703,163 +635,164 @@ Imf::TypedAttribute<Imf::Compression> toAttribute<Imf::Compression>(
 
 const mex::ConstMap<std::string, EAttributeType> registeredAttributeNameToAttributeType
 	= mex::ConstMap<std::string, EAttributeType>
-	("gain",				EAttributeFloat)
-	("wavelength",			EAttributeFloat)
-	("extTube",				EAttributeString)
-	("lens",				EAttributeString)
-	("material",			EAttributeString)
-	("chromaticities",		EAttributeChromaticities)
-	("whiteLuminance",		EAttributeFloat)
-	("adoptedNeutral",		EAttributeV2f)
-	("renderingTransform",	EAttributeString)
-	("lookModTransform",	EAttributeFloat)
-	("xDensity",			EAttributeFloat)
-	("owner",				EAttributeString)
-	("comments",			EAttributeString)
-	("capDate",				EAttributeString)
-	("utcOffset",			EAttributeFloat)
-	("longitude",			EAttributeFloat)
-	("latitude",			EAttributeFloat)
-	("altitude",			EAttributeFloat)
-	("focus",				EAttributeFloat)
-	("expTime",				EAttributeFloat)
-	("aperture",			EAttributeFloat)
-	("isoSpeed",			EAttributeFloat)
-	("multExpTimes",		EAttributeVectorf)
-	("multApertures",		EAttributeVectorf)
-	("multIsoSpeeds",		EAttributeVectorf)
-	("multGains",			EAttributeVectorf)
-	("envmap",				EAttributeEnvmap)
-	("unknown",				EAttributeTypeInvalid);
+	(std::string("gain"),				EAttributeFloat)
+	(std::string("wavelength"),			EAttributeFloat)
+	(std::string("extTube"),			EAttributeString)
+	(std::string("lens"),				EAttributeString)
+	(std::string("material"),			EAttributeString)
+	(std::string("chromaticities"),		EAttributeChromaticities)
+	(std::string("whiteLuminance"),		EAttributeFloat)
+	(std::string("adoptedNeutral"),		EAttributeV2f)
+	(std::string("renderingTransform"),	EAttributeString)
+	(std::string("lookModTransform"),	EAttributeFloat)
+	(std::string("xDensity"),			EAttributeFloat)
+	(std::string("owner"),				EAttributeString)
+	(std::string("comments"),			EAttributeString)
+	(std::string("capDate"),			EAttributeString)
+	(std::string("utcOffset"),			EAttributeFloat)
+	(std::string("longitude"),			EAttributeFloat)
+	(std::string("latitude"),			EAttributeFloat)
+	(std::string("altitude"),			EAttributeFloat)
+	(std::string("focus"),				EAttributeFloat)
+	(std::string("expTime"),			EAttributeFloat)
+	(std::string("aperture"),			EAttributeFloat)
+	(std::string("isoSpeed"),			EAttributeFloat)
+	(std::string("multExpTimes"),		EAttributeVectorf)
+	(std::string("multApertures"),		EAttributeVectorf)
+	(std::string("multIsoSpeeds"),		EAttributeVectorf)
+	(std::string("multGains"),			EAttributeVectorf)
+	(std::string("envmap"),				EAttributeEnvmap);
 
 void EXROutputFile::setAttribute(const mex::MxArray& attribute,
 								const mex::MxString& attributeName) {
 
+	mexPrintf("%s\n", attributeName.c_str());
 	std::map<std::string, EAttributeType>::const_iterator iteratorToType =
 											registeredAttributeNameToAttributeType.
 											get_map().
 											find(attributeName.string());
 	const EAttributeType type(
-				(iteratorToType != registeredAttributeNameToAttributeType.end())
+				(iteratorToType != registeredAttributeNameToAttributeType.get_map().end())
 				?(iteratorToType->second)
 				:(EAttributeString));
+	mexPrintf("%d\n", type);
 	switch(type) {
 		case EAttributeChannelList: {
 			mexAssertEx(0, "Unsupported attribute type");
 			break;
 		}
 		case EAttributeCompression: {
-			mexAssert(attribute.get_class() == mxCHAR_CLASS);
+			const mex::MxString tempAttribute(attribute.get_array());
 			m_header.insert(attributeName.c_str(), toAttribute<Imf::Compression>(
-					dynamic_cast<const mex::MxString&>(attribute)));
+							tempAttribute));
 			break;
 		}
 		case EAttributeLineOrder: {
-			mexAssert(attribute.get_class() == mxCHAR_CLASS);
+			const mex::MxString tempAttribute(attribute.get_array());
 			m_header.insert(attributeName.c_str(), toAttribute<Imf::LineOrder>(
-					dynamic_cast<const mex::MxString&>(attribute)));
+							tempAttribute));
 			break;
 		}
 		case EAttributeEnvmap: {
-			mexAssert(attribute.get_class() == mxCHAR_CLASS);
+			const mex::MxString tempAttribute(attribute.get_array());
 			m_header.insert(attributeName.c_str(), toAttribute<Imf::Envmap>(
-					dynamic_cast<const mex::MxString&>(attribute)));
+							tempAttribute));
 			break;
 		}
 		case EAttributeString: {
-			mexAssert(attribute.get_class() == mxCHAR_CLASS);
+			const mex::MxString tempAttribute(attribute.get_array());
 			m_header.insert(attributeName.c_str(), toAttribute<std::string>(
-					dynamic_cast<const mex::MxString&>(attribute)));
+							tempAttribute));
 			break;
 		}
 		case EAttributeChromaticities: {
-			mexAssert((attribute.get_class() == mxSTRUCT_CLASS) &&
-					((dynamic_cast<const mex::MxStruct&>(attribute).isField(std::string("red"))) &&
-					(mex::MxArray((dynamic_cast<const mex::MxStruct&>(attribute))[std::string("red")]).get_class() == mex::MxClassId<float>().get_class()) &&
-					(mex::MxArray((dynamic_cast<const mex::MxStruct&>(attribute))[std::string("red")]).getNumberOfElements() == 2)) &&
-					((dynamic_cast<const mex::MxStruct&>(attribute).isField(std::string("green"))) &&
-					(mex::MxArray((dynamic_cast<const mex::MxStruct&>(attribute))[std::string("green")]).get_class() == mex::MxClassId<float>().get_class()) &&
-					(mex::MxArray((dynamic_cast<const mex::MxStruct&>(attribute))[std::string("green")]).getNumberOfElements() == 2)) &&
-					((dynamic_cast<const mex::MxStruct&>(attribute).isField(std::string("blue"))) &&
-					(mex::MxArray((dynamic_cast<const mex::MxStruct&>(attribute))[std::string("blue")]).get_class() == mex::MxClassId<float>().get_class()) &&
-					(mex::MxArray((dynamic_cast<const mex::MxStruct&>(attribute))[std::string("blue")]).getNumberOfElements() == 2)) &&
-					((dynamic_cast<const mex::MxStruct&>(attribute).isField(std::string("white"))) &&
-					(mex::MxArray((dynamic_cast<const mex::MxStruct&>(attribute))[std::string("white")]).get_class() == mex::MxClassId<float>().get_class()) &&
-					(mex::MxArray((dynamic_cast<const mex::MxStruct&>(attribute))[std::string("white")]).getNumberOfElements() == 2))
+			const mex::MxStruct tempAttribute(attribute.get_array());
+			mexAssert(
+					(tempAttribute.getNumberOfFields() == 4) &&
+					((tempAttribute.isField(std::string("red"))) &&
+					(mex::MxNumeric<float>(tempAttribute[std::string("red")]).getNumberOfElements() == 2)) &&
+					((tempAttribute.isField(std::string("green"))) &&
+					(mex::MxNumeric<float>(tempAttribute[std::string("green")]).getNumberOfElements() == 2)) &&
+					((tempAttribute.isField(std::string("blue"))) &&
+					(mex::MxNumeric<float>(tempAttribute[std::string("blue")]).getNumberOfElements() == 2)) &&
+					((tempAttribute.isField(std::string("white"))) &&
+					(mex::MxNumeric<float>(tempAttribute[std::string("white")]).getNumberOfElements() == 2))
 			);
 			m_header.insert(attributeName.c_str(), toAttribute(
-					dynamic_cast<const mex::MxStruct&>(attribute)));
+							tempAttribute));
 			break;
 		}
 		case EAttributeBox2f: {
-			mexAssert((attribute.get_class() == mxCELL_CLASS) &&
-					(attribute.getNumberOfElements() == 2) &&
-					((mex::MxArray((dynamic_cast<const mex::MxCell&>(attribute))[0]).get_class() == mex::MxClassId<float>().get_class()) &&
-					(mex::MxArray((dynamic_cast<const mex::MxCell&>(attribute))[0]).getNumberOfElements() == 2)) &&
-					((mex::MxArray((dynamic_cast<const mex::MxCell&>(attribute))[1]).get_class() == mex::MxClassId<float>().get_class()) &&
-					(mex::MxArray((dynamic_cast<const mex::MxCell&>(attribute))[1]).getNumberOfElements() == 2))
+			const mex::MxStruct tempAttribute(attribute.get_array());
+			mexAssert(
+					(tempAttribute.getNumberOfFields() == 1) &&
+					((tempAttribute.isField(std::string("min"))) &&
+					(mex::MxNumeric<float>(tempAttribute[std::string("min")]).getNumberOfElements() == 2)) &&
+					((tempAttribute.isField(std::string("max"))) &&
+					(mex::MxNumeric<float>(tempAttribute[std::string("max")]).getNumberOfElements() == 2))
 			);
 			m_header.insert(attributeName.c_str(), toAttribute<float>(
-					dynamic_cast<const mex::MxCell&>(attribute)));
+							tempAttribute));
 			break;
 		}
 		case EAttributeBox2i: {
-			mexAssert((attribute.get_class() == mxCELL_CLASS) &&
-					(attribute.getNumberOfElements() == 2) &&
-					((mex::MxArray((dynamic_cast<const mex::MxCell&>(attribute))[0]).get_class() == mex::MxClassId<int>().get_class()) &&
-					(mex::MxArray((dynamic_cast<const mex::MxCell&>(attribute))[0]).getNumberOfElements() == 2)) &&
-					((mex::MxArray((dynamic_cast<const mex::MxCell&>(attribute))[1]).get_class() == mex::MxClassId<int>().get_class()) &&
-					(mex::MxArray((dynamic_cast<const mex::MxCell&>(attribute))[1]).getNumberOfElements() == 2))
+			const mex::MxStruct tempAttribute(attribute.get_array());
+			mexAssert(
+					(tempAttribute.getNumberOfFields() == 1) &&
+					((tempAttribute.isField(std::string("min"))) &&
+					(mex::MxNumeric<int>(tempAttribute[std::string("min")]).getNumberOfElements() == 2)) &&
+					((tempAttribute.isField(std::string("max"))) &&
+					(mex::MxNumeric<int>(tempAttribute[std::string("max")]).getNumberOfElements() == 2))
 			);
 			m_header.insert(attributeName.c_str(), toAttribute<int>(
-					dynamic_cast<const mex::MxCell&>(attribute)));
+							tempAttribute));
 			break;
 		}
 		case EAttributeV2f: {
-			mexAssert((attribute.get_class() == mex::MxClassId<float>().get_class()) &&
-					(attribute.getNumberOfElements() == 2));
+			const mex::MxNumeric<float> tempAttribute(attribute.get_array());
+			mexAssert(tempAttribute.getNumberOfElements() == 2);
 			m_header.insert(attributeName.c_str(), toAttribute<Imath::Vec2<float> >(
-					dynamic_cast<const mex::MxNumeric<float>&>(attribute)));
+							tempAttribute));
 			break;
 		}
 		case EAttributeV2i: {
-			mexAssert((attribute.get_class() == mex::MxClassId<int>().get_class()) &&
-					(attribute.getNumberOfElements() == 2));
+			const mex::MxNumeric<int> tempAttribute(attribute.get_array());
+			mexAssert(tempAttribute.getNumberOfElements() == 2);
 			m_header.insert(attributeName.c_str(), toAttribute<Imath::Vec2<int> >(
-					dynamic_cast<const mex::MxNumeric<int>&>(attribute)));
+							tempAttribute));
 			break;
 		}
 		case EAttributeVectorf: {
-			mexAssert(attribute.get_class() == mex::MxClassId<float>().get_class());
+			const mex::MxNumeric<float> tempAttribute(attribute.get_array());
 			m_header.insert(attributeName.c_str(), toAttribute<std::vector<float> >(
-					dynamic_cast<const mex::MxNumeric<float>&>(attribute)));
+							tempAttribute));
 			break;
 		}
 		case EAttributeVectori: {
-			mexAssert(attribute.get_class() == mex::MxClassId<int>().get_class());
+			const mex::MxNumeric<int> tempAttribute(attribute.get_array());
 			m_header.insert(attributeName.c_str(), toAttribute<std::vector<int> >(
-					dynamic_cast<const mex::MxNumeric<int>&>(attribute)));
+							tempAttribute));
 			break;
 		}
 		case EAttributeDouble: {
-			mexAssert((attribute.get_class() == mex::MxClassId<double>().get_class()) &&
-					(attribute.getNumberOfElements() == 1));
+			const mex::MxNumeric<double> tempAttribute(attribute.get_array());
+			mexAssert(tempAttribute.getNumberOfElements() == 1);
 			m_header.insert(attributeName.c_str(), toAttribute<double>(
-					dynamic_cast<const mex::MxNumeric<double>&>(attribute)));
+							tempAttribute));
 			break;
 		}
 		case EAttributeFloat: {
-			mexAssert((attribute.get_class() == mex::MxClassId<float>().get_class()) &&
-					(attribute.getNumberOfElements() == 1));
+			const mex::MxNumeric<float> tempAttribute(attribute.get_array());
+			mexAssert(tempAttribute.getNumberOfElements() == 1);
 			m_header.insert(attributeName.c_str(), toAttribute<float>(
-					dynamic_cast<const mex::MxNumeric<float>&>(attribute)));
+							tempAttribute));
 			break;
 		}
 		case EAttributeInt: {
-			mexAssert((attribute.get_class() == mex::MxClassId<int>().get_class()) &&
-					(attribute.getNumberOfElements() == 1));
+			const mex::MxNumeric<int> tempAttribute(attribute.get_array());
+			mexAssert(tempAttribute.getNumberOfElements() == 1);
 			m_header.insert(attributeName.c_str(), toAttribute<int>(
-					dynamic_cast<const mex::MxNumeric<int>&>(attribute)));
+							tempAttribute));
 			break;
 		}
 		default: {
@@ -871,8 +804,8 @@ void EXROutputFile::setAttribute(const mex::MxArray& attribute,
 
 void EXROutputFile::setAttribute(const mex::MxStruct& attributes) {
 
-	for (int iter = 0, numElements = attributes.getNumberOfElements();
-		iter < numElements;
+	for (int iter = 0, numFields = attributes.getNumberOfFields();
+		iter < numFields;
 		++iter) {
 		setAttribute(mex::MxArray(attributes[iter]), mex::MxString(attributes.getFieldName(iter)));
 	}

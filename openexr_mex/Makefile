@@ -7,11 +7,12 @@ DEBUG_MODE = 1
 # USE_GCC = 1
 include gcc.mk
 
-all: read write get
+all: read write get test
 
 get: exrget.$(MEXEXT)
 read: exrread.$(MEXEXT)
 write: exrwrite_sub.$(MEXEXT)
+test: test_exr.$(MEXEXT)
 
 %.$(MEXEXT): %.o ImfVectorAttribute.o openexr_mex.o
 	$(CC) $(LDFLAGS) $(INCLUDES) $(LIBS) $(CFLAGS) -o $@ $^

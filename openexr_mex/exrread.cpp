@@ -33,10 +33,13 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[]) {
 		}
 		inputFile.readChannel(channelNames);
 	} else {
+		/*
+		 * TODO: Handle Alpha channel in RGB.
+		 */
 		int numChannels = inputFile.getNumberOfChannels();
-		if (numChannels == 1) {
+		if (numChannels == 2) {
 			inputFile.readChannelY();
-		} else if (numChannels == 3) {
+		} else if (numChannels == 4) {
 			inputFile.readChannelRGB();
 		} else {
 			inputFile.readChannel(inputFile.getChannelNames());
