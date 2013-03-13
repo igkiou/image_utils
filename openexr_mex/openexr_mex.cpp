@@ -601,7 +601,7 @@ Imf::TypedAttribute<Imf::Chromaticities> toAttribute(
 template <typename T>
 Imf::TypedAttribute<T> toAttribute(
 	const mex::MxString& mxString) {
-	return Imf::TypedAttribute<T>(mxString.string());
+	return Imf::TypedAttribute<T>(mxString.get_string());
 }
 
 // Envmap
@@ -609,7 +609,7 @@ template <>
 Imf::TypedAttribute<Imf::Envmap> toAttribute<Imf::Envmap>(
 	const mex::MxString& mxString) {
 	return Imf::TypedAttribute<Imf::Envmap>(stringToEnvmapType[
-															mxString.string()]);
+															mxString.get_string()]);
 }
 
 // LineOrder
@@ -617,7 +617,7 @@ template <>
 Imf::TypedAttribute<Imf::LineOrder> toAttribute<Imf::LineOrder>(
 	const mex::MxString& mxString) {
 	return Imf::TypedAttribute<Imf::LineOrder>(stringToLineOrderType[
-															mxString.string()]);
+															mxString.get_string()]);
 }
 
 // Compression
@@ -625,7 +625,7 @@ template <>
 Imf::TypedAttribute<Imf::Compression> toAttribute<Imf::Compression>(
 	const mex::MxString& mxString) {
 	return Imf::TypedAttribute<Imf::Compression>(stringToCompressionType[
-															mxString.string()]);
+															mxString.get_string()]);
 }
 
 // ChannelList
@@ -670,7 +670,7 @@ void EXROutputFile::setAttribute(const mex::MxArray& attribute,
 	std::map<std::string, EAttributeType>::const_iterator iteratorToType =
 											registeredAttributeNameToAttributeType.
 											get_map().
-											find(attributeName.string());
+											find(attributeName.get_string());
 	const EAttributeType type(
 				(iteratorToType != registeredAttributeNameToAttributeType.get_map().end())
 				?(iteratorToType->second)
