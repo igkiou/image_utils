@@ -6,7 +6,6 @@
  */
 
 #include "ImfVectorAttribute.h"
-#include <iterator>
 
 namespace Imf {
 
@@ -22,7 +21,7 @@ ViAttribute::staticTypeName ()
 template <>
 void ViAttribute::writeValueTo (OStream &os, int version) const
 {
-	for (int iter = 0, size = _value.size(); iter < size; ++iter) {
+	for (int iter = 0, end = _value.size(); iter < end; ++iter) {
 		Xdr::write <StreamIO> (os, _value[iter]);
 	}
 }
@@ -31,8 +30,14 @@ void ViAttribute::writeValueTo (OStream &os, int version) const
 template <>
 void ViAttribute::readValueFrom (IStream &is, int size, int version)
 {
-	for (int iter = 0, size = _value.size(); iter < size; ++iter) {
-		Xdr::read <StreamIO> (is, _value[iter]);
+	int read = 0;
+
+	while (read < size)
+	{
+		int temp;
+		Xdr::read <StreamIO> (is, temp);
+		read ++;
+       _value.push_back (temp);
 	}
 }
 
@@ -48,7 +53,7 @@ VfAttribute::staticTypeName ()
 template <>
 void VfAttribute::writeValueTo (OStream &os, int version) const
 {
-	for (int iter = 0, size = _value.size(); iter < size; ++iter) {
+	for (int iter = 0, end = _value.size(); iter < end; ++iter) {
 		Xdr::write <StreamIO> (os, _value[iter]);
 	}
 }
@@ -57,10 +62,26 @@ void VfAttribute::writeValueTo (OStream &os, int version) const
 template <>
 void VfAttribute::readValueFrom (IStream &is, int size, int version)
 {
-	for (int iter = 0, size = _value.size(); iter < size; ++iter) {
-		Xdr::read <StreamIO> (is, _value[iter]);
+	int read = 0;
+
+	while (read < size)
+	{
+		float temp;
+		Xdr::read <StreamIO> (is, temp);
+		read ++;
+       _value.push_back (temp);
 	}
 }
+
+//{
+//	int read = 0;
+//	while (read < size) {
+//		float temp;
+//		Xdr::read <StreamIO> (is, temp);
+//		_value.push_back(temp);
+//		++read;
+//	}
+//}
 
 
 } // namespace Imf

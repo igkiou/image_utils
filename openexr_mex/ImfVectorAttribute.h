@@ -40,7 +40,7 @@ template <> void VfAttribute::readValueFrom (IStream &, int, int);
 
 // Metrowerks compiler wants the .cpp file inlined, too
 #ifdef __MWERKS__
-#include <ImfVecAttribute.cpp>
+#include <ImfVectorAttribute.cpp>
 #endif
 
 

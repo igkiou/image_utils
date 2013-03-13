@@ -157,6 +157,17 @@ mex::MxNumeric<T> toMxArray(
 template <typename T>
 mex::MxNumeric<T> toMxArray(
 	const Imf::TypedAttribute<std::vector<T> >& attribute) {
+//	std::vector<T> vecj = attribute.value();
+//	std::cout << "length " << attribute.value().size() << std::endl;
+//	for (int iter = 0, end = attribute.value().size(); iter < end; ++iter) {
+//		std::cout << "iter " << iter << " value "<< attribute.value()[iter] << std::endl;
+//	}
+//	mex::MxNumeric<T> mxNumeric(attribute.value());
+//	std::vector<T> veci = mxNumeric.vectorize();
+//	std::cout << "length " << veci.size() << std::endl;
+//	for (int iter = 0, end = veci.size(); iter < end; ++iter) {
+//		std::cout << "iter " << iter << " value "<< veci[iter] << std::endl;
+//	}
 	return mex::MxNumeric<T>(attribute.value());
 }
 
@@ -546,6 +557,18 @@ Imf::TypedAttribute<Imath::Vec2<int> > toAttribute<Imath::Vec2<int> >(
 template <>
 Imf::TypedAttribute<std::vector<float> > toAttribute<std::vector<float> >(
 	const mex::MxNumeric<float>& mxNumeric) {
+//	std::vector<float> veci = mxNumeric.vectorize();
+//	std::cout << "length " << veci.size() << std::endl;
+//	for (int iter = 0, end = veci.size(); iter < end; ++iter) {
+//		std::cout << "iter " << iter << " value "<< veci[iter] << std::endl;
+//	}
+//
+//	Imf::TypedAttribute<std::vector<float> > attr(mxNumeric.vectorize());
+//	std::vector<float> vecj = attr.value();
+//	std::cout << "length " << vecj.size() << std::endl;
+//	for (int iter = 0, end = vecj.size(); iter < end; ++iter) {
+//		std::cout << "iter " << iter << " value "<< vecj[iter] << std::endl;
+//	}
 	return Imf::TypedAttribute<std::vector<float> >(mxNumeric.vectorize());
 }
 

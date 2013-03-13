@@ -1,10 +1,6 @@
 -OpenEXR
---Add properties for writing exif data
---Add namespace for openexr
 --Changes names and have script for adding to MATLAB imformats
---Test alpha channel support
 --Fix problems with channels
---Add proper support for variable channels <- Partially done, need to debug and wrap properly.
 
 -color_transforms
 --Make equivalents of Lab for Luv
