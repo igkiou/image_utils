@@ -35,6 +35,7 @@
 #include "ImfRgbaFile.h"
 //#include "ImfStandardAttributes.h"
 #include "ImfStringAttribute.h"
+#include "ImfTestFile.h"
 #include "ImfVecAttribute.h"
 #include "ImfVectorAttribute.h"
 
@@ -44,6 +45,8 @@ namespace exr {
 
 /*
  * TODO: Design: Everything that could be called from mexfile is using MxArray.
+ * TODO: Maybe add support for preview images?
+ * TODO: Add general support for alpha channel?
  */
 
 typedef float FloatUsed;
@@ -68,6 +71,10 @@ typedef enum EAttributeType {
 	EAttributeTypeLength,
 	EAttributeTypeInvalid = -1
 } EAttributeType;
+
+inline mex::MxNumeric<bool> isOpenExrFile(const mex::MxString& fileName) {
+	return mex::MxNumeric<bool>(Imf::isOpenExrFile(fileName.c_str()));
+}
 
 /*
  * TODO: Maybe replace remaining arguments of these functions to use directly
@@ -123,14 +130,16 @@ public:
 		return channelNames;
 	}
 
-	/*
-	 * TODO: Find way to do these without pointers. Maybe pass as argument? Or,
-	 * hide these as private, and have internal functions that strips
-	 * type-specific info and only returns a base MxArray with the pointer
-	 * copied.
-	 */
-	mex::MxArray* getAttribute(const mex::MxString& attributeName) const;
-	mex::MxArray* getAttribute() const;
+	inline bool isComplete() const {
+		return m_file.isComplete();
+	}
+
+	inline bool hasChannel(const std::string& channelName) const {
+		return m_file.header().channels().findChannel(channelName.c_str()) != 0;
+	}
+
+	mex::MxArray getAttribute(const mex::MxString& attributeName) const;
+	mex::MxArray getAttribute() const;
 
 	void readChannelRGB();
 	void readChannelY();
@@ -141,11 +150,14 @@ public:
 
 	~EXRInputFile() {
 		if (m_createdFrameBuffer) {
-//			m_pixelBuffer.destroy();
+			m_pixelBuffer.destroy();
 		}
 	}
 
 private:
+	mex::MxArray* getAttribute_sub(const mex::MxString& attributeName) const;
+	mex::MxArray* getAttribute_sub() const;
+
 	Imf::InputFile m_file;
 	Imf::FrameBuffer m_frameBuffer;
 	mex::MxNumeric<FloatUsed> m_pixelBuffer;
@@ -156,11 +168,16 @@ private:
 
 class EXROutputFile {
 public:
+	/*
+	 * TODO: Should this be initialized directly from pixels MxNumeric? It may
+	 * be desirable to create just the header. On the other hand, it would be
+	 * safer in terms of passing width and height arguments to the
+	 * initialization of the header.
+	 */
 	EXROutputFile(const int width, const int height)
 				: m_header(width, height),
 				  m_frameBuffer(),
 				  m_pixelBuffer(),
-				  m_foundChannel(),
 				  m_createdFrameBuffer(false),
 				  m_wroteFile(false) {	}
 
@@ -203,7 +220,6 @@ private:
 	Imf::Header m_header;
 	Imf::FrameBuffer m_frameBuffer;
 	mex::MxNumeric<FloatUsed> m_pixelBuffer;
-	std::vector<bool> m_foundChannel;
 	bool m_createdFrameBuffer;
 	bool m_wroteFile;
 };

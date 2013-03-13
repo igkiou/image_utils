@@ -11,7 +11,7 @@
 void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[]) {
 
 	/* Check number of input arguments */
-	if (nrhs > 3) {
+	if (nrhs > 2) {
 		mexErrMsgTxt("Two or fewer arguments are required.");
 	} else if (nrhs < 1) {
 		mexErrMsgTxt("At least one input argument is required.");
@@ -23,7 +23,7 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[]) {
 	}
 
 	exr::EXRInputFile inputFile(mex::MxString(const_cast<mxArray*>(prhs[0])));
-	if ((nrhs >= 3) && (!mex::MxArray(const_cast<mxArray*>(prhs[1])).isEmpty())) {
+	if ((nrhs >= 2) && (!mex::MxArray(const_cast<mxArray*>(prhs[1])).isEmpty())) {
 		mex::MxCell channelNameArray(const_cast<mxArray*>(prhs[1]));
 		std::vector<std::string> channelNames;
 		for (int iter = 0, end = channelNameArray.getNumberOfElements();
@@ -37,18 +37,18 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[]) {
 		 * TODO: Handle Alpha channel in RGB.
 		 */
 		int numChannels = inputFile.getNumberOfChannels();
-		if (numChannels == 2) {
+		if ((numChannels == 1)
+			|| ((numChannels == 2) && inputFile.hasChannel(std::string("A")))) {
 			inputFile.readChannelY();
-		} else if (numChannels == 4) {
+		} else if ((numChannels == 3)
+			|| ((numChannels == 4) && inputFile.hasChannel(std::string("A")))) {
 			inputFile.readChannelRGB();
 		} else {
 			inputFile.readChannel(inputFile.getChannelNames());
 		}
 	}
 	plhs[0] = inputFile.readFile().get_array();
-	if (nlhs > 2) {
-		mex::MxArray* temp = inputFile.getAttribute();
-		plhs[1] = temp->get_array();
-		delete temp;
+	if (nlhs >= 2) {
+		plhs[1] = inputFile.getAttribute().get_array();
 	}
 }

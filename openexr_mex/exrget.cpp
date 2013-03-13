@@ -22,16 +22,12 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[]) {
 		mexErrMsgTxt("Too many output arguments.");
 	}
 
-	mex::MxString fileName(const_cast<mxArray *>(prhs[0]));
-	exr::EXRInputFile file(fileName);
+	mex::MxString fileName(const_cast<mxArray*>(prhs[0]));
+	exr::EXRInputFile inputFile(fileName);
 	if (nrhs >= 2) {
-		mex::MxString attributeName(const_cast<mxArray *>(prhs[1]));
-		mex::MxArray* temp = file.getAttribute(attributeName);
-		plhs[0] = temp->get_array();
-		delete temp;
+		mex::MxString attributeName(const_cast<mxArray*>(prhs[1]));
+		plhs[0] = inputFile.getAttribute(attributeName).get_array();
 	} else {
-		mex::MxArray* temp = file.getAttribute();
-		plhs[0] = temp->get_array();
-		delete temp;
+		plhs[0] = inputFile.getAttribute().get_array();
 	}
 }

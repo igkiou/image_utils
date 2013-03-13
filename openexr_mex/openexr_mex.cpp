@@ -13,38 +13,6 @@ namespace exr {
 /*
  * Input file handling.
  */
-
-namespace {
-
-void copyArray2DtoMxArray(mex::MxNumeric<FloatUsed>& destination,
-						const Imf::Array2D<FloatUsed>* origin,
-						const int width, const int height,
-						const int numChannels) {
-	std::vector<int> dimensions = destination.getDimensions();
-	mexAssert((((numChannels == 1) && (dimensions.size() == 2)) ||
-				((dimensions.size() == 3) && (dimensions[2] == numChannels))) &&
-				(dimensions[0] == height) &&
-				(dimensions[1] == width));
-	for (int iterChannel = 0; iterChannel < numChannels; ++iterChannel) {
-		for (int iterWidth = 0; iterWidth < width; ++iterWidth) {
-			for (int iterRow = 0; iterRow < height; ++iterRow) {
-				destination[height * width * iterChannel
-				            + height * iterWidth
-				            + iterRow] =
-				static_cast<FloatUsed>(origin[iterChannel][iterRow][iterWidth]);
-			}
-		}
-//		FloatUsed* destinationData = destination.data()
-//								+ height * width * iterChannel;
-//		const Imf::Array2D<FloatUsed>* originData = origin + iterChannel;
-//		memcpy(destinationData,
-//			(*originData)[0],
-//			height * width * sizeof(FloatUsed));
-	}
-}
-
-} /* namespace */
-
 void EXRInputFile::readChannelRGB() {
 	std::vector<std::string> channelNames;
 	channelNames.push_back(std::string("R"));
@@ -100,6 +68,7 @@ void EXRInputFile::readChannel(const std::vector<std::string>& channelNames) {
 mex::MxNumeric<FloatUsed> EXRInputFile::readFile() {
 
 	mexAssert((m_createdFrameBuffer) && (!m_readFile));
+	mexAssert(isComplete());
 	Imath::Box2i dw = m_file.header().dataWindow();
 	m_file.setFrameBuffer(m_frameBuffer);
 	m_file.readPixels(dw.min.y, dw.max.y);
@@ -112,9 +81,8 @@ mex::MxNumeric<FloatUsed> EXRInputFile::readFile() {
 	if (numChannels > 1) {
 		transposePermutation.push_back(3);
 	}
-//	copyArray2DtoMxArray(retArg, m_pixelBuffer, width, height, numChannels);
 	m_readFile = true;
-	return m_pixelBuffer/*.permute(transposePermutation)*/;
+	return m_pixelBuffer.permute(transposePermutation);
 }
 
 namespace {
@@ -193,9 +161,6 @@ mex::MxNumeric<T> toMxArray(
 }
 
 // Box2T
-/*
- * TODO: Change this to struct.
- */
 template <typename T>
 mex::MxStruct toMxArray(
 	const Imf::TypedAttribute<Imath::Box<Imath::Vec2<T> > >& attribute) {
@@ -229,33 +194,33 @@ mex::MxStruct toMxArray(
 
 	/* red */
 	chromaticityNames.push_back(std::string("red"));
-	std::vector<float> red(2, 0);
-	red[0] = attribute.value().red.x;
-	red[1] = attribute.value().red.y;
+	std::vector<float> red;
+	red.push_back(attribute.value().red.x);
+	red.push_back(attribute.value().red.y);
 	mex::MxNumeric<float> redMx(red);
 	chromaticityValues.push_back(&redMx);
 
 	/* green */
 	chromaticityNames.push_back(std::string("green"));
-	std::vector<float> green(2, 0);
-	green[0] = attribute.value().green.x;
-	green[1] = attribute.value().green.y;
+	std::vector<float> green;
+	green.push_back(attribute.value().green.x);
+	green.push_back(attribute.value().green.y);
 	mex::MxNumeric<float> greenMx(green);
 	chromaticityValues.push_back(&greenMx);
 
 	/* blue */
 	chromaticityNames.push_back(std::string("blue"));
-	std::vector<float> blue(2, 0);
-	blue[0] = attribute.value().blue.x;
-	blue[1] = attribute.value().blue.y;
+	std::vector<float> blue;
+	blue.push_back(attribute.value().blue.x);
+	blue.push_back(attribute.value().blue.y);
 	mex::MxNumeric<float> blueMx(blue);
 	chromaticityValues.push_back(&blueMx);
 
 	/* white */
 	chromaticityNames.push_back(std::string("white"));
-	std::vector<float> white(2, 0);
-	white[0] = attribute.value().white.x;
-	white[1] = attribute.value().white.y;
+	std::vector<float> white;
+	white.push_back(attribute.value().white.x);
+	white.push_back(attribute.value().white.y);
 	mex::MxNumeric<float> whiteMx(white);
 	chromaticityValues.push_back(&whiteMx);
 
@@ -307,12 +272,9 @@ mex::MxCell toMxArray(
 
 } /* namespace */
 
-mex::MxArray* EXRInputFile::getAttribute(const mex::MxString& attributeName) const {
+mex::MxArray* EXRInputFile::getAttribute_sub(const mex::MxString& attributeName) const {
 	const Imf::Attribute& attribute = m_file.header()[attributeName.c_str()];
-//	mexPrintf("type %s %s %d ", attribute.typeName(), attributeName.c_str(), stringToAttributeType["chlist"]);
 	const EAttributeType type = stringToAttributeType[std::string(attribute.typeName())];
-//	const EAttributeType type = EAttributeCompression;
-//	mexPrintf("type %d ", type);
 	switch(type) {
 		case EAttributeChannelList: {
 			return new mex::MxCell(toMxArray(
@@ -396,7 +358,7 @@ mex::MxArray* EXRInputFile::getAttribute(const mex::MxString& attributeName) con
 	}
 }
 
-mex::MxArray* EXRInputFile::getAttribute() const {
+mex::MxArray* EXRInputFile::getAttribute_sub() const {
 
 	std::vector<std::string> nameVec;
 	std::vector<mex::MxArray*> arrayVec;
@@ -405,7 +367,7 @@ mex::MxArray* EXRInputFile::getAttribute() const {
 		iter != end;
 		++iter) {
 		nameVec.push_back(std::string(iter.name()));
-		arrayVec.push_back(getAttribute(mex::MxString(iter.name())));
+		arrayVec.push_back(getAttribute_sub(mex::MxString(iter.name())));
 	}
 	mex::MxArray* retArg = new mex::MxStruct(nameVec, arrayVec);
 	for (int iter = 0, numAttributes = arrayVec.size();
@@ -416,6 +378,20 @@ mex::MxArray* EXRInputFile::getAttribute() const {
 	return retArg;
 }
 
+mex::MxArray EXRInputFile::getAttribute(const mex::MxString& attributeName)
+										const {
+	mex::MxArray* temp = getAttribute_sub(attributeName);
+	mex::MxArray retArg(temp->get_array());
+	delete temp;
+	return retArg;
+}
+
+mex::MxArray EXRInputFile::getAttribute() const {
+	mex::MxArray* temp = getAttribute_sub();
+	mex::MxArray retArg(temp->get_array());
+	delete temp;
+	return retArg;
+}
 
 /*
  * Output file handling.
@@ -451,12 +427,20 @@ void EXROutputFile::writeChannel(const mex::MxNumeric<FloatUsed>& channelPixels,
 					(dimensions[0] == height) &&
 					(dimensions[1] == width));
 
+	std::vector<int> transposePermutation;
+	transposePermutation.push_back(2);
+	transposePermutation.push_back(1);
+	if (numChannels > 1) {
+		transposePermutation.push_back(3);
+	}
+	m_pixelBuffer = channelPixels.permute(transposePermutation);
 	for (int iterChannel = 0; iterChannel < numChannels; ++iterChannel) {
 		m_header.channels().insert(channelNames[iterChannel].c_str(),
 								Imf::Channel(kEXRFloatUsed));
 		m_frameBuffer.insert(channelNames[iterChannel].c_str(),
 							Imf::Slice(kEXRFloatUsed,
-									(char *) &channelPixels[width * height * iterChannel],
+									(char *) &m_pixelBuffer[
+									              width * height * iterChannel],
 									sizeof(FloatUsed) * 1,
 									sizeof(FloatUsed) * width));
 	}
@@ -666,7 +650,6 @@ const mex::ConstMap<std::string, EAttributeType> registeredAttributeNameToAttrib
 void EXROutputFile::setAttribute(const mex::MxArray& attribute,
 								const mex::MxString& attributeName) {
 
-	mexPrintf("%s\n", attributeName.c_str());
 	std::map<std::string, EAttributeType>::const_iterator iteratorToType =
 											registeredAttributeNameToAttributeType.
 											get_map().
@@ -675,7 +658,6 @@ void EXROutputFile::setAttribute(const mex::MxArray& attribute,
 				(iteratorToType != registeredAttributeNameToAttributeType.get_map().end())
 				?(iteratorToType->second)
 				:(EAttributeString));
-	mexPrintf("%d\n", type);
 	switch(type) {
 		case EAttributeChannelList: {
 			mexAssertEx(0, "Unsupported attribute type");
