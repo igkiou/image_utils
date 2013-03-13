@@ -1,6 +1,8 @@
 -OpenEXR
 --Changes names and have script for adding to MATLAB imformats
---Fix problems with channels
+--Fix problems with alpha channel
+--Get vector attribute to work
+--Upgrade to OpenEXR 1.7, perhaps convert all vector to StringVectorAttributes
 
 -color_transforms
 --Make equivalents of Lab for Luv
