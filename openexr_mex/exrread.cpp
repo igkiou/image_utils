@@ -22,12 +22,12 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[]) {
 		mexErrMsgTxt("Too many output arguments.");
 	}
 
-	exr::EXRInputFile inputFile(mex::MxString(const_cast<mxArray *>(prhs[0])));
-	if ((nrhs >= 3) && (!mex::MxArray(const_cast<mxArray *>(prhs[1])).isEmpty())) {
-		mex::MxCell channelNameArray(const_cast<mxArray *>(prhs[1]));
+	exr::EXRInputFile inputFile(mex::MxString(const_cast<mxArray*>(prhs[0])));
+	if ((nrhs >= 3) && (!mex::MxArray(const_cast<mxArray*>(prhs[1])).isEmpty())) {
+		mex::MxCell channelNameArray(const_cast<mxArray*>(prhs[1]));
 		std::vector<std::string> channelNames;
-		for (int iter = 0, numChannels = channelNameArray.getNumberOfElements();
-			iter < numChannels;
+		for (int iter = 0, end = channelNameArray.getNumberOfElements();
+			iter < end;
 			++iter) {
 			channelNames.push_back(mex::MxString(channelNameArray[iter]).get_string());
 		}

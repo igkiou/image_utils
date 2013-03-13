@@ -38,7 +38,7 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[]) {
 		mexAssert(numChannels == channelNameArray.getNumberOfElements());
 		std::vector<std::string> channelNames;
 		for (int iter = 0; 	iter < numChannels; ++iter) {
-			channelNames.push_back(mex::MxString(channelNameArray[iter]).string());
+			channelNames.push_back(mex::MxString(channelNameArray[iter]).get_string());
 		}
 		file.writeChannel(image, channelNames);
 	} else {
