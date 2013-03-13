@@ -29,7 +29,7 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[]) {
 		for (int iter = 0, numChannels = channelNameArray.getNumberOfElements();
 			iter < numChannels;
 			++iter) {
-			channelNames.push_back(mex::MxString(channelNameArray[iter]).string());
+			channelNames.push_back(mex::MxString(channelNameArray[iter]).get_string());
 		}
 		inputFile.readChannel(channelNames);
 	} else {

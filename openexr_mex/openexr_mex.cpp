@@ -75,7 +75,7 @@ void EXRInputFile::readChannel(const std::vector<std::string>& channelNames) {
 	if (numChannels > 1) {
 		dimensions.push_back(numChannels);
 	}
-	m_pixelBuffer = mex::MxNumeric<FloatUsed>(dimensions.size(), &dimensions[0]);
+	m_pixelBuffer = mex::MxNumeric<FloatUsed>(static_cast<int>(dimensions.size()), &dimensions[0]);
 	m_foundChannel.clear();
 
 	for (int iter = 0; iter < numChannels; ++iter) {
