@@ -9,62 +9,234 @@
 #define PFM_MEX_H_
 
 #include <fstream>
+#include <istream>
+#include <ostream>
 #include <string>
 #include <vector>
+#include <ctype.h>
 
 #include "mex_utils.h"
 
 namespace pfm {
 
-typedef enum ENDIANNESS {
-	BIG = 0,
-	LITTLE = 1,
-	ENDIANNESS_LENGTH = 2,
-	ENDIANNESS_INVALID = -1
-} ENDIANNESS;
+typedef enum EByteOrder {
+	EBigEndian = 0,
+	ELittleEndian,
+	EByteTypeLength,
+	EByteTypeInvalid = -1
+} EByteOrder;
 
-struct PFMInputFIle {
-private:
-	std::fstream m_file;
+typedef enum EColorFormat {
+	ERGB = 0,
+	EGrayscale,
+	EColorFormatLength,
+	EColorFormatInvalid = -1
+} EColorFormat;
 
-public:
-	PFMInputFIle(const std::string& fileName)
-			: m_file(fileName.c_str(), fstream::in | fstream::binary) {	}
+//static PFMHeader::EByteOrder getByteOrder() {
+//	union {
+//		uint8_t  charValue[2];
+//		uint16_t shortValue;
+//	};
+//	charValue[0] = 1;
+//	charValue[1] = 0;
+//
+//	return (shortValue == 1)?(PFMHeader::ELittleEndian):(PFMHeader::EBigEndian);
+//}
 
+inline mex::MxNumeric<bool> isPfmFile(const mex::MxString& fileName) {
+	return mex::MxNumeric<bool>(isPfmFile(fileName.c_str()));
+}
 
-	inline void read() {
+class PFMHeader {
+	PFMHeader()
+			: m_colorFormat(),
+			  m_width(),
+			  m_height(),
+			  m_scale(),
+			  m_byteOrder() {	}
 
+	PFMHeader(const EColorFormat colorFormat,
+			const int width,
+			const int height,
+			const double scale,
+			const EByteOrder byteOrder)
+			: m_colorFormat(colorFormat),
+			  m_width(width),
+			  m_height(height),
+			  m_scale(scale),
+			  m_byteOrder(byteOrder) {
+		mexAssert((m_colorFormat == ERGB) || (m_colorFormat == EGrayscale));
+		mexAssert(m_width > 0);
+		mexAssert(m_height > 0);
+		mexAssert(m_scale > 0);
+		mexAssert((m_byteOrder == ELittleEndian) ||
+				(m_byteOrder == EBigEndian));
 	}
 
-	inline void get() {
+	inline void readFromStream(std::istream& stream) {
+		char format[2];
+		stream.read(format, 2);
+		mexAssert((format[0] == 'P') &&
+				(format[1] == 'F' || format[1] == 'f'));
+		m_colorFormat = (format[1] == 'F')?(ERGB):(EGrayscale);
+		mexAssert(stream);
+
+		char whitespace;
+		stream.get(whitespace);
+		mexAssert(std::isspace(whitespace));
+
+		stream >> m_width;
+		mexAssert(m_width > 0);
+		mexAssert(stream);
+
+		stream.get(whitespace);
+		mexAssert(whitespace == ' ');
+		mexAssert(stream);
+
+		stream >> m_height;
+		mexAssert(m_height > 0);
+		mexAssert(stream);
+
+		stream.get(whitespace);
+		mexAssert(whitespace == ' ');
+		mexAssert(stream);
+
+		double byteOrder;
+		stream >> byteOrder;
+		m_scale = std::abs(byteOrder);
+		m_byteOrder = (byteOrder < 0)?(ELittleEndian):(EBigEndian);
+		mexAssert(stream);
+
+		stream.get(whitespace);
+		mexAssert(std::isspace(whitespace));
+		mexAssert(stream);
+	}
+
+	inline void writeToStream(std::ostream& stream) const {
+		stream << 'P' << (m_colorFormat == ERGB)?('F'):('f') << '\n';
+		stream << m_width << ' ' << m_height << '\n';
+		stream << m_scale * (m_byteOrder == ELittleEndian)?(-1):(1) << '\n';
+	}
+
+	inline const EColorFormat get_colorFormat() const {
+		return m_colorFormat;
+	}
+
+	inline const int get_width() const {
+		return m_width;
+	}
+
+	inline const int get_height() const {
+		return m_height;
+	}
+
+	inline const double get_scale() const {
+		return m_scale;
+	}
+
+	inline const EByteOrder get_byteOrder() const {
+		return m_byteOrder;
+	}
+
+	inline mex::MxStruct toMxArray() const {
+		std::vector<std::string> fieldNames;
+		fieldNames.push_back(std::string("colorformat"));
+		fieldNames.push_back(std::string("width"));
+		fieldNames.push_back(std::string("height"));
+		fieldNames.push_back(std::string("scale"));
+		fieldNames.push_back(std::string("byteorder"));
+		std::vector<mex::MxArray*> fieldValues;
+		fieldValues.push_back(new mex::MxString(
+								(m_colorFormat == ERGB)?("rgb"):("grayscale")));
+		fieldValues.push_back(new mex::MxNumeric<int>(m_width));
+		fieldValues.push_back(new mex::MxNumeric<int>(m_height));
+		fieldValues.push_back(new mex::MxNumeric<double>(m_scale));
+		fieldValues.push_back(new mex::MxString((m_byteOrder == ELittleEndian)?
+												("littleendian"):
+												("bigendian")));
+		mex::MxStruct retArg(fieldNames, fieldValues);
+		for (int iter = 0, end = fieldValues.size(); iter < end; ++iter) {
+			delete fieldValues[iter];
+		}
+		return retArg;
+	}
+
+private:
+	EColorFormat m_colorFormat;
+	int m_width;
+	int m_height;
+	double m_scale;
+	EByteOrder m_byteOrder;
+};
+
+class PFMInputFIle {
+public:
+	explicit PFMInputFIle(const mex::MxString& fileName)
+						: m_file(fileName.c_str(),
+								std::ifstream::in | std::ifstream::binary),
+						  m_header(),
+						  m_readHeader(false),
+						  m_readFile(false) {
+		mexAssert(m_file);
+	}
+
+	inline mex::MxStruct getHeader() const {
+		mexAssert((!m_readHeader) && (!m_readFile));
+		m_header.readFromStream(m_file);
+		m_readHeader = true;
+		return m_header.toMxArray();
+	}
+
+	inline mex::MxNumeric<float> readFile() const {
+		mexAssert((m_readHeader) && (!m_readFile));
+		int numChannels;
+		std::vector<int> dimensions;
+		dimensions.push_back(m_header.get_height());
+		dimensions.push_back(m_header.get_width());
+		if (m_header.get_colorFormat() == ERGB) {
+			numChannels = 3;
+			dimensions.push_back(numChannels);
+		} else {
+			numChannels = 1;
+		}
+		int numPixels = m_header.get_width() * m_header.get_height() *
+						numChannels;
+		mex::MxNumeric<float> pixelArray(3, &dimensions[0]);
+		float* pixelBuffer = pixelArray.getData();
+
+
 
 	}
 
 	~PFMInputFIle() {
 		m_file.close();
 	}
+
+private:
+	std::ifstream m_file;
+	PFMHeader m_header;
+	bool m_readHeader;
+	bool m_readFile;
 };
 
-struct PFMOutputFIle {
-private:
-	std::fstream m_file;
-
+class PFMOutputFIle {
 public:
-	PFMOutputFIle(const std::string& fileName)
-			: m_(fileName.c_str(), fstream::out | fstream::binary) {	}
+	explicit PFMOutputFIle(const mex::MxString& fileName)
+						: m_file(fileName.c_str(),
+							std::ofstream::out | std::ofstream::binary) {	}
 
+	inline void writeFile(const mex::MxNumeric<float>& pixels);
 
-	inline void write() {
-
-	}
-
-	inline void get() {
-
-	}
+	inline void setHeader();
 
 	~PFMOutputFIle() {
 		m_file.close();
 	}
+
+private:
+	std::ofstream m_file;
+
 };
 
 
