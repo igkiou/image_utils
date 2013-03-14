@@ -204,9 +204,12 @@ public:
 						numChannels;
 		mex::MxNumeric<float> pixelArray(3, &dimensions[0]);
 		float* pixelBuffer = pixelArray.getData();
-
-
-
+		m_file.read(static_cast<char*>(pixelBuffer), numPixels);
+		std::vector<int> permutationVector;
+		if (m_header.get_colorFormat() == ERGB) {
+			permutationVector.push_back(3);
+		}
+		return pixelBuffer.permute(permutationVector);
 	}
 
 	~PFMInputFIle() {
