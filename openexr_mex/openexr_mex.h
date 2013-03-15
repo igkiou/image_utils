@@ -88,7 +88,9 @@ public:
 							  m_pixelBuffer(),
 							  m_foundChannel(),
 							  m_createdFrameBuffer(false),
-							  m_readFile(false) {	}
+							  m_readFile(false) {
+		mexAssert(Imf::isOpenExrFile(fileName.c_str()));
+	}
 
 	inline int getWidth() const {
 		Imath::Box2i dw = m_file.header().dataWindow();

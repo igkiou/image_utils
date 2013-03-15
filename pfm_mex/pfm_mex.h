@@ -31,9 +31,8 @@ typedef enum EByteOrder {
 	EByteTypeInvalid = -1
 } EByteOrder;
 
-inline mex::MxNumeric<bool> isPfmFile(const mex::MxString& fileName);
-
 class PFMHeader {
+public:
 	PFMHeader();
 
 	void build(const EColorFormat colorFormat,
@@ -42,30 +41,30 @@ class PFMHeader {
 			const float scale,
 			const EByteOrder byteOrder);
 
-	bool read(std::ifstream& stream);
-
-	void write(std::ofstream& stream) const;
-
 	mex::MxStruct toMxArray() const;
 
-	inline const EColorFormat get_colorFormat() const {
+	inline EColorFormat get_colorFormat() const {
 		return m_colorFormat;
 	}
 
-	inline const int get_width() const {
+	inline int get_width() const {
 		return m_width;
 	}
 
-	inline const int get_height() const {
+	inline int get_height() const {
 		return m_height;
 	}
 
-	inline const float get_scale() const {
+	inline float get_scale() const {
 		return m_scale;
 	}
 
-	inline const EByteOrder get_byteOrder() const {
+	inline EByteOrder get_byteOrder() const {
 		return m_byteOrder;
+	}
+
+	inline bool isValidPFMHeader() const {
+		return m_isValidPFMHeader;
 	}
 
 private:
@@ -74,21 +73,24 @@ private:
 	int m_height;
 	float m_scale;
 	EByteOrder m_byteOrder;
+	bool m_isValidPFMHeader;
 };
+
+mex::MxNumeric<bool> isPfmFile(const mex::MxString& fileName);
 
 class PFMInputFile {
 public:
 	explicit PFMInputFile(const mex::MxString& fileName);
 
-	mex::MxStruct readHeader() const;
+	void readHeader();
 
-	mex::MxNumeric<float> readFile() const;
+	mex::MxNumeric<float> readFile();
 
 	inline const PFMHeader& get_header() const {
 		return m_header;
 	}
 
-	~PFMInputFile();
+	virtual ~PFMInputFile() {	}
 
 private:
 	std::ifstream m_file;
@@ -101,13 +103,17 @@ class PFMOutputFile {
 public:
 	explicit PFMOutputFile(const mex::MxString& fileName);
 
-	void writeFile(mex::MxNumeric<float>& pixels) const;
+	void writeHeader(const mex::MxNumeric<float>& pixels);
 
-	~PFMOutputFile();
+	void writeFile(const mex::MxNumeric<float>& pixels);
+
+	virtual ~PFMOutputFile() {	}
 
 private:
 	std::ofstream m_file;
 	PFMHeader m_header;
+	bool m_wroteHeader;
+	bool m_wroteFile;
 };
 
 }	/* namespace pfm */

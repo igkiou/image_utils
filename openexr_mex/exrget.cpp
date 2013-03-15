@@ -23,11 +23,11 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[]) {
 	}
 
 	mex::MxString fileName(const_cast<mxArray*>(prhs[0]));
-	exr::EXRInputFile inputFile(fileName);
+	exr::EXRInputFile file(fileName);
 	if (nrhs >= 2) {
 		mex::MxString attributeName(const_cast<mxArray*>(prhs[1]));
-		plhs[0] = inputFile.getAttribute(attributeName).get_array();
+		plhs[0] = file.getAttribute(attributeName).get_array();
 	} else {
-		plhs[0] = inputFile.getAttribute().get_array();
+		plhs[0] = file.getAttribute().get_array();
 	}
 }
