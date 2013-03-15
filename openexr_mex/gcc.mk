@@ -10,8 +10,9 @@ RPATH = -Wl,-rpath-link,$(MATLABDIR)/bin/$(MATLABARCH)
 LIBS = $(RPATH) $(MATLABLIBS) $(EXRLIBS) -lm -lpthread 
 
 EXRINCLUDE = -I/usr/include/OpenEXR
+MEXUTILSINCLUDE = -I../mex_utils
 MATLABINCLUDE = -I$(MATLABDIR)/extern/include
-INCLUDES = $(EXRINCLUDE) $(MATLABINCLUDE) -I../mex_utils
+INCLUDES = $(EXRINCLUDE) $(MATLABINCLUDE) $(MEXUTILSINCLUDE)
 
 CC = g++
 MEXFLAGS = -DUSE_MATLAB_INTERFACE -DMATLAB_MEX_FILE -D_GNU_SOURCE -fexceptions -fno-omit-frame-pointer

@@ -84,6 +84,10 @@ public:
 
 	mex::MxNumeric<float> readFile() const;
 
+	inline const PFMHeader& get_header() const {
+		return m_header;
+	}
+
 	~PFMInputFile();
 
 private:
