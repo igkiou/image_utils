@@ -1,11 +1,9 @@
 /*
- * exrwrite_sub.cpp
+ * exrwrite.cpp
  *
  *  Created on: Jun 14, 2011
  *      Author: igkiou
  */
-
-#include <sstream>
 
 #include "mex_utils.h"
 #include "openexr_mex.h"

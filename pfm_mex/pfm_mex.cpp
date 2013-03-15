@@ -6,6 +6,8 @@
  */
 
 #include "pfm_mex.h"
+#include <stdint.h>
+#include <cmath>
 
 namespace pfm {
 
@@ -149,7 +151,11 @@ mex::MxStruct PFMInputFile::readHeader() const {
 }
 
 mex::MxNumeric<float> PFMInputFile::readFile() const {
-	mexAssert((m_readHeader) && (!m_readFile));
+	mexAssert(!m_readFile);
+	if (!m_readHeader) {
+		m_header.read(m_file);
+		m_readHeader = true;
+	}
 	int numChannels;
 	std::vector<int> dimensions;
 	dimensions.push_back(m_header.get_height());
