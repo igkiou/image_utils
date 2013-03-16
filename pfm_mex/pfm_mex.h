@@ -17,6 +17,8 @@
 
 namespace pfm {
 
+typedef float FloatUsed;
+
 typedef enum EColorFormat {
 	ERGB = 0,
 	EGrayscale,
@@ -38,7 +40,7 @@ public:
 	void build(const EColorFormat colorFormat,
 			const int width,
 			const int height,
-			const float scale,
+			const FloatUsed scale,
 			const EByteOrder byteOrder);
 
 	mex::MxStruct toMxArray() const;
@@ -55,7 +57,7 @@ public:
 		return m_height;
 	}
 
-	inline float get_scale() const {
+	inline FloatUsed get_scale() const {
 		return m_scale;
 	}
 
@@ -71,7 +73,7 @@ private:
 	EColorFormat m_colorFormat;
 	int m_width;
 	int m_height;
-	float m_scale;
+	FloatUsed m_scale;
 	EByteOrder m_byteOrder;
 	bool m_isValidPFMHeader;
 };
@@ -84,7 +86,7 @@ public:
 
 	void readHeader();
 
-	mex::MxNumeric<float> readFile();
+	mex::MxNumeric<FloatUsed> readFile();
 
 	inline const PFMHeader& get_header() const {
 		return m_header;
@@ -103,9 +105,9 @@ class PFMOutputFile {
 public:
 	explicit PFMOutputFile(const mex::MxString& fileName);
 
-	void writeHeader(const mex::MxNumeric<float>& pixels);
+	void writeHeader(const mex::MxNumeric<FloatUsed>& pixels);
 
-	void writeFile(const mex::MxNumeric<float>& pixels);
+	void writeFile(const mex::MxNumeric<FloatUsed>& pixels);
 
 	virtual ~PFMOutputFile() {	}
 

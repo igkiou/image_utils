@@ -5,9 +5,10 @@
  *      Author: igkiou
  */
 
-#include "pfm_mex.h"
-#include <stdint.h>
+#include <algorithm>
 #include <cmath>
+#include <stdint.h>
+#include "pfm_mex.h"
 
 namespace pfm {
 
@@ -22,6 +23,18 @@ static EByteOrder getHostByteOrder() {
 	charValue[1] = 0;
 
 	return (shortValue == 1)?(ELittleEndian):(EBigEndian);
+}
+
+template<typename T>
+inline T endianness_swap(T value) {
+	union {
+		T value;
+		uint8_t byteValue[sizeof(T)];
+	} u;
+
+	u.value = value;
+	std::reverse(&u.byteValue[0], &u.byteValue[sizeof(T)]);
+	return u.value;
 }
 
 } /* namespace */
@@ -40,7 +53,7 @@ PFMHeader::PFMHeader()
 void PFMHeader::build(const EColorFormat colorFormat,
 					const int width,
 					const int height,
-					const float scale,
+					const FloatUsed scale,
 					const EByteOrder byteOrder) {
 	if ((colorFormat == ERGB) || (colorFormat == EGrayscale)) {
 		m_colorFormat = colorFormat;
@@ -82,7 +95,7 @@ mex::MxStruct PFMHeader::toMxArray() const {
 							(m_colorFormat == ERGB)?("rgb"):("grayscale")));
 	fieldValues.push_back(new mex::MxNumeric<int>(m_width));
 	fieldValues.push_back(new mex::MxNumeric<int>(m_height));
-	fieldValues.push_back(new mex::MxNumeric<float>(m_scale));
+	fieldValues.push_back(new mex::MxNumeric<FloatUsed>(m_scale));
 	fieldValues.push_back(new mex::MxString((m_byteOrder == ELittleEndian)?
 											("littleendian"):
 											("bigendian")));
@@ -155,9 +168,9 @@ void PFMInputFile::readHeader() {
 		return;
 	}
 
-	float scaledByteOrder;
+	FloatUsed scaledByteOrder;
 	m_file >> scaledByteOrder;
-	float scale = std::abs(scaledByteOrder);
+	FloatUsed scale = std::abs(scaledByteOrder);
 	EByteOrder byteOrder = (scaledByteOrder < 0)?(ELittleEndian):(EBigEndian);
 	if (!m_file) {
 		return;
@@ -172,7 +185,7 @@ void PFMInputFile::readHeader() {
 	m_readHeader = true;
 }
 
-mex::MxNumeric<float> PFMInputFile::readFile() {
+mex::MxNumeric<FloatUsed> PFMInputFile::readFile() {
 	mexAssert((m_readHeader && m_header.isValidPFMHeader()) && (!m_readFile));
 	int numChannels;
 	std::vector<int> dimensions;
@@ -184,13 +197,27 @@ mex::MxNumeric<float> PFMInputFile::readFile() {
 	} else {
 		numChannels = 1;
 	}
-	int numPixels = m_header.get_width() * m_header.get_height() *
-					numChannels;
-	mex::MxNumeric<float> pixels(3, &dimensions[0]);
-	float* pixelBuffer = pixels.getData();
-
-	m_file.read(reinterpret_cast<char*>(pixelBuffer), numPixels);
+	mex::MxNumeric<FloatUsed> pixels(static_cast<int>(dimensions.size()),
+									&dimensions[0]);
+	FloatUsed* pixelBuffer = pixels.getData();
+	m_file.read(reinterpret_cast<char*>(pixelBuffer),
+				pixels.getNumberOfElements() * sizeof(FloatUsed));
 	mexAssert(m_file);
+
+	if ((m_header.get_scale() != 1.0) ||
+		(getHostByteOrder() != m_header.get_byteOrder())) {
+		for (int iter = 0, end = pixels.getNumberOfElements();
+			iter < end;
+			++iter) {
+			if (getHostByteOrder() != m_header.get_byteOrder()) {
+				pixelBuffer[iter] = endianness_swap(pixelBuffer[iter]);
+			}
+			if (m_header.get_scale() != 1.0) {
+				pixelBuffer[iter] *= m_header.get_scale();
+			}
+		}
+	}
+
 	std::vector<int> permutationVector;
 	if (m_header.get_colorFormat() == ERGB) {
 		permutationVector.push_back(3);
@@ -213,7 +240,7 @@ PFMOutputFile::PFMOutputFile(const mex::MxString& fileName)
 	mexAssert(m_file);
 }
 
-void PFMOutputFile::writeHeader(const mex::MxNumeric<float>& pixels) {
+void PFMOutputFile::writeHeader(const mex::MxNumeric<FloatUsed>& pixels) {
 	mexAssert((!m_wroteHeader) && (!m_wroteFile));
 	std::vector<int> dimensions = pixels.getDimensions();
 	mexAssert((dimensions.size() == 2) ||
@@ -221,9 +248,9 @@ void PFMOutputFile::writeHeader(const mex::MxNumeric<float>& pixels) {
 			((dimensions[2] == 3) || (dimensions[2] == 1))));
 	EColorFormat colorFormat = ((dimensions.size() == 2) ||
 								(dimensions[2] == 1))?(EGrayscale):(ERGB);
-	int width = dimensions[2];
-	int height = dimensions[1];
-	float scale = 1;
+	int width = dimensions[1];
+	int height = dimensions[0];
+	FloatUsed scale = 1.0;
 	EByteOrder byteOrder = getHostByteOrder();
 	m_header.build(colorFormat, width, height, scale, byteOrder);
 	mexAssert(m_header.isValidPFMHeader());
@@ -251,7 +278,7 @@ void PFMOutputFile::writeHeader(const mex::MxNumeric<float>& pixels) {
 	m_wroteHeader = true;
 }
 
-void PFMOutputFile::writeFile(const mex::MxNumeric<float>& pixels) {
+void PFMOutputFile::writeFile(const mex::MxNumeric<FloatUsed>& pixels) {
 	mexAssert(m_wroteHeader && (!m_wroteFile));
 	std::vector<int> permutationVector;
 	if (m_header.get_colorFormat() == ERGB) {
@@ -259,10 +286,10 @@ void PFMOutputFile::writeFile(const mex::MxNumeric<float>& pixels) {
 	}
 	permutationVector.push_back(2);
 	permutationVector.push_back(1);
-	mex::MxNumeric<float> pixelsTemp = pixels.permute(permutationVector);
-	float* pixelBuffer = pixelsTemp.getData();
+	mex::MxNumeric<FloatUsed> pixelsTemp = pixels.permute(permutationVector);
+	FloatUsed* pixelBuffer = pixelsTemp.getData();
 	m_file.write(reinterpret_cast<char*>(pixelBuffer),
-					pixelsTemp.getNumberOfElements());
+				pixelsTemp.getNumberOfElements() * sizeof(FloatUsed));
 	mexAssert(m_file);
 
 	m_wroteFile = true;
