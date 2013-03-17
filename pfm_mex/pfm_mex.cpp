@@ -189,14 +189,14 @@ mex::MxNumeric<FloatUsed> PFMInputFile::readFile() {
 	mexAssert((m_readHeader && m_header.isValidPFMHeader()) && (!m_readFile));
 	int numChannels;
 	std::vector<int> dimensions;
-	dimensions.push_back(m_header.get_height());
-	dimensions.push_back(m_header.get_width());
 	if (m_header.get_colorFormat() == ERGB) {
 		numChannels = 3;
 		dimensions.push_back(numChannels);
 	} else {
 		numChannels = 1;
 	}
+	dimensions.push_back(m_header.get_width());
+	dimensions.push_back(m_header.get_height());
 	mex::MxNumeric<FloatUsed> pixels(static_cast<int>(dimensions.size()),
 									&dimensions[0]);
 	FloatUsed* pixelBuffer = pixels.getData();
@@ -217,14 +217,17 @@ mex::MxNumeric<FloatUsed> PFMInputFile::readFile() {
 			}
 		}
 	}
+	m_readFile = true;
 
 	std::vector<int> permutationVector;
 	if (m_header.get_colorFormat() == ERGB) {
 		permutationVector.push_back(3);
+		permutationVector.push_back(2);
+		permutationVector.push_back(1);
+	} else {
+		permutationVector.push_back(2);
+		permutationVector.push_back(1);
 	}
-	permutationVector.push_back(2);
-	permutationVector.push_back(1);
-	m_readFile = true;
 	return pixels.permute(permutationVector);
 }
 

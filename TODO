@@ -4,12 +4,12 @@
 --Get vector attribute to work
 --Upgrade to OpenEXR 1.7, perhaps convert all vector to StringVectorAttributes
 
+-pfm
+--Changes names and have script for adding to MATLAB imformats
+
 -color_transforms
 --Make equivalents of Lab for Luv
 --Make chroma, saturation, and hue variants for Luv
-
--pfm
---Get both write and read to work properly
 
 -RAW
 --Write RAW reader using libraw
