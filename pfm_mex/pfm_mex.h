@@ -29,8 +29,8 @@ typedef enum EColorFormat {
 typedef enum EByteOrder {
 	EBigEndian = 0,
 	ELittleEndian,
-	EByteTypeLength,
-	EByteTypeInvalid = -1
+	EByteOrderLength,
+	EByteOrderInvalid = -1
 } EByteOrder;
 
 class PFMHeader {

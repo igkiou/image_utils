@@ -1,21 +1,21 @@
 -OpenEXR
---Changes names and have script for adding to MATLAB imformats
---Fix problems with alpha channel
---Get vector attribute to work
---Upgrade to OpenEXR 1.7, perhaps convert all vector to StringVectorAttributes
+--Change names and have script for adding to MATLAB imformats.
+--Fix problems with alpha channel.
+--Get vector attribute to work.
+--Upgrade to OpenEXR 1.7, perhaps convert all vector to StringVectorAttributes.
 
 -pfm
---Changes names and have script for adding to MATLAB imformats
+--Change names and have script for adding to MATLAB imformats.
 
--color_transforms
---Make equivalents of Lab for Luv
---Make chroma, saturation, and hue variants for Luv
+-color_formats
+--Add support for ICC and DNG profiles.
 
 -RAW
---Write RAW reader using libraw
+--Need to debug RAW reader using libraw.
+--Add support for DNG.
 
 -hdrvdp
---Perhaps integrate HDRVDP
+--Perhaps integrate HDRVDP.
 
 -hdri
---Write GUI-viewer for HDR with various tonemapping
+--Write GUI-viewer for HDR with various tonemapping.
