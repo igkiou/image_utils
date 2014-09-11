@@ -3,6 +3,7 @@
 --Fix problems with alpha channel.
 --Get vector attribute to work.
 --Upgrade to OpenEXR 1.7, perhaps convert all vector to StringVectorAttributes.
+--Upgrade to OpenEXR 2.0.
 
 -pfm
 --Change names and have script for adding to MATLAB imformats.
@@ -19,3 +20,7 @@
 
 -hdri
 --Write GUI-viewer for HDR with various tonemapping.
+--Perhaps add results by Granados et al.: iterative optimization of variance and radiance, and spatially adaptive denoising.
+
+-various
+--Add interpolation for unknown wavelength values.
