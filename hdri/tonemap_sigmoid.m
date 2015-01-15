@@ -1,4 +1,4 @@
-function imOut = tonemap_sigmoid(imIn, gainType, linthresh, scale)
+function imOut = tonemap_sigmoid(imIn, gainType, linthresh, scale, shift)
 
 if ((nargin < 2) || isempty(gainType)),
 	gainType = 'tanh';
@@ -12,29 +12,33 @@ if ((nargin < 4) || isempty(scale)),
 	scale = 2;
 end;
 
-imOut = tonemap_sigmoid_thresh_gain(imIn, gainType, linthresh, scale);
+if ((nargin < 5) || isempty(shift)),
+	shift = 0.5;
+end;
+
+imOut = tonemap_sigmoid_thresh_gain(imIn, gainType, linthresh, scale, shift);
 
 end
 
-function Y = tonemap_sigmoid_thresh_gain(X, gainType, linthresh, scale)
+function Y = tonemap_sigmoid_thresh_gain(X, gainType, linthresh, scale, shift)
 
 inds = X < linthresh;
 Y = zeros(size(X));
 Y(inds) = X(inds);
-Y(~inds) = tonemap_sigmoid_gain(X(~inds), gainType, scale);
+Y(~inds) = tonemap_sigmoid_gain(X(~inds), gainType, scale, shift);
 
 end
 
-function Y = tonemap_sigmoid_gain(X, gainType, scale)
+function Y = tonemap_sigmoid_gain(X, gainType, scale, shift)
 
 if ((nargin < 2) || isempty(gainType)),
 	gainType = 'tanh';
 end;
 
 if (strcmpi(gainType, 'tanh')),
-	Y = (tanh(scale * (X - 0.5)) + 1) / 2;
+	Y = (tanh(scale * (X - shift)) + 1) / 2;
 elseif (strcmpi(gainType, 'erf')),
-	Y = (erfnorm(scale * (X - 0.5)) + 1) / 2;
+	Y = (erfnorm(scale * (X - shift)) + 1) / 2;
 else
 	error('Unrecognized gain function type.');
 end;
