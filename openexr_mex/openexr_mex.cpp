@@ -13,7 +13,7 @@ namespace exr {
 /*
  * Input file handling.
  */
-void EXRInputFile::readChannelRGB() {
+void ExrInputFile::readChannelRGB() {
 	std::vector<std::string> channelNames;
 	channelNames.push_back(std::string("R"));
 	channelNames.push_back(std::string("G"));
@@ -21,16 +21,16 @@ void EXRInputFile::readChannelRGB() {
 	readChannel(channelNames);
 }
 
-void EXRInputFile::readChannelY() {
+void ExrInputFile::readChannelY() {
 	readChannel(std::vector<std::string>(1, std::string("Y")));
 }
 
-void EXRInputFile::readChannel(const std::string &channelName) {
+void ExrInputFile::readChannel(const std::string &channelName) {
 
 	readChannel(std::vector<std::string>(1, channelName));
 }
 
-void EXRInputFile::readChannel(const std::vector<std::string>& channelNames) {
+void ExrInputFile::readChannel(const std::vector<std::string>& channelNames) {
 
 	mexAssert((!m_createdFrameBuffer) && (!m_readFile));
 	int width, height;
@@ -65,7 +65,7 @@ void EXRInputFile::readChannel(const std::vector<std::string>& channelNames) {
 	m_createdFrameBuffer = true;
 }
 
-mex::MxNumeric<FloatUsed> EXRInputFile::readFile() {
+mex::MxNumeric<FloatUsed> ExrInputFile::readFile() {
 
 	mexAssert((m_createdFrameBuffer) && (!m_readFile));
 	mexAssert(isComplete());
@@ -87,54 +87,70 @@ mex::MxNumeric<FloatUsed> EXRInputFile::readFile() {
 
 namespace {
 
+enum class EExrAttributeType {
+	EChannelList = 0,
+	ECompression,
+	ELineOrder,
+	EChromaticities,
+	EEnvmap,
+	EString,
+	EBox2f,
+	EBox2i,
+	EV2f,
+	EV2i,
+	EDouble,
+	EFloat,
+	EInt,
+	ELength,
+	EInvalid = -1
+};
+
+mex::ConstBiMap<EExrAttributeType, std::string> attributeTypeNameMap =
+	mex::ConstBiMap<EExrAttributeType, std::string>
+	(EExrAttributeType::EChannelList, std::string(Imf::ChannelListAttribute::staticTypeName()))
+	(EExrAttributeType::ECompression, std::string(Imf::CompressionAttribute::staticTypeName()))
+	(EExrAttributeType::ELineOrder, std::string(Imf::LineOrderAttribute::staticTypeName()))
+	(EExrAttributeType::EChromaticities, std::string(Imf::ChromaticitiesAttribute::staticTypeName()))
+	(EExrAttributeType::EEnvmap, std::string(Imf::EnvmapAttribute::staticTypeName()))
+	(EExrAttributeType::EString, std::string(Imf::StringAttribute::staticTypeName()))
+	(EExrAttributeType::EBox2f, std::string(Imf::Box2fAttribute::staticTypeName()))
+	(EExrAttributeType::EBox2i, std::string(Imf::Box2iAttribute::staticTypeName()))
+	(EExrAttributeType::EV2f, std::string(Imf::V2fAttribute::staticTypeName()))
+	(EExrAttributeType::EV2i, std::string(Imf::V2iAttribute::staticTypeName()))
+	(EExrAttributeType::EDouble, std::string(Imf::TypedAttribute<double>::staticTypeName()))
+	(EExrAttributeType::EFloat, std::string(Imf::FloatAttribute::staticTypeName()))
+	(EExrAttributeType::EInt, std::string(Imf::TypedAttribute<int>::staticTypeName()))
+	(EExrAttributeType::EInvalid, std::string("unknown"));
+
+mex::ConstBiMap<Imf::Compression, std::string> compressionTypeNameMap =
+	mex::ConstBiMap<Imf::Compression, std::string>
+	(Imf::NO_COMPRESSION, std::string("no"))
+	(Imf::RLE_COMPRESSION, std::string("rle"))
+	(Imf::ZIPS_COMPRESSION, std::string("zips"))
+	(Imf::ZIP_COMPRESSION, std::string("zip"))
+	(Imf::PIZ_COMPRESSION, std::string("piz"))
+	(Imf::PXR24_COMPRESSION, std::string("pxr24"))
+	(Imf::B44_COMPRESSION, std::string("b44"))
+	(Imf::B44A_COMPRESSION, std::string("b44a"))
+	(Imf::NUM_COMPRESSION_METHODS, std::string("unknown"));
+
+mex::ConstBiMap<Imf::LineOrder, std::string> lineOrderTypeNameMap =
+	mex::ConstBiMap<Imf::LineOrder, std::string>
+	(Imf::INCREASING_Y, std::string("increasing_y"))
+	(Imf::DECREASING_Y,	std::string("decreasing_y"))
+	(Imf::RANDOM_Y, std::string("random_y"))
+	(Imf::NUM_LINEORDERS, std::string("unknown"));
+
+mex::ConstBiMap<Imf::Envmap, std::string> envmapTypeNameMap =
+	mex::ConstBiMap<Imf::Envmap, std::string>
+	(Imf::ENVMAP_LATLONG, 	std::string("latlong"))
+	(Imf::ENVMAP_CUBE,		std::string("cube"))
+	(Imf::NUM_ENVMAPTYPES,	std::string("unknown"));
+
 /*
  * Routines to convert an Attribute to MxArray.
  * TODO: Find reason why DoubleAttribute and IntAttribute are not in Imf.
  */
-
-const mex::ConstMap<std::string, EAttributeType> stringToAttributeType
-	= mex::ConstMap<std::string, EAttributeType>
-	(std::string(Imf::ChannelListAttribute::staticTypeName()),		EAttributeChannelList)
-	(std::string(Imf::CompressionAttribute::staticTypeName()),		EAttributeCompression)
-	(std::string(Imf::LineOrderAttribute::staticTypeName()),		EAttributeLineOrder)
-	(std::string(Imf::ChromaticitiesAttribute::staticTypeName()),	EAttributeChromaticities)
-	(std::string(Imf::EnvmapAttribute::staticTypeName()),			EAttributeEnvmap)
-	(std::string(Imf::StringAttribute::staticTypeName()),			EAttributeString)
-	(std::string(Imf::Box2fAttribute::staticTypeName()),			EAttributeBox2f)
-	(std::string(Imf::Box2iAttribute::staticTypeName()),			EAttributeBox2i)
-	(std::string(Imf::V2fAttribute::staticTypeName()),				EAttributeV2f)
-	(std::string(Imf::V2iAttribute::staticTypeName()),				EAttributeV2i)
-	(std::string(Imf::VfAttribute::staticTypeName()),				EAttributeVectorf)
-	(std::string(Imf::ViAttribute::staticTypeName()),				EAttributeVectori)
-	(std::string(Imf::TypedAttribute<double>::staticTypeName()),	EAttributeDouble)
-	(std::string(Imf::FloatAttribute::staticTypeName()),			EAttributeFloat)
-	(std::string(Imf::TypedAttribute<int>::staticTypeName()),		EAttributeInt)
-	(std::string("unknown"),										EAttributeTypeInvalid);
-
-const mex::ConstMap<Imf::Compression, std::string> compressionTypeToString
-	= mex::ConstMap<Imf::Compression, std::string>
-	(Imf::NO_COMPRESSION, 			std::string("no"))
-	(Imf::RLE_COMPRESSION,			std::string("rle"))
-	(Imf::ZIPS_COMPRESSION,			std::string("zips"))
-	(Imf::ZIP_COMPRESSION,			std::string("zip"))
-	(Imf::PIZ_COMPRESSION,			std::string("piz"))
-	(Imf::PXR24_COMPRESSION,		std::string("pxr24"))
-	(Imf::B44_COMPRESSION,			std::string("b44"))
-	(Imf::B44A_COMPRESSION,			std::string("b44a"))
-	(Imf::NUM_COMPRESSION_METHODS,	std::string("unknown"));
-
-const mex::ConstMap<Imf::LineOrder, std::string> lineOrderTypeToString
-	= mex::ConstMap<Imf::LineOrder, std::string>
-	(Imf::INCREASING_Y,		std::string("increasing_y"))
-	(Imf::DECREASING_Y,		std::string("decreasing_y"))
-	(Imf::RANDOM_Y,			std::string("random_y"))
-	(Imf::NUM_LINEORDERS,	std::string("unknown"));
-
-const mex::ConstMap<Imf::Envmap, std::string> envmapTypeToString
-	= mex::ConstMap<Imf::Envmap, std::string>
-	(Imf::ENVMAP_LATLONG, 	std::string("latlong"))
-	(Imf::ENVMAP_CUBE,		std::string("cube"))
-	(Imf::NUM_ENVMAPTYPES,	std::string("unknown"));
 
 // VT
 template <typename T>
@@ -151,24 +167,6 @@ mex::MxNumeric<T> toMxArray(
 	temp.push_back(attribute.value().x);
 	temp.push_back(attribute.value().y);
 	return mex::MxNumeric<T>(temp);
-}
-
-// VectorT
-template <typename T>
-mex::MxNumeric<T> toMxArray(
-	const Imf::TypedAttribute<std::vector<T> >& attribute) {
-//	std::vector<T> vecj = attribute.value();
-//	std::cout << "length " << attribute.value().size() << std::endl;
-//	for (int iter = 0, end = attribute.value().size(); iter < end; ++iter) {
-//		std::cout << "iter " << iter << " value "<< attribute.value()[iter] << std::endl;
-//	}
-//	mex::MxNumeric<T> mxNumeric(attribute.value());
-//	std::vector<T> veci = mxNumeric.vectorize();
-//	std::cout << "length " << veci.size() << std::endl;
-//	for (int iter = 0, end = veci.size(); iter < end; ++iter) {
-//		std::cout << "iter " << iter << " value "<< veci[iter] << std::endl;
-//	}
-	return mex::MxNumeric<T>(attribute.value());
 }
 
 // Box2T
@@ -247,19 +245,19 @@ mex::MxString toMxArray(
 // Envmap
 mex::MxString toMxArray(
 	const Imf::TypedAttribute<Imf::Envmap>& attribute) {
-	return mex::MxString(envmapTypeToString[attribute.value()]);
+	return mex::MxString(envmapTypeNameMap[attribute.value()]);
 }
 
 // LineOrder
 mex::MxString toMxArray(
 	const Imf::TypedAttribute<Imf::LineOrder>& attribute) {
-	return mex::MxString(lineOrderTypeToString[attribute.value()]);
+	return mex::MxString(lineOrderTypeNameMap[attribute.value()]);
 }
 
 // Compression
 mex::MxString toMxArray(
 	const Imf::TypedAttribute<Imf::Compression>& attribute) {
-	return mex::MxString(compressionTypeToString[attribute.value()]);
+	return mex::MxString(compressionTypeNameMap[attribute.value()]);
 }
 
 // ChannelList
@@ -283,81 +281,71 @@ mex::MxCell toMxArray(
 
 } /* namespace */
 
-mex::MxArray* EXRInputFile::getAttribute_sub(const mex::MxString& attributeName) const {
+mex::MxArray* ExrInputFile::getAttribute_sub(const mex::MxString& attributeName) const {
 	const Imf::Attribute& attribute = m_file.header()[attributeName.c_str()];
-	const EAttributeType type = stringToAttributeType[std::string(attribute.typeName())];
+	const EExrAttributeType type = attributeTypeNameMap.find(std::string(attribute.typeName()));
 	switch(type) {
-		case EAttributeChannelList: {
+		case EExrAttributeType::EChannelList: {
 			return new mex::MxCell(toMxArray(
 					static_cast<const Imf::TypedAttribute<Imf::ChannelList>&>(
 																attribute)));
 		}
-		case EAttributeCompression: {
+		case EExrAttributeType::ECompression: {
 			return new mex::MxString(toMxArray(
 					static_cast<const Imf::TypedAttribute<Imf::Compression>&>(
 																attribute)));
 		}
-		case EAttributeLineOrder: {
+		case EExrAttributeType::ELineOrder: {
 			return new mex::MxString(toMxArray(
 					static_cast<const Imf::TypedAttribute<Imf::LineOrder>&>(
 																attribute)));
 		}
-		case EAttributeEnvmap: {
+		case EExrAttributeType::EEnvmap: {
 			return new mex::MxString(toMxArray(
 					static_cast<const Imf::TypedAttribute<Imf::Envmap>&>(
 																attribute)));
 		}
-		case EAttributeString: {
+		case EExrAttributeType::EString: {
 			return new mex::MxString(toMxArray(
 					static_cast<const Imf::TypedAttribute<std::string>&>(
 																attribute)));
 		}
-		case EAttributeChromaticities: {
+		case EExrAttributeType::EChromaticities: {
 			return new mex::MxStruct(toMxArray(
 					static_cast<const Imf::TypedAttribute<Imf::Chromaticities>&>(
 																attribute)));
 		}
-		case EAttributeBox2f: {
+		case EExrAttributeType::EBox2f: {
 			return new mex::MxStruct(toMxArray(
 					static_cast<const Imf::TypedAttribute<Imath::Box2f>&>(
 																attribute)));
 		}
-		case EAttributeBox2i: {
+		case EExrAttributeType::EBox2i: {
 			return new mex::MxStruct(toMxArray(
 					static_cast<const Imf::TypedAttribute<Imath::Box2i>&>(
 																attribute)));
 		}
-		case EAttributeVectorf: {
-			return new mex::MxNumeric<float>(toMxArray(
-					static_cast<const Imf::TypedAttribute<std::vector<float> >&>(
-																attribute)));
-		}
-		case EAttributeVectori: {
-			return new mex::MxNumeric<int>(toMxArray(
-					static_cast<const Imf::TypedAttribute<std::vector<int> >&>(
-																attribute)));
-		}
-		case EAttributeV2f: {
+		case EExrAttributeType::EV2f: {
 			return new mex::MxNumeric<float>(toMxArray(
 					static_cast<const Imf::TypedAttribute<Imath::V2f>&>(
 																attribute)));
 		}
-		case EAttributeV2i: {
+		case EExrAttributeType::EV2i: {
 			return new mex::MxNumeric<int>(toMxArray(
 					static_cast<const Imf::TypedAttribute<Imath::V2i>&>(
 																attribute)));
 		}
-		case EAttributeDouble: {
+		case EExrAttributeType::EDouble: {
 			return new mex::MxNumeric<double>(toMxArray(
 					static_cast<const Imf::TypedAttribute<double>&>(
 																attribute)));
 		}
-		case EAttributeFloat: {
+		case EExrAttributeType::EFloat: {
 			return new mex::MxNumeric<float>(toMxArray(
 					static_cast<const Imf::TypedAttribute<float>&>(
 																attribute)));
 		}
-		case EAttributeInt: {
+		case EExrAttributeType::EInt: {
 			return new mex::MxNumeric<int>(toMxArray(
 					static_cast<const Imf::TypedAttribute<int>&>(
 																attribute)));
@@ -369,7 +357,7 @@ mex::MxArray* EXRInputFile::getAttribute_sub(const mex::MxString& attributeName)
 	}
 }
 
-mex::MxArray* EXRInputFile::getAttribute_sub() const {
+mex::MxArray* ExrInputFile::getAttribute_sub() const {
 
 	std::vector<std::string> nameVec;
 	std::vector<mex::MxArray*> arrayVec;
@@ -389,7 +377,7 @@ mex::MxArray* EXRInputFile::getAttribute_sub() const {
 	return retArg;
 }
 
-mex::MxArray EXRInputFile::getAttribute(const mex::MxString& attributeName)
+mex::MxArray ExrInputFile::getAttribute(const mex::MxString& attributeName)
 										const {
 	mex::MxArray* temp = getAttribute_sub(attributeName);
 	mex::MxArray retArg(temp->get_array());
@@ -397,7 +385,7 @@ mex::MxArray EXRInputFile::getAttribute(const mex::MxString& attributeName)
 	return retArg;
 }
 
-mex::MxArray EXRInputFile::getAttribute() const {
+mex::MxArray ExrInputFile::getAttribute() const {
 	mex::MxArray* temp = getAttribute_sub();
 	mex::MxArray retArg(temp->get_array());
 	delete temp;
@@ -407,7 +395,7 @@ mex::MxArray EXRInputFile::getAttribute() const {
 /*
  * Output file handling.
  */
-void EXROutputFile::writeChannelRGB(const mex::MxNumeric<FloatUsed>& rgbPixels) {
+void ExrOutputFile::writeChannelRGB(const mex::MxNumeric<FloatUsed>& rgbPixels) {
 
 	std::vector<std::string> rgbNames;
 	rgbNames.push_back(std::string("R"));
@@ -416,17 +404,17 @@ void EXROutputFile::writeChannelRGB(const mex::MxNumeric<FloatUsed>& rgbPixels) 
 	writeChannel(rgbPixels, rgbNames);
 }
 
-void EXROutputFile::writeChannelY(const mex::MxNumeric<FloatUsed>& yPixels) {
+void ExrOutputFile::writeChannelY(const mex::MxNumeric<FloatUsed>& yPixels) {
 	writeChannel(yPixels, std::vector<std::string>(1, std::string("Y")));
 }
 
-void EXROutputFile::writeChannel(const mex::MxNumeric<FloatUsed>& channelPixels,
+void ExrOutputFile::writeChannel(const mex::MxNumeric<FloatUsed>& channelPixels,
 									const std::string& channelName) {
 
 	writeChannel(channelPixels, std::vector<std::string>(1, channelName));
 }
 
-void EXROutputFile::writeChannel(const mex::MxNumeric<FloatUsed>& channelPixels,
+void ExrOutputFile::writeChannel(const mex::MxNumeric<FloatUsed>& channelPixels,
 									const std::vector<std::string>& channelNames) {
 	mexAssert((!m_createdFrameBuffer) && (!m_wroteFile));
 	std::vector<int> dimensions = channelPixels.getDimensions();
@@ -458,7 +446,7 @@ void EXROutputFile::writeChannel(const mex::MxNumeric<FloatUsed>& channelPixels,
 	m_createdFrameBuffer = true;
 }
 
-void EXROutputFile::writeFile(const mex::MxString& fileName) {
+void ExrOutputFile::writeFile(const mex::MxString& fileName) {
 	mexAssert((m_createdFrameBuffer) && (!m_wroteFile));
 	int height = getHeight();
 	Imf::OutputFile outFile(fileName.c_str(), m_header);
@@ -472,50 +460,6 @@ namespace {
 /*
  * Routines to convert an MxArray to Attribute.
  */
-
-const mex::ConstMap<EAttributeType, std::string> attributeTypeToString
-	= mex::ConstMap<EAttributeType, std::string>
-	(EAttributeChannelList, 	std::string(Imf::ChannelListAttribute::staticTypeName()))
-	(EAttributeCompression,		std::string(Imf::CompressionAttribute::staticTypeName()))
-	(EAttributeLineOrder,		std::string(Imf::LineOrderAttribute::staticTypeName()))
-	(EAttributeChromaticities,	std::string(Imf::ChromaticitiesAttribute::staticTypeName()))
-	(EAttributeEnvmap,			std::string(Imf::EnvmapAttribute::staticTypeName()))
-	(EAttributeString,			std::string(Imf::StringAttribute::staticTypeName()))
-	(EAttributeBox2f,			std::string(Imf::Box2fAttribute::staticTypeName()))
-	(EAttributeBox2i,			std::string(Imf::Box2iAttribute::staticTypeName()))
-	(EAttributeV2f,				std::string(Imf::V2fAttribute::staticTypeName()))
-	(EAttributeV2i,				std::string(Imf::V2iAttribute::staticTypeName()))
-	(EAttributeVectorf,			std::string(Imf::VfAttribute::staticTypeName()))
-	(EAttributeVectori,			std::string(Imf::ViAttribute::staticTypeName()))
-	(EAttributeDouble,			std::string(Imf::TypedAttribute<double>::staticTypeName()))
-	(EAttributeFloat,			std::string(Imf::FloatAttribute::staticTypeName()))
-	(EAttributeInt,				std::string(Imf::TypedAttribute<int>::staticTypeName()))
-	(EAttributeTypeInvalid,		std::string("unknown"));
-
-const mex::ConstMap<std::string, Imf::Compression> stringToCompressionType
-	= mex::ConstMap<std::string, Imf::Compression>
-	(std::string("no"), 		Imf::NO_COMPRESSION)
-	(std::string("rle"),		Imf::RLE_COMPRESSION)
-	(std::string("zips"),		Imf::ZIPS_COMPRESSION)
-	(std::string("zip"),		Imf::ZIP_COMPRESSION)
-	(std::string("piz"),		Imf::PIZ_COMPRESSION)
-	(std::string("pxr24"),		Imf::PXR24_COMPRESSION)
-	(std::string("b44"),		Imf::B44_COMPRESSION)
-	(std::string("b44a"),		Imf::B44A_COMPRESSION)
-	(std::string("unknown"),	Imf::NUM_COMPRESSION_METHODS);
-
-const mex::ConstMap<std::string, Imf::LineOrder> stringToLineOrderType
-	= mex::ConstMap<std::string, Imf::LineOrder>
-	(std::string("increasing_y"), 	Imf::INCREASING_Y)
-	(std::string("decreasing_y"),	Imf::DECREASING_Y)
-	(std::string("random_y"),		Imf::RANDOM_Y)
-	(std::string("unknown"),			Imf::NUM_LINEORDERS);
-
-const mex::ConstMap<std::string, Imf::Envmap> stringToEnvmapType
-	= mex::ConstMap<std::string, Imf::Envmap>
-	(std::string("latlong"), Imf::ENVMAP_LATLONG)
-	(std::string("cube"),	Imf::ENVMAP_CUBE)
-	(std::string("unknown"),	Imf::NUM_ENVMAPTYPES);
 
 // VT
 template <typename T>
@@ -551,31 +495,6 @@ Imf::TypedAttribute<Imath::Vec2<int> > toAttribute<Imath::Vec2<int> >(
 	return Imf::TypedAttribute<Imath::Vec2<int> >(
 											Imath::Vec2<int>(mxNumeric[0],
 														mxNumeric[1]));
-}
-
-// VectorT
-template <>
-Imf::TypedAttribute<std::vector<float> > toAttribute<std::vector<float> >(
-	const mex::MxNumeric<float>& mxNumeric) {
-//	std::vector<float> veci = mxNumeric.vectorize();
-//	std::cout << "length " << veci.size() << std::endl;
-//	for (int iter = 0, end = veci.size(); iter < end; ++iter) {
-//		std::cout << "iter " << iter << " value "<< veci[iter] << std::endl;
-//	}
-//
-//	Imf::TypedAttribute<std::vector<float> > attr(mxNumeric.vectorize());
-//	std::vector<float> vecj = attr.value();
-//	std::cout << "length " << vecj.size() << std::endl;
-//	for (int iter = 0, end = vecj.size(); iter < end; ++iter) {
-//		std::cout << "iter " << iter << " value "<< vecj[iter] << std::endl;
-//	}
-	return Imf::TypedAttribute<std::vector<float> >(mxNumeric.vectorize());
-}
-
-template <>
-Imf::TypedAttribute<std::vector<int> > toAttribute<std::vector<int> >(
-	const mex::MxNumeric<int>& mxNumeric) {
-	return Imf::TypedAttribute<std::vector<int> >(mxNumeric.vectorize());
 }
 
 // Box2T
@@ -615,24 +534,24 @@ Imf::TypedAttribute<T> toAttribute(
 template <>
 Imf::TypedAttribute<Imf::Envmap> toAttribute<Imf::Envmap>(
 	const mex::MxString& mxString) {
-	return Imf::TypedAttribute<Imf::Envmap>(stringToEnvmapType[
-															mxString.get_string()]);
+	return Imf::TypedAttribute<Imf::Envmap>(envmapTypeNameMap.find(
+														mxString.get_string()));
 }
 
 // LineOrder
 template <>
 Imf::TypedAttribute<Imf::LineOrder> toAttribute<Imf::LineOrder>(
 	const mex::MxString& mxString) {
-	return Imf::TypedAttribute<Imf::LineOrder>(stringToLineOrderType[
-															mxString.get_string()]);
+	return Imf::TypedAttribute<Imf::LineOrder>(lineOrderTypeNameMap.find(
+														mxString.get_string()));
 }
 
 // Compression
 template <>
 Imf::TypedAttribute<Imf::Compression> toAttribute<Imf::Compression>(
 	const mex::MxString& mxString) {
-	return Imf::TypedAttribute<Imf::Compression>(stringToCompressionType[
-															mxString.get_string()]);
+	return Imf::TypedAttribute<Imf::Compression>(compressionTypeNameMap.find(
+														mxString.get_string()));
 }
 
 // ChannelList
@@ -640,77 +559,73 @@ Imf::TypedAttribute<Imf::Compression> toAttribute<Imf::Compression>(
 
 } /* namespace */
 
-const mex::ConstMap<std::string, EAttributeType> registeredAttributeNameToAttributeType
-	= mex::ConstMap<std::string, EAttributeType>
-	(std::string("gain"),				EAttributeFloat)
-	(std::string("wavelength"),			EAttributeFloat)
-	(std::string("extTube"),			EAttributeString)
-	(std::string("lens"),				EAttributeString)
-	(std::string("material"),			EAttributeString)
-	(std::string("chromaticities"),		EAttributeChromaticities)
-	(std::string("whiteLuminance"),		EAttributeFloat)
-	(std::string("adoptedNeutral"),		EAttributeV2f)
-	(std::string("renderingTransform"),	EAttributeString)
-	(std::string("lookModTransform"),	EAttributeFloat)
-	(std::string("xDensity"),			EAttributeFloat)
-	(std::string("owner"),				EAttributeString)
-	(std::string("comments"),			EAttributeString)
-	(std::string("capDate"),			EAttributeString)
-	(std::string("utcOffset"),			EAttributeFloat)
-	(std::string("longitude"),			EAttributeFloat)
-	(std::string("latitude"),			EAttributeFloat)
-	(std::string("altitude"),			EAttributeFloat)
-	(std::string("focus"),				EAttributeFloat)
-	(std::string("expTime"),			EAttributeFloat)
-	(std::string("aperture"),			EAttributeFloat)
-	(std::string("isoSpeed"),			EAttributeFloat)
-	(std::string("multExpTimes"),		EAttributeVectorf)
-	(std::string("multApertures"),		EAttributeVectorf)
-	(std::string("multIsoSpeeds"),		EAttributeVectorf)
-	(std::string("multGains"),			EAttributeVectorf)
-	(std::string("envmap"),				EAttributeEnvmap);
+const mex::ConstMap<std::string, EExrAttributeType> registeredAttributeNameAttributeTypeMap
+	= mex::ConstMap<std::string, EExrAttributeType>
+	(std::string("gain"),				EExrAttributeType::EFloat)
+	(std::string("wavelength"),			EExrAttributeType::EFloat)
+	(std::string("extTube"),			EExrAttributeType::EString)
+	(std::string("lens"),				EExrAttributeType::EString)
+	(std::string("material"),			EExrAttributeType::EString)
+	(std::string("chromaticities"),		EExrAttributeType::EChromaticities)
+	(std::string("whiteLuminance"),		EExrAttributeType::EFloat)
+	(std::string("adoptedNeutral"),		EExrAttributeType::EV2f)
+	(std::string("renderingTransform"),	EExrAttributeType::EString)
+	(std::string("lookModTransform"),	EExrAttributeType::EFloat)
+	(std::string("xDensity"),			EExrAttributeType::EFloat)
+	(std::string("owner"),				EExrAttributeType::EString)
+	(std::string("comments"),			EExrAttributeType::EString)
+	(std::string("capDate"),			EExrAttributeType::EString)
+	(std::string("utcOffset"),			EExrAttributeType::EFloat)
+	(std::string("longitude"),			EExrAttributeType::EFloat)
+	(std::string("latitude"),			EExrAttributeType::EFloat)
+	(std::string("altitude"),			EExrAttributeType::EFloat)
+	(std::string("focus"),				EExrAttributeType::EFloat)
+	(std::string("expTime"),			EExrAttributeType::EFloat)
+	(std::string("aperture"),			EExrAttributeType::EFloat)
+	(std::string("isoSpeed"),			EExrAttributeType::EFloat)
+	(std::string("envmap"),				EExrAttributeType::EEnvmap);
 
-void EXROutputFile::setAttribute(const mex::MxArray& attribute,
+void ExrOutputFile::setAttribute(const mex::MxArray& attribute,
 								const mex::MxString& attributeName) {
 
-	std::map<std::string, EAttributeType>::const_iterator iteratorToType =
-											registeredAttributeNameToAttributeType.
+	std::map<std::string, EExrAttributeType>::const_iterator iteratorToType =
+											registeredAttributeNameAttributeTypeMap.
 											get_map().
 											find(attributeName.get_string());
-	const EAttributeType type(
-				(iteratorToType != registeredAttributeNameToAttributeType.get_map().end())
+	const EExrAttributeType type(
+				(iteratorToType != registeredAttributeNameAttributeTypeMap.get_map().end())
 				?(iteratorToType->second)
-				:(EAttributeString));
+				:(EExrAttributeType::EString));
 	switch(type) {
-		case EAttributeChannelList: {
+		case EExrAttributeType::EChannelList: {
 			mexAssertEx(0, "Unsupported attribute type");
 			break;
 		}
-		case EAttributeCompression: {
+		case EExrAttributeType::ECompression: {
 			const mex::MxString tempAttribute(attribute.get_array());
 			m_header.insert(attributeName.c_str(), toAttribute<Imf::Compression>(
 							tempAttribute));
 			break;
 		}
-		case EAttributeLineOrder: {
+		case EExrAttributeType::ELineOrder: {
 			const mex::MxString tempAttribute(attribute.get_array());
 			m_header.insert(attributeName.c_str(), toAttribute<Imf::LineOrder>(
 							tempAttribute));
 			break;
 		}
-		case EAttributeEnvmap: {
+		case EExrAttributeType::EEnvmap: {
 			const mex::MxString tempAttribute(attribute.get_array());
 			m_header.insert(attributeName.c_str(), toAttribute<Imf::Envmap>(
 							tempAttribute));
 			break;
 		}
-		case EAttributeString: {
+		case EExrAttributeType::EString: {
 			const mex::MxString tempAttribute(attribute.get_array());
 			m_header.insert(attributeName.c_str(), toAttribute<std::string>(
 							tempAttribute));
 			break;
 		}
-		case EAttributeChromaticities: {
+		case EExrAttributeType::EChromaticities: {
 			const mex::MxStruct tempAttribute(attribute.get_array());
 			mexAssert(
 					(tempAttribute.getNumberOfFields() == 4) &&
@@ -727,7 +642,7 @@ void EXROutputFile::setAttribute(const mex::MxArray& attribute,
 							tempAttribute));
 			break;
 		}
-		case EAttributeBox2f: {
+		case EExrAttributeType::EBox2f: {
 			const mex::MxStruct tempAttribute(attribute.get_array());
 			mexAssert(
 					(tempAttribute.getNumberOfFields() == 1) &&
@@ -740,7 +655,7 @@ void EXROutputFile::setAttribute(const mex::MxArray& attribute,
 							tempAttribute));
 			break;
 		}
-		case EAttributeBox2i: {
+		case EExrAttributeType::EBox2i: {
 			const mex::MxStruct tempAttribute(attribute.get_array());
 			mexAssert(
 					(tempAttribute.getNumberOfFields() == 1) &&
@@ -753,47 +668,35 @@ void EXROutputFile::setAttribute(const mex::MxArray& attribute,
 							tempAttribute));
 			break;
 		}
-		case EAttributeV2f: {
+		case EExrAttributeType::EV2f: {
 			const mex::MxNumeric<float> tempAttribute(attribute.get_array());
 			mexAssert(tempAttribute.getNumberOfElements() == 2);
 			m_header.insert(attributeName.c_str(), toAttribute<Imath::Vec2<float> >(
 							tempAttribute));
 			break;
 		}
-		case EAttributeV2i: {
+		case EExrAttributeType::EV2i: {
 			const mex::MxNumeric<int> tempAttribute(attribute.get_array());
 			mexAssert(tempAttribute.getNumberOfElements() == 2);
 			m_header.insert(attributeName.c_str(), toAttribute<Imath::Vec2<int> >(
 							tempAttribute));
 			break;
 		}
-		case EAttributeVectorf: {
-			const mex::MxNumeric<float> tempAttribute(attribute.get_array());
-			m_header.insert(attributeName.c_str(), toAttribute<std::vector<float> >(
-							tempAttribute));
-			break;
-		}
-		case EAttributeVectori: {
-			const mex::MxNumeric<int> tempAttribute(attribute.get_array());
-			m_header.insert(attributeName.c_str(), toAttribute<std::vector<int> >(
-							tempAttribute));
-			break;
-		}
-		case EAttributeDouble: {
+		case EExrAttributeType::EDouble: {
 			const mex::MxNumeric<double> tempAttribute(attribute.get_array());
 			mexAssert(tempAttribute.getNumberOfElements() == 1);
 			m_header.insert(attributeName.c_str(), toAttribute<double>(
 							tempAttribute));
 			break;
 		}
-		case EAttributeFloat: {
+		case EExrAttributeType::EFloat: {
 			const mex::MxNumeric<float> tempAttribute(attribute.get_array());
 			mexAssert(tempAttribute.getNumberOfElements() == 1);
 			m_header.insert(attributeName.c_str(), toAttribute<float>(
 							tempAttribute));
 			break;
 		}
-		case EAttributeInt: {
+		case EExrAttributeType::EInt: {
 			const mex::MxNumeric<int> tempAttribute(attribute.get_array());
 			mexAssert(tempAttribute.getNumberOfElements() == 1);
 			m_header.insert(attributeName.c_str(), toAttribute<int>(
@@ -807,7 +710,7 @@ void EXROutputFile::setAttribute(const mex::MxArray& attribute,
 	}
 }
 
-void EXROutputFile::setAttribute(const mex::MxStruct& attributes) {
+void ExrOutputFile::setAttribute(const mex::MxStruct& attributes) {
 
 	for (int iter = 0, numFields = attributes.getNumberOfFields();
 		iter < numFields;

@@ -22,5 +22,8 @@
 --Write GUI-viewer for HDR with various tonemapping.
 --Perhaps add results by Granados et al.: iterative optimization of variance and radiance, and spatially adaptive denoising.
 
+-demosaicking
+--Add basic demosaicking support.
+
 -various
 --Add interpolation for unknown wavelength values.

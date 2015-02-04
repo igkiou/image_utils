@@ -26,7 +26,7 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[]) {
 	std::vector<int> dimensions = image.getDimensions();
 	mexAssert((dimensions.size() == 2) || (dimensions.size() == 3));
 	int numChannels = (dimensions.size() == 2)?(1):(dimensions[2]);
-	exr::EXROutputFile file(dimensions[1], dimensions[0]);
+	exr::ExrOutputFile file(dimensions[1], dimensions[0]);
 	if (nrhs >= 4) {
 		mex::MxStruct attributes(const_cast<mxArray*>(prhs[3]));
 		file.setAttribute(attributes);

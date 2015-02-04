@@ -13,31 +13,31 @@
 #include <stdio.h>
 #include <stdarg.h>
 
-#include "Iex.h"
-#include "ImathBox.h"
-#include "ImfArray.h"
-#include "ImfAttribute.h"
-#include "ImfBoxAttribute.h"
-#include "ImfChannelList.h"
-#include "ImfChannelListAttribute.h"
-#include "ImfChromaticitiesAttribute.h"
-#include "ImfCompressionAttribute.h"
-#include "ImfEnvmapAttribute.h"
+#include "IlmBase/Iex/Iex.h"
+#include "IlmBase/Imath/ImathBox.h"
+#include "OpenEXR/IlmImf/ImfArray.h"
+#include "OpenEXR/IlmImf/ImfAttribute.h"
+#include "OpenEXR/IlmImf/ImfBoxAttribute.h"
+#include "OpenEXR/IlmImf/ImfChannelList.h"
+#include "OpenEXR/IlmImf/ImfChannelListAttribute.h"
+#include "OpenEXR/IlmImf/ImfChromaticitiesAttribute.h"
+#include "OpenEXR/IlmImf/ImfCompressionAttribute.h"
+#include "OpenEXR/IlmImf/ImfEnvmapAttribute.h"
 //#include "ImfExtraAttributes.h"
-#include "ImfFloatAttribute.h"
-#include "ImfFrameBuffer.h"
-#include "ImfHeader.h"
-#include "ImfInputFile.h"
-#include "ImfLineOrderAttribute.h"
-#include "ImfOutputFile.h"
-#include "ImfPixelType.h"
-#include "ImfRgba.h"
-#include "ImfRgbaFile.h"
+#include "OpenEXR/IlmImf/ImfFloatAttribute.h"
+#include "OpenEXR/IlmImf/ImfFrameBuffer.h"
+#include "OpenEXR/IlmImf/ImfHeader.h"
+#include "OpenEXR/IlmImf/ImfInputFile.h"
+#include "OpenEXR/IlmImf/ImfLineOrderAttribute.h"
+#include "OpenEXR/IlmImf/ImfOutputFile.h"
+#include "OpenEXR/IlmImf/ImfPixelType.h"
+#include "OpenEXR/IlmImf/ImfRgba.h"
+#include "OpenEXR/IlmImf/ImfRgbaFile.h"
 //#include "ImfStandardAttributes.h"
-#include "ImfStringAttribute.h"
-#include "ImfTestFile.h"
-#include "ImfVecAttribute.h"
-#include "ImfVectorAttribute.h"
+#include "OpenEXR/IlmImf/ImfStringAttribute.h"
+#include "OpenEXR/IlmImf/ImfTestFile.h"
+#include "OpenEXR/IlmImf/ImfVecAttribute.h"
+//#include "ImfVectorAttribute.h"
 
 #include "mex_utils.h"
 
@@ -52,26 +52,6 @@ namespace exr {
 typedef float FloatUsed;
 const Imf::PixelType kEXRFloatUsed = Imf::FLOAT;
 
-typedef enum EAttributeType {
-	EAttributeChannelList = 0,
-	EAttributeCompression,
-	EAttributeLineOrder,
-	EAttributeChromaticities,
-	EAttributeEnvmap,
-	EAttributeString,
-	EAttributeBox2f,
-	EAttributeBox2i,
-	EAttributeV2f,
-	EAttributeV2i,
-	EAttributeVectorf,
-	EAttributeVectori,
-	EAttributeDouble,
-	EAttributeFloat,
-	EAttributeInt,
-	EAttributeTypeLength,
-	EAttributeTypeInvalid = -1
-} EAttributeType;
-
 inline mex::MxNumeric<bool> isOpenExrFile(const mex::MxString& fileName) {
 	return mex::MxNumeric<bool>(Imf::isOpenExrFile(fileName.c_str()));
 }
@@ -80,10 +60,12 @@ inline mex::MxNumeric<bool> isOpenExrFile(const mex::MxString& fileName) {
  * TODO: Maybe replace remaining arguments of these functions to use directly
  * MxArrays?
  */
-class EXRInputFile {
+
+class ExrInputFile : public mex::MxObject {
 public:
-	explicit EXRInputFile(const mex::MxString& fileName)
-							: m_file(fileName.c_str()),
+
+		explicit ExrInputFile(const mex::MxString& fileName) :
+							  m_file(fileName.c_str()),
 							  m_frameBuffer(),
 							  m_pixelBuffer(),
 							  m_foundChannel(),
@@ -140,8 +122,8 @@ public:
 		return m_file.header().channels().findChannel(channelName.c_str()) != 0;
 	}
 
-	mex::MxArray getAttribute(const mex::MxString& attributeName) const;
-	mex::MxArray getAttribute() const;
+	virtual mex::MxArray getAttribute(const mex::MxString& attributeName) const;
+	virtual mex::MxArray getAttribute() const;
 
 	void readChannelRGB();
 	void readChannelY();
@@ -150,7 +132,7 @@ public:
 
 	mex::MxNumeric<FloatUsed> readFile();
 
-	~EXRInputFile() {
+	~ExrInputFile() {
 		if (m_createdFrameBuffer) {
 			m_pixelBuffer.destroy();
 		}
@@ -168,7 +150,7 @@ private:
 	bool m_readFile;
 };
 
-class EXROutputFile {
+class ExrOutputFile : public mex::MxObject {
 public:
 	/*
 	 * TODO: Should this be initialized directly from pixels MxNumeric? It may
@@ -176,8 +158,8 @@ public:
 	 * safer in terms of passing width and height arguments to the
 	 * initialization of the header.
 	 */
-	EXROutputFile(const int width, const int height)
-				: m_header(width, height),
+	ExrOutputFile(const int width, const int height) :
+				  m_header(width, height),
 				  m_frameBuffer(),
 				  m_pixelBuffer(),
 				  m_createdFrameBuffer(false),
@@ -199,9 +181,9 @@ public:
 		height = dw.max.y - dw.min.y + 1;
 	}
 
-	void setAttribute(const mex::MxArray& attribute,
+	virtual void setAttribute(const mex::MxArray& attribute,
 					const mex::MxString& attributeName);
-	void setAttribute(const mex::MxStruct& attributes);
+	virtual void setAttribute(const mex::MxStruct& attributes);
 
 	void writeChannelRGB(const mex::MxNumeric<FloatUsed>& rgbPixels);
 	void writeChannelY(const mex::MxNumeric<FloatUsed>& yPixels);
@@ -212,7 +194,7 @@ public:
 
 	void writeFile(const mex::MxString& fileName);
 
-	~EXROutputFile() {
+	~ExrOutputFile() {
 		if (m_createdFrameBuffer) {
 			m_pixelBuffer.destroy();
 		}

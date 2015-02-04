@@ -8,27 +8,27 @@
 #include "openexr_mex.h"
 #include "mex_utils.h"
 
-const mex::ConstMap<std::string, exr::EAttributeType> stringToAttributeType
-	= mex::ConstMap<std::string, exr::EAttributeType>
-	(std::string(Imf::ChannelListAttribute::staticTypeName()),		exr::EAttributeChannelList)
-	(std::string(Imf::CompressionAttribute::staticTypeName()),		exr::EAttributeCompression)
-	(std::string(Imf::LineOrderAttribute::staticTypeName()),			exr::EAttributeLineOrder)
-	(std::string(Imf::ChromaticitiesAttribute::staticTypeName()),	exr::EAttributeChromaticities)
-	(std::string(Imf::EnvmapAttribute::staticTypeName()),			exr::EAttributeEnvmap)
-	(std::string(Imf::StringAttribute::staticTypeName()),			exr::EAttributeString)
-	(std::string(Imf::Box2fAttribute::staticTypeName()),				exr::EAttributeBox2f)
-	(std::string(Imf::Box2iAttribute::staticTypeName()),				exr::EAttributeBox2i)
-	(std::string(Imf::V2fAttribute::staticTypeName()),				exr::EAttributeV2f)
-	(std::string(Imf::V2iAttribute::staticTypeName()),				exr::EAttributeV2i)
-	(std::string(Imf::VfAttribute::staticTypeName()),				exr::EAttributeVectorf)
-	(std::string(Imf::ViAttribute::staticTypeName()),				exr::EAttributeVectori)
-	(std::string(Imf::TypedAttribute<double>::staticTypeName()),		exr::EAttributeDouble)
-	(std::string(Imf::FloatAttribute::staticTypeName()),				exr::EAttributeFloat)
-	(std::string(Imf::TypedAttribute<int>::staticTypeName()),		exr::EAttributeInt)
-	(std::string("unknown"),											exr::EAttributeTypeInvalid);
+//const mex::ConstBiMap<std::string, exr::EAttributeType> stringToAttributeType
+//	= mex::ConstBiMap<std::string, exr::EAttributeType>
+//	(std::string(Imf::ChannelListAttribute::staticTypeName()),		exr::EAttributeChannelList)
+//	(std::string(Imf::CompressionAttribute::staticTypeName()),		exr::EAttributeCompression)
+//	(std::string(Imf::LineOrderAttribute::staticTypeName()),			exr::EAttributeLineOrder)
+//	(std::string(Imf::ChromaticitiesAttribute::staticTypeName()),	exr::EAttributeChromaticities)
+//	(std::string(Imf::EnvmapAttribute::staticTypeName()),			exr::EAttributeEnvmap)
+//	(std::string(Imf::StringAttribute::staticTypeName()),			exr::EAttributeString)
+//	(std::string(Imf::Box2fAttribute::staticTypeName()),				exr::EAttributeBox2f)
+//	(std::string(Imf::Box2iAttribute::staticTypeName()),				exr::EAttributeBox2i)
+//	(std::string(Imf::V2fAttribute::staticTypeName()),				exr::EAttributeV2f)
+//	(std::string(Imf::V2iAttribute::staticTypeName()),				exr::EAttributeV2i)
+//	(std::string(Imf::VfAttribute::staticTypeName()),				exr::EAttributeVectorf)
+//	(std::string(Imf::ViAttribute::staticTypeName()),				exr::EAttributeVectori)
+//	(std::string(Imf::TypedAttribute<double>::staticTypeName()),		exr::EAttributeDouble)
+//	(std::string(Imf::FloatAttribute::staticTypeName()),				exr::EAttributeFloat)
+//	(std::string(Imf::TypedAttribute<int>::staticTypeName()),		exr::EAttributeInt)
+//	(std::string("unknown"),											exr::EAttributeTypeInvalid);
 
-const mex::ConstMap<int, exr::EAttributeType> intToAttributeType
-	= mex::ConstMap<int, exr::EAttributeType>
+const mex::ConstBiMap<int, exr::EAttributeType> intToAttributeType
+	= mex::ConstBiMap<int, exr::EAttributeType>
 	(5,		exr::EAttributeChannelList)
 	(6,		exr::EAttributeCompression)
 	(7,		exr::EAttributeLineOrder)
@@ -61,7 +61,7 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[]) {
 	}
 
 	mex::MxString fileName(const_cast<mxArray *>(prhs[0]));
-	exr::EXRInputFile file(fileName);
+	exr::ExrInputFile file(fileName);
 	mexAssert(intToAttributeType[6] == exr::EAttributeCompression);
 	for (std::map<int, exr::EAttributeType>::const_iterator iter = intToAttributeType.get_map().begin(),
 		end = intToAttributeType.get_map().end();
