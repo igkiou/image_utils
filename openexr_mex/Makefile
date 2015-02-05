@@ -7,14 +7,14 @@ INCLUDES = -I/home/igkiou/MATLAB/mex_utils -I/home/igkiou/MATLAB/openexr -I/home
 LIBS = -L/home/igkiou/MATLAB/openexr/OpenEXR/IlmImf/ -L/home/igkiou/MATLAB/openexr/IlmBase/lib -lIlmImf-2_2 -lHalf -lIex-2_2 -lIexMath-2_2 -lIlmThread-2_2 -lImath-2_2
 
 ifeq ($(USE_GCC), 1)
-	include gcc.mk
+	include ../gcc.mk
 else
-	include icc.mk
+	include ../icc.mk
 endif
 
-include matlab.mk
+include ../matlab.mk
 
-all: read write get is
+all: read write get is test
 
 get: exrget.$(MEXEXT)
 read: exrread.$(MEXEXT)
