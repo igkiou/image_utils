@@ -139,8 +139,6 @@ public:
 	}
 
 private:
-	mex::MxArray* getAttribute_sub(const mex::MxString& attributeName) const;
-	mex::MxArray* getAttribute_sub() const;
 
 	Imf::InputFile m_file;
 	Imf::FrameBuffer m_frameBuffer;

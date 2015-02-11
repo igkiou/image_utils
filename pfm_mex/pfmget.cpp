@@ -21,7 +21,7 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[]) {
 	}
 
 	mex::MxString fileName(const_cast<mxArray*>(prhs[0]));
-	pfm::PFMInputFile file(fileName);
+	pfm::PfmInputFile file(fileName);
 	file.readHeader();
 	plhs[0] = file.get_header().toMxArray().get_array();
 }

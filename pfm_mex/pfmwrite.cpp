@@ -21,7 +21,7 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[]) {
 	}
 
 	mex::MxNumeric<pfm::FloatUsed> image(const_cast<mxArray*>(prhs[0]));
-	pfm::PFMOutputFile file(mex::MxString(const_cast<mxArray*>(prhs[1])));
+	pfm::PfmOutputFile file(mex::MxString(const_cast<mxArray*>(prhs[1])));
 	file.writeHeader(image);
 	file.writeFile(image);
 }

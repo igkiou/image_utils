@@ -281,83 +281,83 @@ mex::MxCell toMxArray(
 
 } /* namespace */
 
-mex::MxArray* ExrInputFile::getAttribute_sub(const mex::MxString& attributeName) const {
+mex::MxArray ExrInputFile::getAttribute(const mex::MxString& attributeName) const {
 	const Imf::Attribute& attribute = m_file.header()[attributeName.c_str()];
 	const EExrAttributeType type = attributeTypeNameMap.find(std::string(attribute.typeName()));
 	switch(type) {
 		case EExrAttributeType::EChannelList: {
-			return new mex::MxCell(toMxArray(
+			return mex::MxArray(toMxArray(
 					static_cast<const Imf::TypedAttribute<Imf::ChannelList>&>(
-																attribute)));
+													attribute)).get_array());
 		}
 		case EExrAttributeType::ECompression: {
-			return new mex::MxString(toMxArray(
+			return mex::MxArray(toMxArray(
 					static_cast<const Imf::TypedAttribute<Imf::Compression>&>(
-																attribute)));
+													attribute)).get_array());
 		}
 		case EExrAttributeType::ELineOrder: {
-			return new mex::MxString(toMxArray(
+			return mex::MxArray(toMxArray(
 					static_cast<const Imf::TypedAttribute<Imf::LineOrder>&>(
-																attribute)));
+													attribute)).get_array());
 		}
 		case EExrAttributeType::EEnvmap: {
-			return new mex::MxString(toMxArray(
+			return mex::MxArray(toMxArray(
 					static_cast<const Imf::TypedAttribute<Imf::Envmap>&>(
-																attribute)));
+													attribute)).get_array());
 		}
 		case EExrAttributeType::EString: {
-			return new mex::MxString(toMxArray(
+			return mex::MxArray(toMxArray(
 					static_cast<const Imf::TypedAttribute<std::string>&>(
-																attribute)));
+													attribute)).get_array());
 		}
 		case EExrAttributeType::EChromaticities: {
-			return new mex::MxStruct(toMxArray(
+			return mex::MxArray(toMxArray(
 					static_cast<const Imf::TypedAttribute<Imf::Chromaticities>&>(
-																attribute)));
+													attribute)).get_array());
 		}
 		case EExrAttributeType::EBox2f: {
-			return new mex::MxStruct(toMxArray(
+			return mex::MxArray(toMxArray(
 					static_cast<const Imf::TypedAttribute<Imath::Box2f>&>(
-																attribute)));
+													attribute)).get_array());
 		}
 		case EExrAttributeType::EBox2i: {
-			return new mex::MxStruct(toMxArray(
+			return mex::MxArray(toMxArray(
 					static_cast<const Imf::TypedAttribute<Imath::Box2i>&>(
-																attribute)));
+													attribute)).get_array());
 		}
 		case EExrAttributeType::EV2f: {
-			return new mex::MxNumeric<float>(toMxArray(
+			return mex::MxArray(toMxArray(
 					static_cast<const Imf::TypedAttribute<Imath::V2f>&>(
-																attribute)));
+													attribute)).get_array());
 		}
 		case EExrAttributeType::EV2i: {
-			return new mex::MxNumeric<int>(toMxArray(
+			return mex::MxArray(toMxArray(
 					static_cast<const Imf::TypedAttribute<Imath::V2i>&>(
-																attribute)));
+													attribute)).get_array());
 		}
 		case EExrAttributeType::EDouble: {
-			return new mex::MxNumeric<double>(toMxArray(
+			return mex::MxArray(toMxArray(
 					static_cast<const Imf::TypedAttribute<double>&>(
-																attribute)));
+													attribute)).get_array());
 		}
 		case EExrAttributeType::EFloat: {
-			return new mex::MxNumeric<float>(toMxArray(
+			return mex::MxArray(toMxArray(
 					static_cast<const Imf::TypedAttribute<float>&>(
-																attribute)));
+													attribute)).get_array());
 		}
 		case EExrAttributeType::EInt: {
-			return new mex::MxNumeric<int>(toMxArray(
+			return mex::MxArray(toMxArray(
 					static_cast<const Imf::TypedAttribute<int>&>(
-																attribute)));
+													attribute)).get_array());
 		}
 		default: {
 			mexAssertEx(0, "Unknown attribute type");
-			return NULL;
+			return mex::MxArray();
 		}
 	}
 }
 
-mex::MxArray* ExrInputFile::getAttribute_sub() const {
+mex::MxArray ExrInputFile::getAttribute() const {
 
 	std::vector<std::string> nameVec;
 	std::vector<mex::MxArray*> arrayVec;
@@ -366,29 +366,17 @@ mex::MxArray* ExrInputFile::getAttribute_sub() const {
 		iter != end;
 		++iter) {
 		nameVec.push_back(std::string(iter.name()));
-		arrayVec.push_back(getAttribute_sub(mex::MxString(iter.name())));
+		mex::MxArray* tempAttributeArray = new mex::MxArray(
+								getAttribute(mex::MxString(iter.name()))
+								.get_array());
+		arrayVec.push_back(tempAttributeArray);
 	}
-	mex::MxArray* retArg = new mex::MxStruct(nameVec, arrayVec);
+	mex::MxArray retArg(mex::MxStruct(nameVec, arrayVec).get_array());
 	for (int iter = 0, numAttributes = arrayVec.size();
 		iter < numAttributes;
 		++iter) {
 		delete arrayVec[iter];
 	}
-	return retArg;
-}
-
-mex::MxArray ExrInputFile::getAttribute(const mex::MxString& attributeName)
-										const {
-	mex::MxArray* temp = getAttribute_sub(attributeName);
-	mex::MxArray retArg(temp->get_array());
-	delete temp;
-	return retArg;
-}
-
-mex::MxArray ExrInputFile::getAttribute() const {
-	mex::MxArray* temp = getAttribute_sub();
-	mex::MxArray retArg(temp->get_array());
-	delete temp;
 	return retArg;
 }
 

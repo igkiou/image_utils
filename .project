@@ -76,11 +76,4 @@
 		<nature>org.eclipse.cdt.managedbuilder.core.managedBuildNature</nature>
 		<nature>org.eclipse.cdt.managedbuilder.core.ScannerConfigNature</nature>
 	</natures>
-	<linkedResources>
-		<link>
-			<name>openexr_source</name>
-			<type>2</type>
-			<location>/home/igkiou/openexr-1.6.1</location>
-		</link>
-	</linkedResources>
 </projectDescription>
