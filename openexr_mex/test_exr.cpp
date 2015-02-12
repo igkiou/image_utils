@@ -75,7 +75,7 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[]) {
 	}
 
 	mex::MxString fileName(const_cast<mxArray *>(prhs[0]));
-	exr::ExrInputFile file(fileName);
+	openexr::ExrInputFile file(fileName);
 	mexAssert(intAttributeTypeMap[6] == EExrAttributeType::ECompression);
 	for (std::map<int, EExrAttributeType>::const_iterator iter = intAttributeTypeMap.get_map().begin(),
 		end = intAttributeTypeMap.get_map().end();

@@ -107,7 +107,7 @@ mex::ConstMap<std::string, EPfmAttributeType> attributeNameAttributeTypeNameMap 
 
 } /* namespace */
 
-mex::MxArray PfmInputFile::getAttribute(const mex::MxString& attributeName) const {
+mex::MxArray PfmInputFile::get(const mex::MxString& attributeName) const {
 	const EPfmAttributeType type = attributeTypeNameMap[attributeName.get_string()];
 	switch(type) {
 		case EPfmAttributeType::EColorFormat: {
@@ -278,11 +278,11 @@ mex::MxNumeric<FloatUsed> PfmInputFile::readFile() {
 	return pixels.permute(permutationVector);
 }
 
-mex::MxArray PfmInputFile::getAttribute(const mex::MxString& attributeName) const {
+mex::MxArray PfmInputFile::get(const mex::MxString& attributeName) const {
 
 }
 
-mex::MxArray PfmInputFile::getAttribute() const {
+mex::MxArray PfmInputFile::get() const {
 	return mex::MxArray(m_header.toMxArray().get_array());
 }
 

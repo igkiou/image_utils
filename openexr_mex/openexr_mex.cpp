@@ -8,33 +8,69 @@
 #include "openexr_mex.h"
 #include <typeinfo>
 
-namespace exr {
+namespace openexr {
 
 /*
  * Input file handling.
  */
-void ExrInputFile::readChannelRGB() {
-	std::vector<std::string> channelNames;
-	channelNames.push_back(std::string("R"));
-	channelNames.push_back(std::string("G"));
-	channelNames.push_back(std::string("B"));
-	readChannel(channelNames);
+ExrInputFile::ExrInputFile(const mex::MxString& fileName):
+						m_file(fileName.c_str()) {
+	mexAssert(isValidFile()[0]);
 }
 
-void ExrInputFile::readChannelY() {
-	readChannel(std::vector<std::string>(1, std::string("Y")));
+mex::MxString ExrInputFile::getFileName() const {
+	return mex::MxString(m_file.fileName());
 }
 
-void ExrInputFile::readChannel(const std::string &channelName) {
-
-	readChannel(std::vector<std::string>(1, channelName));
+mex::MxNumeric<bool> ExrInputFile::isValidFile() const {
+	return mex::MxNumeric<bool>(Imf::isOpenExrFile(m_file.fileName()));
 }
 
-void ExrInputFile::readChannel(const std::vector<std::string>& channelNames) {
+int ExrInputFile::getHeight() const {
+	Imath::Box2i dw = m_file.header().dataWindow();
+	return dw.max.y - dw.min.y + 1;
+}
 
-	mexAssert((!m_createdFrameBuffer) && (!m_readFile));
-	int width, height;
-	getDimensions(width, height);
+int ExrInputFile::getWidth() const {
+	Imath::Box2i dw = m_file.header().dataWindow();
+	return dw.max.x - dw.min.x + 1;
+}
+
+int ExrInputFile::getNumberOfChannels() const {
+	int numChannels = 0;
+	for (Imf::ChannelList::ConstIterator
+			channelIter = m_file.header().channels().begin(),
+			channelEnd = m_file.header().channels().end();
+			channelIter != channelEnd;
+			++channelIter) {
+		++numChannels;
+	}
+	return numChannels;
+}
+mex::MxArray ExrInputFile::readDataRGB() {
+	std::vector<mex::MxString> channelNames;
+	channelNames.push_back(mex::MxString("R"));
+	channelNames.push_back(mex::MxString("G"));
+	channelNames.push_back(mex::MxString("B"));
+	return readData(channelNames);
+}
+
+mex::MxArray ExrInputFile::readDataY() {
+	return readData(std::vector<mex::MxString>(1, mex::MxString("Y")));
+}
+
+mex::MxArray ExrInputFile::readData(const mex::MxString &channelName) {
+	return readData(std::vector<mex::MxString>(1, channelName));
+}
+
+mex::MxArray ExrInputFile::readData() {
+	return readData(getChannelNames());
+}
+
+mex::MxArray ExrInputFile::readData(const std::vector<mex::MxString>& channelNames) {
+
+	int width = getWidth();
+	int height = getHeight();
 	Imath::Box2i dw = m_file.header().dataWindow();
 	int numChannels = channelNames.size();
 	std::vector<int> dimensions;
@@ -43,14 +79,19 @@ void ExrInputFile::readChannel(const std::vector<std::string>& channelNames) {
 	if (numChannels > 1) {
 		dimensions.push_back(numChannels);
 	}
-	m_pixelBuffer = mex::MxNumeric<FloatUsed>(static_cast<int>(dimensions.size()), &dimensions[0]);
-	m_foundChannel.clear();
+	mex::MxNumeric<FloatUsed> pixelBuffer = mex::MxNumeric<FloatUsed>(
+											static_cast<int>(
+											dimensions.size()), &dimensions[0]);
 
+	std::vector<bool> foundChannel;
+	foundChannel.clear();
+
+	Imf::FrameBuffer frameBuffer;
 	for (int iter = 0; iter < numChannels; ++iter) {
 		if (m_file.header().channels().findChannel(channelNames[iter].c_str())) {
-			FloatUsed* tempBuffer = &m_pixelBuffer[iter * width * height];
-			m_foundChannel.push_back(true);
-			m_frameBuffer.insert(channelNames[iter].c_str(),
+			FloatUsed* tempBuffer = &pixelBuffer[iter * width * height];
+			foundChannel.push_back(true);
+			frameBuffer.insert(channelNames[iter].c_str(),
 							Imf::Slice(kEXRFloatUsed,
 									(char *) (tempBuffer - dw.min.x - dw.min.y * width),
 									sizeof(*tempBuffer) * 1,
@@ -59,30 +100,26 @@ void ExrInputFile::readChannel(const std::vector<std::string>& channelNames) {
 									1,
 									FLT_MAX));
 		} else {
-			m_foundChannel.push_back(false);
+			foundChannel.push_back(false);
 		}
 	}
-	m_createdFrameBuffer = true;
-}
 
-mex::MxNumeric<FloatUsed> ExrInputFile::readFile() {
-
-	mexAssert((m_createdFrameBuffer) && (!m_readFile));
 	mexAssert(isComplete());
 	Imath::Box2i dw = m_file.header().dataWindow();
-	m_file.setFrameBuffer(m_frameBuffer);
+	m_file.setFrameBuffer(frameBuffer);
 	m_file.readPixels(dw.min.y, dw.max.y);
-	int width, height, numChannels;
-	getDimensions(width, height);
-	numChannels = m_foundChannel.size();
+	int width = getWidth();
+	int height = getHeight();
+	int numChannels = foundChannel.size();
 	std::vector<int> transposePermutation;
 	transposePermutation.push_back(2);
 	transposePermutation.push_back(1);
 	if (numChannels > 1) {
 		transposePermutation.push_back(3);
 	}
-	m_readFile = true;
-	return m_pixelBuffer.permute(transposePermutation);
+	mex::MxArray retArg = pixelBuffer.permute(transposePermutation).get_array();
+	pixelBuffer.destroy();
+	return retArg;
 }
 
 namespace {
@@ -281,7 +318,7 @@ mex::MxCell toMxArray(
 
 } /* namespace */
 
-mex::MxArray ExrInputFile::getAttribute(const mex::MxString& attributeName) const {
+mex::MxArray ExrInputFile::get(const mex::MxString& attributeName) const {
 	const Imf::Attribute& attribute = m_file.header()[attributeName.c_str()];
 	const EExrAttributeType type = attributeTypeNameMap.find(std::string(attribute.typeName()));
 	switch(type) {
@@ -357,7 +394,7 @@ mex::MxArray ExrInputFile::getAttribute(const mex::MxString& attributeName) cons
 	}
 }
 
-mex::MxArray ExrInputFile::getAttribute() const {
+mex::MxArray ExrInputFile::get() const {
 
 	std::vector<std::string> nameVec;
 	std::vector<mex::MxArray*> arrayVec;
@@ -367,7 +404,7 @@ mex::MxArray ExrInputFile::getAttribute() const {
 		++iter) {
 		nameVec.push_back(std::string(iter.name()));
 		mex::MxArray* tempAttributeArray = new mex::MxArray(
-								getAttribute(mex::MxString(iter.name()))
+								get(mex::MxString(iter.name()))
 								.get_array());
 		arrayVec.push_back(tempAttributeArray);
 	}
@@ -383,6 +420,26 @@ mex::MxArray ExrInputFile::getAttribute() const {
 /*
  * Output file handling.
  */
+ExrOutputFile::ExrOutputFile(const mex::MxString& fileName, int width,
+							int height) :
+						  m_header(width, height),
+						  m_fileName(fileName.get_string()),
+						  m_writtenFile(false) {	}
+
+mex::MxString ExrOutputFile::getFileName() const {
+	return mex::MxString(m_fileName);
+}
+
+int ExrOutputFile::getHeight() const {
+	Imath::Box2i dw = m_header.dataWindow();
+	return dw.max.y - dw.min.y + 1;
+}
+
+int ExrOutputFile::getWidth() const {
+	Imath::Box2i dw = m_header.dataWindow();
+	return dw.max.x - dw.min.x + 1;
+}
+
 void ExrOutputFile::writeChannelRGB(const mex::MxNumeric<FloatUsed>& rgbPixels) {
 
 	std::vector<std::string> rgbNames;
@@ -404,10 +461,10 @@ void ExrOutputFile::writeChannel(const mex::MxNumeric<FloatUsed>& channelPixels,
 
 void ExrOutputFile::writeChannel(const mex::MxNumeric<FloatUsed>& channelPixels,
 									const std::vector<std::string>& channelNames) {
-	mexAssert((!m_createdFrameBuffer) && (!m_wroteFile));
+	mexAssert((!m_createdFrameBuffer) && (!m_writtenFile));
 	std::vector<int> dimensions = channelPixels.getDimensions();
-	int width, height;
-	getDimensions(width, height);
+	int width = getWidth();
+	int height = getHeight();
 	int numChannels = channelNames.size();
 	mexAssert((((numChannels == 1) && (dimensions.size() == 2)) ||
 					((dimensions.size() == 3) && (dimensions[2] == numChannels))) &&
@@ -434,13 +491,13 @@ void ExrOutputFile::writeChannel(const mex::MxNumeric<FloatUsed>& channelPixels,
 	m_createdFrameBuffer = true;
 }
 
-void ExrOutputFile::writeFile(const mex::MxString& fileName) {
-	mexAssert((m_createdFrameBuffer) && (!m_wroteFile));
+void ExrOutputFile::writeData(const mex::MxString& fileName) {
+	mexAssert((m_createdFrameBuffer) && (!m_writtenFile));
 	int height = getHeight();
 	Imf::OutputFile outFile(fileName.c_str(), m_header);
 	outFile.setFrameBuffer(m_frameBuffer);
 	outFile.writePixels(height);
-	m_wroteFile = true;
+	m_writtenFile = true;
 }
 
 namespace {
@@ -573,7 +630,7 @@ const mex::ConstMap<std::string, EExrAttributeType> registeredAttributeNameAttri
 	(std::string("isoSpeed"),			EExrAttributeType::EFloat)
 	(std::string("envmap"),				EExrAttributeType::EEnvmap);
 
-void ExrOutputFile::setAttribute(const mex::MxArray& attribute,
+void ExrOutputFile::set(const mex::MxArray& attribute,
 								const mex::MxString& attributeName) {
 
 	std::map<std::string, EExrAttributeType>::const_iterator iteratorToType =
@@ -698,12 +755,12 @@ void ExrOutputFile::setAttribute(const mex::MxArray& attribute,
 	}
 }
 
-void ExrOutputFile::setAttribute(const mex::MxStruct& attributes) {
+void ExrOutputFile::set(const mex::MxStruct& attributes) {
 
 	for (int iter = 0, numFields = attributes.getNumberOfFields();
 		iter < numFields;
 		++iter) {
-		setAttribute(mex::MxArray(attributes[iter]), mex::MxString(attributes.getFieldName(iter)));
+		set(mex::MxArray(attributes[iter]), mex::MxString(attributes.getFieldName(iter)));
 	}
 }
 

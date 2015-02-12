@@ -80,14 +80,14 @@ private:
 
 mex::MxNumeric<bool> isPfmFile(const mex::MxString& fileName);
 
-class PfmInputFile : public mex::MxObject {
+class PfmInputFile : public mex::MxObjectInterface {
 public:
 	explicit PfmInputFile(const mex::MxString& fileName);
 
 	mex::MxNumeric<FloatUsed> readFile();
 
-	virtual mex::MxArray getAttribute(const mex::MxString& attributeName) const;
-	virtual mex::MxArray getAttribute() const;
+	virtual mex::MxArray get(const mex::MxString& attributeName) const;
+	virtual mex::MxArray get() const;
 
 	inline bool isOpenPfmFile() const {
 		return m_isValidHeader;
@@ -105,7 +105,7 @@ private:
 	bool m_isValidHeader;
 };
 
-class PfmOutputFile : public mex::MxObject {
+class PfmOutputFile : public mex::MxObjectInterface {
 public:
 	explicit PfmOutputFile(const mex::MxString& fileName);
 
