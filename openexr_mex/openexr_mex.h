@@ -22,11 +22,14 @@
 #include "OpenEXR/IlmImf/ImfChannelListAttribute.h"
 #include "OpenEXR/IlmImf/ImfChromaticitiesAttribute.h"
 #include "OpenEXR/IlmImf/ImfCompressionAttribute.h"
+#include "OpenEXR/IlmImf/ImfDoubleAttribute.h" // new addition
 #include "OpenEXR/IlmImf/ImfEnvmapAttribute.h"
 //#include "ImfExtraAttributes.h"
 #include "OpenEXR/IlmImf/ImfFloatAttribute.h"
+#include "OpenEXR/IlmImf/ImfFloatVectorAttribute.h" // new addition
 #include "OpenEXR/IlmImf/ImfFrameBuffer.h"
 #include "OpenEXR/IlmImf/ImfHeader.h"
+#include "OpenEXR/IlmImf/ImfIntAttribute.h" // new addition
 #include "OpenEXR/IlmImf/ImfInputFile.h"
 #include "OpenEXR/IlmImf/ImfLineOrderAttribute.h"
 #include "OpenEXR/IlmImf/ImfOutputFile.h"
@@ -35,6 +38,7 @@
 #include "OpenEXR/IlmImf/ImfRgbaFile.h"
 #include "OpenEXR/IlmImf/ImfStandardAttributes.h"
 #include "OpenEXR/IlmImf/ImfStringAttribute.h"
+#include "OpenEXR/IlmImf/ImfStringVectorAttribute.h" // new addition
 #include "OpenEXR/IlmImf/ImfTestFile.h"
 #include "OpenEXR/IlmImf/ImfVecAttribute.h"
 //#include "ImfVectorAttribute.h"
@@ -52,9 +56,7 @@ namespace openexr {
 typedef float FloatUsed;
 const Imf::PixelType kEXRFloatUsed = Imf::FLOAT;
 
-inline mex::MxNumeric<bool> isOpenExrFile(const mex::MxString& fileName) {
-	return mex::MxNumeric<bool>(Imf::isOpenExrFile(fileName.c_str()));
-}
+mex::MxNumeric<bool> isOpenExrFile(const mex::MxString& fileName);
 
 /*
  * TODO: Maybe replace remaining arguments of these functions to use directly
@@ -78,32 +80,12 @@ public:
 	mex::MxArray readData(const mex::MxString& channelName);
 	mex::MxArray readData(const std::vector<mex::MxString>& channelNames);
 
-	inline std::vector<mex::MxString> getChannelNames() const {
-		std::vector<mex::MxString> channelNames(0);
-		for (Imf::ChannelList::ConstIterator
-				channelIter = m_file.header().channels().begin(),
-				channelEnd = m_file.header().channels().end();
-				channelIter != channelEnd;
-				++channelIter) {
-			channelNames.push_back(mex::MxString(channelIter.name()));
-		}
-		return channelNames;
-	}
+	std::vector<mex::MxString> getChannelNames() const;
+	bool isComplete() const;
+	bool hasChannel(const std::string& channelName) const;
 
-	inline bool isComplete() const {
-		return m_file.isComplete();
-	}
-
-	inline bool hasChannel(const std::string& channelName) const {
-		return m_file.header().channels().findChannel(channelName.c_str()) != 0;
-	}
-
-	virtual mex::MxArray getAttribute(const mex::MxString& attributeName) const;
-	virtual mex::MxArray getAttribute() const;
-
-	virtual void setAttribute(const mex::MxString& /* attributeName */,
-					const mex::MxArray& /* attribute */) {	};
-	virtual void setAttribute(const mex::MxStruct& /* attributes */) {	};
+	mex::MxArray getAttribute(const mex::MxString& attributeName) const;
+	mex::MxArray getAttribute() const;
 
 	~ExrInputFile() {	}
 
@@ -119,16 +101,15 @@ public:
 	 * safer in terms of passing width and height arguments to the
 	 * initialization of the header.
 	 */
-	ExrOutputFile(const mex::MxString& fileName, int width, int height,
-				int numberOfChannels);
+	ExrOutputFile(const mex::MxString& fileName, int width, int height);
 
 	mex::MxString getFileName() const;
 	int getHeight() const;
 	int getWidth() const;
 
-	virtual void setAttribute(const mex::MxString& attributeName,
+	void setAttribute(const mex::MxString& attributeName,
 						const mex::MxArray& attribute);
-	virtual void setAttribute(const mex::MxStruct& attributes);
+	void setAttribute(const mex::MxStruct& attributes);
 
 	void writeChannelRGB(const mex::MxNumeric<FloatUsed>& rgbPixels);
 	void writeChannelY(const mex::MxNumeric<FloatUsed>& yPixels);
@@ -144,18 +125,12 @@ public:
 	void writeData(const std::vector<mex::MxString>& channelNames,
 				const mex::MxArray& data);
 
-	~ExrOutputFile() {
-		if (m_createdFrameBuffer) {
-			m_pixelBuffer.destroy();
-		}
-	}
+	~ExrOutputFile() {	}
 
 private:
 	Imf::Header m_header;
 	std::string m_fileName;
 	Imf::FrameBuffer m_frameBuffer;
-	mex::MxNumeric<FloatUsed> m_pixelBuffer;
-	bool m_createdFrameBuffer;
 	bool m_writtenFile;
 };
 

@@ -12,7 +12,7 @@
 
 namespace fileformat {
 
-class InputFileInterface : public mex::MxObjectInterface {
+class InputFileInterface {
 public:
 
 	virtual mex::MxString getFileName() const = 0;
@@ -20,20 +20,25 @@ public:
 	virtual int getHeight() const = 0;
 	virtual int getWidth() const = 0;
 	virtual int getNumberOfChannels() const = 0;
+	virtual mex::MxArray getAttribute(const mex::MxString& attributeName)
+									const = 0;
+	virtual mex::MxArray getAttribute() const = 0;
 	virtual mex::MxArray readData() = 0;
 	virtual ~InputFileInterface() {	};
 };
 
-class OutputFileInterface : public mex::MxObjectInterface {
+class OutputFileInterface {
 public:
 
 	virtual mex::MxString getFileName() const = 0;
 	virtual int getHeight() const = 0;
 	virtual int getWidth() const = 0;
+	virtual void setAttribute(const mex::MxString& attributeName,
+							const mex::MxArray& attribute) = 0;
+	virtual void setAttribute(const mex::MxStruct& attributes) = 0;
 	virtual void writeData(const mex::MxArray& data) = 0;
 	virtual ~OutputFileInterface() {	};
 };
-
 
 }
 

@@ -11,6 +11,13 @@
 namespace openexr {
 
 /*
+ * Check valid file function.
+ */
+mex::MxNumeric<bool> isOpenExrFile(const mex::MxString& fileName) {
+	return mex::MxNumeric<bool>(Imf::isOpenExrFile(fileName.c_str()));
+}
+
+/*
  * Input file handling.
  */
 ExrInputFile::ExrInputFile(const mex::MxString& fileName):
@@ -23,7 +30,7 @@ mex::MxString ExrInputFile::getFileName() const {
 }
 
 mex::MxNumeric<bool> ExrInputFile::isValidFile() const {
-	return mex::MxNumeric<bool>(Imf::isOpenExrFile(m_file.fileName()));
+	return isOpenExrFile(mex::MxString(m_file.fileName()));
 }
 
 int ExrInputFile::getHeight() const {
@@ -47,6 +54,27 @@ int ExrInputFile::getNumberOfChannels() const {
 	}
 	return numChannels;
 }
+
+std::vector<mex::MxString> ExrInputFile::getChannelNames() const {
+	std::vector<mex::MxString> channelNames(0);
+	for (Imf::ChannelList::ConstIterator
+			channelIter = m_file.header().channels().begin(),
+			channelEnd = m_file.header().channels().end();
+			channelIter != channelEnd;
+			++channelIter) {
+		channelNames.push_back(mex::MxString(channelIter.name()));
+	}
+	return channelNames;
+}
+
+bool ExrInputFile::isComplete() const {
+	return m_file.isComplete();
+}
+
+bool ExrInputFile::hasChannel(const std::string& channelName) const {
+	return m_file.header().channels().findChannel(channelName.c_str()) != 0;
+}
+
 mex::MxArray ExrInputFile::readDataRGB() {
 	std::vector<mex::MxString> channelNames;
 	channelNames.push_back(mex::MxString("R"));
@@ -125,38 +153,42 @@ mex::MxArray ExrInputFile::readData(const std::vector<mex::MxString>& channelNam
 namespace {
 
 enum class EExrAttributeType {
-	EChannelList = 0,
-	ECompression,
-	ELineOrder,
-	EChromaticities,
-	EEnvmap,
-	EString,
-	EBox2f,
+	EBox2f = 0,
 	EBox2i,
+	EChannelList,
+	EChromaticities,
+	ECompression,
+	EDouble,
+	EEnvmap,
+	EFloat,
+	EFloatVector,
+	EInt,
+	ELineOrder,
+	EString,
+	EStringVector,
 	EV2f,
 	EV2i,
-	EDouble,
-	EFloat,
-	EInt,
 	ELength,
 	EInvalid = -1
 };
 
 mex::ConstBiMap<EExrAttributeType, std::string> attributeTypeNameMap =
 	mex::ConstBiMap<EExrAttributeType, std::string>
-	(EExrAttributeType::EChannelList, std::string(Imf::ChannelListAttribute::staticTypeName()))
-	(EExrAttributeType::ECompression, std::string(Imf::CompressionAttribute::staticTypeName()))
-	(EExrAttributeType::ELineOrder, std::string(Imf::LineOrderAttribute::staticTypeName()))
-	(EExrAttributeType::EChromaticities, std::string(Imf::ChromaticitiesAttribute::staticTypeName()))
-	(EExrAttributeType::EEnvmap, std::string(Imf::EnvmapAttribute::staticTypeName()))
-	(EExrAttributeType::EString, std::string(Imf::StringAttribute::staticTypeName()))
 	(EExrAttributeType::EBox2f, std::string(Imf::Box2fAttribute::staticTypeName()))
 	(EExrAttributeType::EBox2i, std::string(Imf::Box2iAttribute::staticTypeName()))
+	(EExrAttributeType::EChannelList, std::string(Imf::ChannelListAttribute::staticTypeName()))
+	(EExrAttributeType::EChromaticities, std::string(Imf::ChromaticitiesAttribute::staticTypeName()))
+	(EExrAttributeType::ECompression, std::string(Imf::CompressionAttribute::staticTypeName()))
+	(EExrAttributeType::EDouble, std::string(Imf::DoubleAttribute::staticTypeName()))
+	(EExrAttributeType::EEnvmap, std::string(Imf::EnvmapAttribute::staticTypeName()))
+	(EExrAttributeType::EFloat, std::string(Imf::FloatAttribute::staticTypeName()))
+	(EExrAttributeType::EFloatVector, std::string(Imf::FloatVectorAttribute::staticTypeName()))
+	(EExrAttributeType::EInt, std::string(Imf::IntAttribute::staticTypeName()))
+	(EExrAttributeType::ELineOrder, std::string(Imf::LineOrderAttribute::staticTypeName()))
+	(EExrAttributeType::EString, std::string(Imf::StringAttribute::staticTypeName()))
+	(EExrAttributeType::EStringVector, std::string(Imf::StringVectorAttribute::staticTypeName()))
 	(EExrAttributeType::EV2f, std::string(Imf::V2fAttribute::staticTypeName()))
 	(EExrAttributeType::EV2i, std::string(Imf::V2iAttribute::staticTypeName()))
-	(EExrAttributeType::EDouble, std::string(Imf::TypedAttribute<double>::staticTypeName()))
-	(EExrAttributeType::EFloat, std::string(Imf::FloatAttribute::staticTypeName()))
-	(EExrAttributeType::EInt, std::string(Imf::TypedAttribute<int>::staticTypeName()))
 	(EExrAttributeType::EInvalid, std::string("unknown"));
 
 mex::ConstBiMap<Imf::Compression, std::string> compressionTypeNameMap =
@@ -186,7 +218,6 @@ mex::ConstBiMap<Imf::Envmap, std::string> envmapTypeNameMap =
 
 /*
  * Routines to convert an Attribute to MxArray.
- * TODO: Find reason why DoubleAttribute and IntAttribute are not in Imf.
  */
 
 // VT
@@ -316,42 +347,39 @@ mex::MxCell toMxArray(
 	return retArg;
 }
 
+// VectorT
+template <typename T>
+mex::MxCell toMxArray(
+	const Imf::TypedAttribute<std::vector<T> >& attribute) {
+	return mex::MxNumeric<T>(attribute.value());
+}
+
+// VectorString
+template <typename T>
+mex::MxCell toMxArray(
+	const Imf::TypedAttribute<std::vector<std::string> >& attribute) {
+	std::vector<mex::MxArray*> stringVector;
+	for (std::vector<std::string>::iterator iter = attribute.value().begin(),
+			end = attribute.value().end();
+			iter != end;
+			++iter) {
+		stringVector.push_back(new mex::MxString(*iter));
+	}
+	mex::MxCell retArg(stringVector);
+	for (int iter = 0, numStrings = stringVector.size();
+			iter < numStrings;
+			++iter) {
+		delete stringVector[iter];
+	}
+	return retArg;
+}
+
 } /* namespace */
 
-mex::MxArray ExrInputFile::get(const mex::MxString& attributeName) const {
+mex::MxArray ExrInputFile::getAttribute(const mex::MxString& attributeName) const {
 	const Imf::Attribute& attribute = m_file.header()[attributeName.c_str()];
 	const EExrAttributeType type = attributeTypeNameMap.find(std::string(attribute.typeName()));
 	switch(type) {
-		case EExrAttributeType::EChannelList: {
-			return mex::MxArray(toMxArray(
-					static_cast<const Imf::TypedAttribute<Imf::ChannelList>&>(
-													attribute)).get_array());
-		}
-		case EExrAttributeType::ECompression: {
-			return mex::MxArray(toMxArray(
-					static_cast<const Imf::TypedAttribute<Imf::Compression>&>(
-													attribute)).get_array());
-		}
-		case EExrAttributeType::ELineOrder: {
-			return mex::MxArray(toMxArray(
-					static_cast<const Imf::TypedAttribute<Imf::LineOrder>&>(
-													attribute)).get_array());
-		}
-		case EExrAttributeType::EEnvmap: {
-			return mex::MxArray(toMxArray(
-					static_cast<const Imf::TypedAttribute<Imf::Envmap>&>(
-													attribute)).get_array());
-		}
-		case EExrAttributeType::EString: {
-			return mex::MxArray(toMxArray(
-					static_cast<const Imf::TypedAttribute<std::string>&>(
-													attribute)).get_array());
-		}
-		case EExrAttributeType::EChromaticities: {
-			return mex::MxArray(toMxArray(
-					static_cast<const Imf::TypedAttribute<Imf::Chromaticities>&>(
-													attribute)).get_array());
-		}
 		case EExrAttributeType::EBox2f: {
 			return mex::MxArray(toMxArray(
 					static_cast<const Imf::TypedAttribute<Imath::Box2f>&>(
@@ -360,6 +388,61 @@ mex::MxArray ExrInputFile::get(const mex::MxString& attributeName) const {
 		case EExrAttributeType::EBox2i: {
 			return mex::MxArray(toMxArray(
 					static_cast<const Imf::TypedAttribute<Imath::Box2i>&>(
+													attribute)).get_array());
+		}
+		case EExrAttributeType::EChannelList: {
+			return mex::MxArray(toMxArray(
+					static_cast<const Imf::TypedAttribute<Imf::ChannelList>&>(
+													attribute)).get_array());
+		}
+		case EExrAttributeType::EChromaticities: {
+			return mex::MxArray(toMxArray(
+					static_cast<const Imf::TypedAttribute<Imf::Chromaticities>&>(
+													attribute)).get_array());
+		}
+		case EExrAttributeType::ECompression: {
+			return mex::MxArray(toMxArray(
+					static_cast<const Imf::TypedAttribute<Imf::Compression>&>(
+													attribute)).get_array());
+		}
+		case EExrAttributeType::EDouble: {
+			return mex::MxArray(toMxArray(
+					static_cast<const Imf::TypedAttribute<double>&>(
+													attribute)).get_array());
+		}
+		case EExrAttributeType::EEnvmap: {
+			return mex::MxArray(toMxArray(
+					static_cast<const Imf::TypedAttribute<Imf::Envmap>&>(
+													attribute)).get_array());
+		}
+		case EExrAttributeType::EFloat: {
+			return mex::MxArray(toMxArray(
+					static_cast<const Imf::TypedAttribute<float>&>(
+													attribute)).get_array());
+		}
+		case EExrAttributeType::EFloatVector: {
+			return mex::MxArray(toMxArray(
+					static_cast<const Imf::TypedAttribute<std::vector<float> >&>(
+													attribute)).get_array());
+		}
+		case EExrAttributeType::EInt: {
+			return mex::MxArray(toMxArray(
+					static_cast<const Imf::TypedAttribute<int>&>(
+													attribute)).get_array());
+		}
+		case EExrAttributeType::ELineOrder: {
+			return mex::MxArray(toMxArray(
+					static_cast<const Imf::TypedAttribute<Imf::LineOrder>&>(
+													attribute)).get_array());
+		}
+		case EExrAttributeType::EString: {
+			return mex::MxArray(toMxArray(
+					static_cast<const Imf::TypedAttribute<std::string>&>(
+													attribute)).get_array());
+		}
+		case EExrAttributeType::EStringVector: {
+			return mex::MxArray(toMxArray(
+					static_cast<const Imf::TypedAttribute<std::vector<std::string> >&>(
 													attribute)).get_array());
 		}
 		case EExrAttributeType::EV2f: {
@@ -372,21 +455,6 @@ mex::MxArray ExrInputFile::get(const mex::MxString& attributeName) const {
 					static_cast<const Imf::TypedAttribute<Imath::V2i>&>(
 													attribute)).get_array());
 		}
-		case EExrAttributeType::EDouble: {
-			return mex::MxArray(toMxArray(
-					static_cast<const Imf::TypedAttribute<double>&>(
-													attribute)).get_array());
-		}
-		case EExrAttributeType::EFloat: {
-			return mex::MxArray(toMxArray(
-					static_cast<const Imf::TypedAttribute<float>&>(
-													attribute)).get_array());
-		}
-		case EExrAttributeType::EInt: {
-			return mex::MxArray(toMxArray(
-					static_cast<const Imf::TypedAttribute<int>&>(
-													attribute)).get_array());
-		}
 		default: {
 			mexAssertEx(0, "Unknown attribute type");
 			return mex::MxArray();
@@ -394,7 +462,7 @@ mex::MxArray ExrInputFile::get(const mex::MxString& attributeName) const {
 	}
 }
 
-mex::MxArray ExrInputFile::get() const {
+mex::MxArray ExrInputFile::getAttribute() const {
 
 	std::vector<std::string> nameVec;
 	std::vector<mex::MxArray*> arrayVec;
@@ -404,7 +472,7 @@ mex::MxArray ExrInputFile::get() const {
 		++iter) {
 		nameVec.push_back(std::string(iter.name()));
 		mex::MxArray* tempAttributeArray = new mex::MxArray(
-								get(mex::MxString(iter.name()))
+								getAttribute(mex::MxString(iter.name()))
 								.get_array());
 		arrayVec.push_back(tempAttributeArray);
 	}
@@ -421,7 +489,7 @@ mex::MxArray ExrInputFile::get() const {
  * Output file handling.
  */
 ExrOutputFile::ExrOutputFile(const mex::MxString& fileName, int width,
-							int height) :
+							int height):
 						  m_header(width, height),
 						  m_fileName(fileName.get_string()),
 						  m_writtenFile(false) {	}
@@ -440,29 +508,30 @@ int ExrOutputFile::getWidth() const {
 	return dw.max.x - dw.min.x + 1;
 }
 
-void ExrOutputFile::writeChannelRGB(const mex::MxNumeric<FloatUsed>& rgbPixels) {
+void ExrOutputFile::writeDataRGB(const mex::MxArray& rgbPixels) {
 
-	std::vector<std::string> rgbNames;
-	rgbNames.push_back(std::string("R"));
-	rgbNames.push_back(std::string("G"));
-	rgbNames.push_back(std::string("B"));
-	writeChannel(rgbPixels, rgbNames);
+	std::vector<mex::MxString> rgbNames;
+	rgbNames.push_back(mex::MxString("R"));
+	rgbNames.push_back(mex::MxString("G"));
+	rgbNames.push_back(mex::MxString("B"));
+	writeData(rgbNames, rgbPixels);
 }
 
-void ExrOutputFile::writeChannelY(const mex::MxNumeric<FloatUsed>& yPixels) {
-	writeChannel(yPixels, std::vector<std::string>(1, std::string("Y")));
+void ExrOutputFile::writeDataY(const mex::MxArray& yPixels) {
+	writeData(std::vector<mex::MxString>(1, mex::MxString("Y")), yPixels);
 }
 
-void ExrOutputFile::writeChannel(const mex::MxNumeric<FloatUsed>& channelPixels,
-									const std::string& channelName) {
+void ExrOutputFile::writeData(const mex::MxString& channelName,
+							const mex::MxArray& channelPixels) {
 
-	writeChannel(channelPixels, std::vector<std::string>(1, channelName));
+	writeData(std::vector<mex::MxString>(1, channelName), channelPixels);
 }
 
-void ExrOutputFile::writeChannel(const mex::MxNumeric<FloatUsed>& channelPixels,
-									const std::vector<std::string>& channelNames) {
-	mexAssert((!m_createdFrameBuffer) && (!m_writtenFile));
-	std::vector<int> dimensions = channelPixels.getDimensions();
+void ExrOutputFile::writeData(const std::vector<mex::MxString>& channelNames,
+							const mex::MxArray& channelPixels) {
+	mexAssert(!m_writtenFile);
+	mex::MxNumeric<FloatUsed> pixelArray(channelPixels.get_array());
+	std::vector<int> dimensions = pixelArray.getDimensions();
 	int width = getWidth();
 	int height = getHeight();
 	int numChannels = channelNames.size();
@@ -477,26 +546,23 @@ void ExrOutputFile::writeChannel(const mex::MxNumeric<FloatUsed>& channelPixels,
 	if (numChannels > 1) {
 		transposePermutation.push_back(3);
 	}
-	m_pixelBuffer = channelPixels.permute(transposePermutation);
+	mex::MxNumeric<FloatUsed> pixelBuffer = pixelArray.permute(transposePermutation);
 	for (int iterChannel = 0; iterChannel < numChannels; ++iterChannel) {
 		m_header.channels().insert(channelNames[iterChannel].c_str(),
 								Imf::Channel(kEXRFloatUsed));
 		m_frameBuffer.insert(channelNames[iterChannel].c_str(),
 							Imf::Slice(kEXRFloatUsed,
-									(char *) &m_pixelBuffer[
+									(char *) &pixelBuffer[
 									              width * height * iterChannel],
 									sizeof(FloatUsed) * 1,
 									sizeof(FloatUsed) * width));
 	}
-	m_createdFrameBuffer = true;
-}
 
-void ExrOutputFile::writeData(const mex::MxString& fileName) {
-	mexAssert((m_createdFrameBuffer) && (!m_writtenFile));
 	int height = getHeight();
-	Imf::OutputFile outFile(fileName.c_str(), m_header);
+	Imf::OutputFile outFile(m_fileName.c_str(), m_header);
 	outFile.setFrameBuffer(m_frameBuffer);
 	outFile.writePixels(height);
+	pixelBuffer.destroy();
 	m_writtenFile = true;
 }
 
