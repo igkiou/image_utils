@@ -13,7 +13,7 @@
 #include <vector>
 #include <ctype.h>
 
-#include "mex_utils.h"
+#include "fileformat_mex.h"
 
 namespace pfm {
 
@@ -26,6 +26,7 @@ public:
 	enum class EColorFormat {
 		ERGB = 0,
 		EGrayscale,
+		EMultichannel,
 		ELength,
 		EInvalid = -1
 	};
@@ -43,19 +44,11 @@ public:
 			const FloatUsed scale,
 			const EByteOrder byteOrder);
 
-	mex::MxStruct toMxArray() const;
+	EColorFormat get_colorFormat() const;
 
-	inline EColorFormat get_colorFormat() const {
-		return m_colorFormat;
-	}
+	int get_width() const;
 
-	inline int get_width() const {
-		return m_width;
-	}
-
-	inline int get_height() const {
-		return m_height;
-	}
+	int get_height() const;
 
 	inline FloatUsed get_scale() const {
 		return m_scale;
@@ -80,20 +73,20 @@ private:
 
 mex::MxNumeric<bool> isPfmFile(const mex::MxString& fileName);
 
-class PfmInputFile : public mex::MxObjectInterface {
+class PfmInputFile : public fileformat::InputFileInterface {
 public:
 	explicit PfmInputFile(const mex::MxString& fileName);
 
-	mex::MxNumeric<FloatUsed> readFile();
+	mex::MxString getFileName() const;
+	mex::MxNumeric<bool> isValidFile() const;
+	int getHeight() const;
+	int getWidth() const;
+	int getNumberOfChannels() const;
+	mex::MxArray getAttribute(const mex::MxString& attributeName) const;
+	mex::MxArray getAttribute() const;
+	mex::MxArray readData();
 
-	virtual mex::MxArray get(const mex::MxString& attributeName) const;
-	virtual mex::MxArray get() const;
-
-	inline bool isOpenPfmFile() const {
-		return m_isValidHeader;
-	}
-
-	virtual ~PfmInputFile() {	}
+	~PfmInputFile() {	}
 
 private:
 	void readHeader();
@@ -105,17 +98,23 @@ private:
 	bool m_isValidHeader;
 };
 
-class PfmOutputFile : public mex::MxObjectInterface {
+class PfmOutputFile : public fileformat::OutputFileInterface {
 public:
-	explicit PfmOutputFile(const mex::MxString& fileName);
+	PfmOutputFile(const mex::MxString& fileName, int width, int height);
 
-	void writeHeader(const mex::MxNumeric<FloatUsed>& pixels);
+	mex::MxString getFileName() const;
+	int getHeight() const;
+	int getWidth() const;
+	void setAttribute(const mex::MxString& attributeName,
+					const mex::MxArray& attribute);
+	void setAttribute(const mex::MxStruct& attributes);
+	void writeData(const mex::MxArray& data);
 
-	void writeFile(const mex::MxNumeric<FloatUsed>& pixels);
-
-	virtual ~PfmOutputFile() {	}
+	~PfmOutputFile() {	}
 
 private:
+	void writeHeader(const mex::MxNumeric<FloatUsed>& pixels);
+
 	std::ofstream m_file;
 	PfmHeader m_header;
 	bool m_wroteHeader;

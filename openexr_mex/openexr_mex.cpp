@@ -676,10 +676,9 @@ Imf::TypedAttribute<std::vector<float> > toAttribute(
 template <>
 Imf::TypedAttribute<std::vector<std::string> > toAttribute(
 													const mex::MxCell& mxCell) {
-	std::vector<int> dimensions = mxCell.getDimensions();
-	int numArrays = (dimensions.size() == 2)?(1):(dimensions[2]);
+	int numStrings = mxCell.size();
 	std::vector<std::string> stringVector;
-	for (int iter = 0; iter < numArrays; ++iter) {
+	for (int iter = 0; iter < numStrings; ++iter) {
 		stringVector.push_back(mex::MxString(mxCell[0]).get_string());
 	}
 	return Imf::TypedAttribute<std::vector<std::string> >(stringVector);

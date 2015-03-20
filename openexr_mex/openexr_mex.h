@@ -63,7 +63,6 @@ mex::MxNumeric<bool> isOpenExrFile(const mex::MxString& fileName);
 
 class ExrInputFile : public fileformat::InputFileInterface {
 public:
-
 	explicit ExrInputFile(const mex::MxString& fileName);
 
 	mex::MxString getFileName() const;
@@ -93,7 +92,6 @@ private:
 
 class ExrOutputFile : public fileformat::OutputFileInterface {
 public:
-
 	ExrOutputFile(const mex::MxString& fileName, int width, int height);
 
 	mex::MxString getFileName() const;

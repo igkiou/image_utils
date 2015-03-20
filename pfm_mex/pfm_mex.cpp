@@ -57,7 +57,8 @@ void PfmHeader::build(const EColorFormat colorFormat,
 					const FloatUsed scale,
 					const EByteOrder byteOrder) {
 	if ((colorFormat == EColorFormat::ERGB) ||
-		(colorFormat == EColorFormat::EGrayscale)) {
+		(colorFormat == EColorFormat::EGrayscale) ||
+		(colorFormat == EColorFormat::EMultichannel)) {
 		m_colorFormat = colorFormat;
 	} else {
 		return;
