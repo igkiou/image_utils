@@ -20,6 +20,6 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[]) {
 		mexErrMsgTxt("Too many output arguments.");
 	}
 
-	openexr::ExrInputFile file(mex::MxString(const_cast<mxArray*>(prhs[0])));
-	plhs[0] = file.isValidFile().get_array();
+	plhs[0] = openexr::isOpenExrFile(
+					mex::MxString(const_cast<mxArray*>(prhs[0]))).get_array();
 }

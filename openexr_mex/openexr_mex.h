@@ -51,17 +51,15 @@ namespace openexr {
  * TODO: Design: Everything that could be called from mexfile is using MxArray.
  * TODO: Maybe add support for preview images?
  * TODO: Add general support for alpha channel?
+ * TODO: Move EExrAttributeType enum and registeredAttributeNameAttributeTypeMap
+ * in header, to allow for easy expansion of registered attributes.
+ * TODO: Provide set attribute variant that allows specifying type of attribute.
  */
 
 typedef float FloatUsed;
 const Imf::PixelType kEXRFloatUsed = Imf::FLOAT;
 
 mex::MxNumeric<bool> isOpenExrFile(const mex::MxString& fileName);
-
-/*
- * TODO: Maybe replace remaining arguments of these functions to use directly
- * MxArrays?
- */
 
 class ExrInputFile : public fileformat::InputFileInterface {
 public:
@@ -95,12 +93,7 @@ private:
 
 class ExrOutputFile : public fileformat::OutputFileInterface {
 public:
-	/*
-	 * TODO: Should this be initialized directly from pixels MxNumeric? It may
-	 * be desirable to create just the header. On the other hand, it would be
-	 * safer in terms of passing width and height arguments to the
-	 * initialization of the header.
-	 */
+
 	ExrOutputFile(const mex::MxString& fileName, int width, int height);
 
 	mex::MxString getFileName() const;
@@ -110,13 +103,6 @@ public:
 	void setAttribute(const mex::MxString& attributeName,
 						const mex::MxArray& attribute);
 	void setAttribute(const mex::MxStruct& attributes);
-
-	void writeChannelRGB(const mex::MxNumeric<FloatUsed>& rgbPixels);
-	void writeChannelY(const mex::MxNumeric<FloatUsed>& yPixels);
-	void writeChannel(const mex::MxNumeric<FloatUsed>& channelPixels,
-						const std::string& channelName);
-	void writeChannel(const mex::MxNumeric<FloatUsed>& channelPixels,
-						const std::vector<std::string>& channelNames);
 
 	void writeData(const mex::MxArray& data);
 	void writeDataRGB(const mex::MxArray& data);
@@ -130,7 +116,6 @@ public:
 private:
 	Imf::Header m_header;
 	std::string m_fileName;
-	Imf::FrameBuffer m_frameBuffer;
 	bool m_writtenFile;
 };
 

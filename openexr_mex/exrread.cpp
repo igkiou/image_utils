@@ -44,7 +44,7 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[]) {
 			|| ((numChannels == 4) && file.hasChannel(std::string("A")))) {
 			plhs[0] = file.readDataRGB().get_array();
 		} else {
-			plhs[0] = file.readData();
+			plhs[0] = file.readData().get_array();
 		}
 	}
 	if (nlhs >= 2) {

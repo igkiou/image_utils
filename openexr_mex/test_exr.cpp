@@ -9,38 +9,42 @@
 #include "mex_utils.h"
 
 enum class EExrAttributeType {
-	EChannelList = 0,
-	ECompression,
-	ELineOrder,
-	EChromaticities,
-	EEnvmap,
-	EString,
-	EBox2f,
+	EBox2f = 0,
 	EBox2i,
+	EChannelList,
+	EChromaticities,
+	ECompression,
+	EDouble,
+	EEnvmap,
+	EFloat,
+	EFloatVector,
+	EInt,
+	ELineOrder,
+	EString,
+	EStringVector,
 	EV2f,
 	EV2i,
-	EDouble,
-	EFloat,
-	EInt,
 	ELength,
 	EInvalid = -1
 };
 
 mex::ConstBiMap<EExrAttributeType, std::string> attributeTypeNameMap =
 	mex::ConstBiMap<EExrAttributeType, std::string>
-	(EExrAttributeType::EChannelList, std::string(Imf::ChannelListAttribute::staticTypeName()))
-	(EExrAttributeType::ECompression, std::string(Imf::CompressionAttribute::staticTypeName()))
-	(EExrAttributeType::ELineOrder, std::string(Imf::LineOrderAttribute::staticTypeName()))
-	(EExrAttributeType::EChromaticities, std::string(Imf::ChromaticitiesAttribute::staticTypeName()))
-	(EExrAttributeType::EEnvmap, std::string(Imf::EnvmapAttribute::staticTypeName()))
-	(EExrAttributeType::EString, std::string(Imf::StringAttribute::staticTypeName()))
 	(EExrAttributeType::EBox2f, std::string(Imf::Box2fAttribute::staticTypeName()))
 	(EExrAttributeType::EBox2i, std::string(Imf::Box2iAttribute::staticTypeName()))
+	(EExrAttributeType::EChannelList, std::string(Imf::ChannelListAttribute::staticTypeName()))
+	(EExrAttributeType::EChromaticities, std::string(Imf::ChromaticitiesAttribute::staticTypeName()))
+	(EExrAttributeType::ECompression, std::string(Imf::CompressionAttribute::staticTypeName()))
+	(EExrAttributeType::EDouble, std::string(Imf::DoubleAttribute::staticTypeName()))
+	(EExrAttributeType::EEnvmap, std::string(Imf::EnvmapAttribute::staticTypeName()))
+	(EExrAttributeType::EFloat, std::string(Imf::FloatAttribute::staticTypeName()))
+	(EExrAttributeType::EFloatVector, std::string(Imf::FloatVectorAttribute::staticTypeName()))
+	(EExrAttributeType::EInt, std::string(Imf::IntAttribute::staticTypeName()))
+	(EExrAttributeType::ELineOrder, std::string(Imf::LineOrderAttribute::staticTypeName()))
+	(EExrAttributeType::EString, std::string(Imf::StringAttribute::staticTypeName()))
+	(EExrAttributeType::EStringVector, std::string(Imf::StringVectorAttribute::staticTypeName()))
 	(EExrAttributeType::EV2f, std::string(Imf::V2fAttribute::staticTypeName()))
 	(EExrAttributeType::EV2i, std::string(Imf::V2iAttribute::staticTypeName()))
-	(EExrAttributeType::EDouble, std::string(Imf::TypedAttribute<double>::staticTypeName()))
-	(EExrAttributeType::EFloat, std::string(Imf::FloatAttribute::staticTypeName()))
-	(EExrAttributeType::EInt, std::string(Imf::TypedAttribute<int>::staticTypeName()))
 	(EExrAttributeType::EInvalid, std::string("unknown"));
 
 const mex::ConstMap<int, EExrAttributeType> intAttributeTypeMap
