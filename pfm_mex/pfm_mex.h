@@ -26,7 +26,6 @@ public:
 	enum class EColorFormat {
 		ERGB = 0,
 		EGrayscale,
-		EMultichannel,
 		ELength,
 		EInvalid = -1
 	};
@@ -45,22 +44,11 @@ public:
 			const EByteOrder byteOrder);
 
 	EColorFormat get_colorFormat() const;
-
 	int get_width() const;
-
 	int get_height() const;
-
-	inline FloatUsed get_scale() const {
-		return m_scale;
-	}
-
-	inline EByteOrder get_byteOrder() const {
-		return m_byteOrder;
-	}
-
-	inline bool isValidPfmHeader() const {
-		return m_isValidPfmHeader;
-	}
+	FloatUsed get_scale() const;
+	EByteOrder get_byteOrder() const;
+	bool isValidPfmHeader() const;
 
 private:
 	EColorFormat m_colorFormat;
@@ -91,11 +79,11 @@ public:
 private:
 	void readHeader();
 
+	std::string m_fileName;
 	std::ifstream m_file;
 	PfmHeader m_header;
 	bool m_readHeader;
 	bool m_readFile;
-	bool m_isValidHeader;
 };
 
 class PfmOutputFile : public fileformat::OutputFileInterface {

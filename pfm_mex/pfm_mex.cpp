@@ -57,8 +57,7 @@ void PfmHeader::build(const EColorFormat colorFormat,
 					const FloatUsed scale,
 					const EByteOrder byteOrder) {
 	if ((colorFormat == EColorFormat::ERGB) ||
-		(colorFormat == EColorFormat::EGrayscale) ||
-		(colorFormat == EColorFormat::EMultichannel)) {
+		(colorFormat == EColorFormat::EGrayscale)) {
 		m_colorFormat = colorFormat;
 	} else {
 		return;
@@ -87,6 +86,30 @@ void PfmHeader::build(const EColorFormat colorFormat,
 	m_isValidPfmHeader = true;
 }
 
+EColorFormat PfmHeader::get_colorFormat() const {
+	return m_colorFormat;
+}
+
+int PfmHeader::get_width() const {
+	return m_width;
+}
+
+int PfmHeader::get_height() const {
+	return m_height;
+}
+
+FloatUsed PfmHeader::get_scale() const {
+	return m_scale;
+}
+
+EByteOrder PfmHeader::get_byteOrder() const {
+	return m_byteOrder;
+}
+
+bool PfmHeader::isValidPfmHeader() const {
+	return m_isValidPfmHeader;
+}
+
 namespace {
 
 enum class EPfmAttributeType {
@@ -100,15 +123,103 @@ enum class EPfmAttributeType {
 
 mex::ConstMap<std::string, EPfmAttributeType> attributeNameAttributeTypeNameMap =
 	mex::ConstMap<std::string, EPfmAttributeType>
-	(std::string('colorformat'), EPfmAttributeType::EColorFormat)
-	(std::string('byteorder'), EPfmAttributeType::EByteOrder)
+	(std::string('colorFormat'), EPfmAttributeType::EColorFormat)
+	(std::string('byteOrder'), EPfmAttributeType::EByteOrder)
 	(std::string('width'), EPfmAttributeType::EInt)
 	(std::string('height'), EPfmAttributeType::EInt)
 	(std::string('scale'), EPfmAttributeType::EFloat);
 
 } /* namespace */
+/*
+ * ispfm implementation.
+ */
+mex::MxNumeric<bool> isPfmFile(const mex::MxString& fileName) {
+	PfmInputFile file(fileName);
+	return mex::MxNumeric<bool>(file.isOpenPfmFile());
+}
 
-mex::MxArray PfmInputFile::get(const mex::MxString& attributeName) const {
+/*
+ * PFMInputFile implementation.
+ */
+PfmInputFile::PfmInputFile(const mex::MxString& fileName):
+						m_fileName(fileName.get_string()),
+						m_file(fileName.c_str(),
+							std::ifstream::in |
+							std::ifstream::binary),
+						m_header(),
+						m_readHeader(false),
+						m_readFile(false) {
+	mexAssert(m_file);
+	readHeader();
+}
+
+void PfmInputFile::readHeader() {
+	mexAssert((!m_readHeader) && (!m_readFile));
+	char format[2];
+	m_file.read(format, 2);
+	if ((format[0] != 'P') || ((format[1] != 'F') && (format[1] != 'f'))) {
+		return;
+	}
+	PfmHeader::EColorFormat colorFormat = (format[1] == 'F')
+										?(PfmHeader::EColorFormat::ERGB)
+										:(PfmHeader::EColorFormat::EGrayscale);
+	if (!m_file) {
+		return;
+	}
+
+	char whitespace;
+	m_file.get(whitespace);
+	if ((!m_file) || (!std::isspace(whitespace))) {
+		return;
+	}
+
+	int width;
+	m_file >> width;
+	if (!m_file) {
+		return;
+	}
+
+	m_file.get(whitespace);
+	if ((!m_file) || (!std::isspace(whitespace))) {
+		return;
+	}
+
+	int height;
+	m_file >> height;
+	if (!m_file) {
+		return;
+	}
+
+	m_file.get(whitespace);
+	if ((!m_file) || (!std::isspace(whitespace))) {
+		return;
+	}
+
+	FloatUsed scaledByteOrder;
+	m_file >> scaledByteOrder;
+	FloatUsed scale = std::abs(scaledByteOrder);
+	PfmHeader::EByteOrder byteOrder = (scaledByteOrder < 0)
+									?(PfmHeader::EByteOrder::ELittleEndian)
+									:(PfmHeader::EByteOrder::EBigEndian);
+	if (!m_file) {
+		return;
+	}
+
+	m_file.get(whitespace);
+	if ((!m_file) || (!std::isspace(whitespace))) {
+		return;
+	}
+
+	m_header.build(colorFormat, width, height, scale, byteOrder);
+	m_readHeader = true;
+	m_isValidHeader = m_header.isValidPfmHeader();
+}
+
+
+
+
+
+mex::MxArray PfmInputFile::getAttribute(const mex::MxString& attributeName) const {
 	const EPfmAttributeType type = attributeTypeNameMap[attributeName.get_string()];
 	switch(type) {
 		case EPfmAttributeType::EColorFormat: {
@@ -148,90 +259,9 @@ mex::MxArray PfmInputFile::get(const mex::MxString& attributeName) const {
 //	return retArg;
 }
 
-/*
- * ispfm implementation.
- */
-mex::MxNumeric<bool> isPfmFile(const mex::MxString& fileName) {
-	PfmInputFile file(fileName);
-	return mex::MxNumeric<bool>(file.isOpenPfmFile());
-}
 
-/*
- * PFMInputFile implementation.
- */
-PfmInputFile::PfmInputFile(const mex::MxString& fileName)
-						: m_file(fileName.c_str(),
-								std::ifstream::in |
-								std::ifstream::binary),
-						  m_header(),
-						  m_readHeader(false),
-						  m_readFile(false),
-						  m_isValidHeader(false) {
-	mexAssert(m_file);
-	readHeader();
-}
 
-void PfmInputFile::readHeader() {
-	mexAssert((!m_readHeader) && (!m_readFile));
-	char format[2];
-	m_file.read(format, 2);
-	if ((format[0] != 'P') || ((format[1] != 'F') && (format[1] != 'f'))) {
-		return;
-	}
-	PfmHeader::EColorFormat colorFormat = (format[1] == 'F')
-										?(PfmHeader::EColorFormat::ERGB)
-										:(PfmHeader::EColorFormat::EGrayscale);
-	if (!m_file) {
-		return;
-	}
 
-	char whitespace;
-	m_file.get(whitespace);
-	if ((!m_file) || (!std::isspace(whitespace))) {
-		return;
-	}
-
-	int width;
-	m_file >> width;
-	if (!m_file) {
-		return;
-	}
-
-	m_file.get(whitespace);
-	if ((!m_file) || (!(whitespace == ' '))) {
-		return;
-	}
-
-	int height;
-	m_file >> height;
-	if (!m_file) {
-		return;
-	}
-
-	m_file.get(whitespace);
-	if ((!m_file) || (!std::isspace(whitespace))) {
-		return;
-	}
-
-	FloatUsed scaledByteOrder;
-	m_file >> scaledByteOrder;
-	FloatUsed scale = std::abs(scaledByteOrder);
-	PfmHeader::EByteOrder byteOrder = (scaledByteOrder < 0)
-									?(PfmHeader::EByteOrder::ELittleEndian)
-									:(PfmHeader::EByteOrder::EBigEndian);
-	if (!m_file) {
-		return;
-	}
-
-	m_file.get(whitespace);
-	if ((!m_file) || (!std::isspace(whitespace))) {
-		return;
-	}
-
-	m_header.build(colorFormat, width, height, scale, byteOrder);
-	m_readHeader = true;
-	m_isValidHeader = m_header.isValidPfmHeader();
-}
 
 mex::MxNumeric<FloatUsed> PfmInputFile::readFile() {
 	mexAssert((m_readHeader && m_header.isValidPfmHeader()) && (!m_readFile));
