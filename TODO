@@ -4,6 +4,7 @@
 
 -pfm
 --Change names and have script for adding to MATLAB imformats.
+--Fix flipping problem when reading files.
 
 -color_formats
 --Add support for ICC and DNG profiles.
@@ -12,8 +13,8 @@
 --Need to debug RAW reader using libraw.
 --Add support for DNG.
 
--hdrvdp
---Perhaps integrate HDRVDP.
+-RGBE
+--Maybe add custom RGBE reader.
 
 -hdri
 --Write GUI-viewer for HDR with various tonemapping.
