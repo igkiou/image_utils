@@ -20,6 +20,6 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[]) {
 		mexErrMsgTxt("Too many output arguments.");
 	}
 
-	plhs[0] = pfm::isPfmFile(mex::MxString(const_cast<mxArray*>(prhs[0])))
-							.get_array();
+	plhs[0] = pfm::isPfmFile(
+					mex::MxString(const_cast<mxArray*>(prhs[0]))).get_array();
 }

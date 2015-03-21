@@ -107,9 +107,8 @@ mex::MxArray ExrInputFile::readData(const std::vector<mex::MxString>& channelNam
 	if (numChannels > 1) {
 		dimensions.push_back(numChannels);
 	}
-	mex::MxNumeric<FloatUsed> pixelBuffer = mex::MxNumeric<FloatUsed>(
-											static_cast<int>(
-											dimensions.size()), &dimensions[0]);
+	mex::MxNumeric<FloatUsed> pixelBuffer(static_cast<int>(dimensions.size()),
+										&dimensions[0]);
 
 	Imf::FrameBuffer frameBuffer;
 	for (int iter = 0; iter < numChannels; ++iter) {

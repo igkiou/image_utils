@@ -3,8 +3,8 @@ DEBUG_MODE = 1
 
 CFLAGS =
 LDFLAGS =
-INCLUDES = -I/home/igkiou/MATLAB/mex_utils
-LIBS = 
+INCLUDES = -I../include -I/home/igkiou/MATLAB/mex_utils
+LIBS =
 
 ifeq ($(USE_GCC), 1)
 	include ../gcc.mk
@@ -23,7 +23,7 @@ is: ispfm.$(MEXEXT)
 test: test_pfm.$(MEXEXT)
 
 %.$(MEXEXT): %.o pfm_mex.o
-	$(CC) $(LDFLAGS) $(INCLUDES) $(CFLAGS) -o $@ $^ $(LIBS)
+	$(LD) $(LDFLAGS) $(INCLUDES) $(CFLAGS) -o $@ $^ $(LIBS) 
 
 %.o: %.cpp pfm_mex.h
 	$(CC) $(INCLUDES) $(LDFLAGS) $(CFLAGS) -c -o $@ $<

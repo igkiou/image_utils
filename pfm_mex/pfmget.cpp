@@ -11,8 +11,10 @@
 void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[]) {
 
 	/* Check number of input arguments */
-	if (nrhs != 1) {
-		mexErrMsgTxt("Exactly one input argument is required.");
+	if (nrhs < 1) {
+		mexErrMsgTxt("At least one input argument is required.");
+	} else if (nrhs > 2) {
+		mexErrMsgTxt("Two or fewer input arguments are required.");
 	}
 
 	/* Check number of output arguments */
@@ -20,8 +22,11 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[]) {
 		mexErrMsgTxt("Too many output arguments.");
 	}
 
-	mex::MxString fileName(const_cast<mxArray*>(prhs[0]));
-	pfm::PfmInputFile file(fileName);
-	file.readHeader();
-	plhs[0] = file.get_header().toMxArray().get_array();
+	pfm::PfmInputFile file(mex::MxString(const_cast<mxArray*>(prhs[0])));
+	if (nrhs >= 2) {
+		mex::MxString attributeName(const_cast<mxArray*>(prhs[1]));
+		plhs[0] = file.getAttribute(attributeName).get_array();
+	} else {
+		plhs[0] = file.getAttribute().get_array();
+	}
 }

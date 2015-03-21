@@ -14,7 +14,6 @@ endif
 
 include ../matlab.mk
 
-#all: read write get is test
 all: read write get is test
 
 get: exrget.$(MEXEXT)

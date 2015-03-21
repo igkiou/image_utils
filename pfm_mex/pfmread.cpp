@@ -21,9 +21,8 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[]) {
 	}
 
 	pfm::PfmInputFile file(mex::MxString(const_cast<mxArray*>(prhs[0])));
-	file.readHeader();
-	plhs[0] = file.readFile().get_array();
+	plhs[0] = file.readData().get_array();
 	if (nlhs >= 2) {
-		plhs[1] = file.get_header().toMxArray().get_array();
+		plhs[1] = file.getAttribute().get_array();
 	}
 }

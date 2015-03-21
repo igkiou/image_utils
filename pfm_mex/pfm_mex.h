@@ -21,7 +21,6 @@ typedef float FloatUsed;
 
 class PfmHeader {
 public:
-	PfmHeader();
 
 	enum class EColorFormat {
 		ERGB = 0,
@@ -37,23 +36,34 @@ public:
 		EInvalid = -1
 	};
 
-	void build(const EColorFormat colorFormat,
-			const int width,
+	PfmHeader();
+
+	PfmHeader(const int width,
 			const int height,
+			const EColorFormat colorFormat,
 			const FloatUsed scale,
 			const EByteOrder byteOrder);
 
-	EColorFormat get_colorFormat() const;
 	int get_width() const;
 	int get_height() const;
+	EColorFormat get_colorFormat() const;
 	FloatUsed get_scale() const;
 	EByteOrder get_byteOrder() const;
 	bool isValidPfmHeader() const;
 
+	void readFromFile(std::ifstream& file);
+	void writeToFile(std::ofstream& file) const;
+
 private:
-	EColorFormat m_colorFormat;
+	void build(const int width,
+			const int height,
+			const EColorFormat colorFormat,
+			const FloatUsed scale,
+			const EByteOrder byteOrder);
+
 	int m_width;
 	int m_height;
+	EColorFormat m_colorFormat;
 	FloatUsed m_scale;
 	EByteOrder m_byteOrder;
 	bool m_isValidPfmHeader;
@@ -77,8 +87,6 @@ public:
 	~PfmInputFile() {	}
 
 private:
-	void readHeader();
-
 	std::string m_fileName;
 	std::ifstream m_file;
 	PfmHeader m_header;
@@ -101,12 +109,13 @@ public:
 	~PfmOutputFile() {	}
 
 private:
-	void writeHeader(const mex::MxNumeric<FloatUsed>& pixels);
-
+	std::string m_fileName;
 	std::ofstream m_file;
+	int m_width;
+	int m_height;
+	FloatUsed m_scale;
 	PfmHeader m_header;
-	bool m_wroteHeader;
-	bool m_wroteFile;
+	bool m_writtenFile;
 };
 
 }	/* namespace pfm */

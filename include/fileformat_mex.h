@@ -12,6 +12,11 @@
 
 namespace fileformat {
 
+/*
+ * TODO: Maybe add isComplete function to all file formats, for files with valid
+ * header but incomplete data.
+ */
+
 class InputFileInterface {
 public:
 
