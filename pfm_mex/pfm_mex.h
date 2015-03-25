@@ -17,6 +17,11 @@
 
 namespace pfm {
 
+/*
+ * TODO: Change include of ctype to cctype and add std:: where necessary.
+ * TODO: Expand to custom file format for multiple images or multiple channels.
+ */
+
 typedef float FloatUsed;
 
 class PfmHeader {

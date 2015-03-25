@@ -48,12 +48,16 @@
 namespace openexr {
 
 /*
- * TODO: Design: Everything that could be called from mexfile is using MxArray.
  * TODO: Maybe add support for preview images?
+ * TODO: Fix includes (stdio to cstdio, etc.) and add std:: where necessary.
  * TODO: Add general support for alpha channel?
  * TODO: Move EExrAttributeType enum and registeredAttributeNameAttributeTypeMap
  * in header, to allow for easy expansion of registered attributes.
+ * TODO: Provide better exposure of registered attributes and their types to
+ * user.
  * TODO: Provide set attribute variant that allows specifying type of attribute.
+ * TODO: Replace readData(const std::vector<mex::MxString>& channelNames) with
+ * readData(mex::MxCell& channelNames). Similar for getChannelNames.
  */
 
 typedef float FloatUsed;

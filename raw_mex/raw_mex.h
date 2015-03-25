@@ -8,67 +8,45 @@
 #ifndef RAW_MEX_H_
 #define RAW_MEX_H_
 
-
 #include <math.h>
 #include <string.h>
+#include <fstream>
+#include <string>
+#include <vector>
+#include <ctype.h>
 
 #include "libraw.h"
 
-#include "mex.h"
-#include "matrix.h"
+#include "fileformat_mex.h"
 
 namespace raw {
 
 enum {raw_MAX_STRING_LENGTH=128};
 
-/*
- * Replace all casts to static_cast.
- */
-const char * const ERROR_ID = "MATLAB:raw_mex";
 
-inline void handleErrorCode(const EdsError errorCode) {
+typedef float FloatUsed;
 
-	switch(errorCode) {
-		case EDS_ERR_OK:
-		{
-			return;
-		}
-		default:
-		{
-			mexErrMsgIdAndTxt(ERROR_ID, "Error %X.", errorCode);
-			return;
-		}
-	}
-}
+mex::MxNumeric<bool> isRawFile(const mex::MxString& fileName);
 
-mxArray* getRawProperty(const EdsCameraRef handle, \
-						const RAW_PROPERTY property);
+class RawInputFile : public fileformat::InputFileInterface {
+public:
+	explicit RawInputFile(const mex::MxString& fileName);
 
-mxArray*
+	mex::MxString getFileName() const;
+	mex::MxNumeric<bool> isValidFile() const;
+	int getHeight() const;
+	int getWidth() const;
+	int getNumberOfChannels() const;
+	mex::MxArray getAttribute(const mex::MxString& attributeName) const;
+	mex::MxArray getAttribute() const;
+	mex::MxArray readData();
 
-/*
- * TODO: Separate out name handling in case of multiple variants of
- * getters/setters (maybe move in mex?).
- */
+	~RawInputFile() {	}
 
-/* Camera getters and setters. */
-mxArray* getCameraProperty(const EdsCameraRef handle, \
-						const RAW_PROPERTY property);
-
-mxArray* getCameraProperty(const EdsCameraRef handle);
-
-void setCameraProperty(const EdsCameraRef handle, \
-					const RAW_PROPERTY property, \
-					const mxArray* mxarr);
-
-void setCameraProperty(const EdsCameraRef handle, const mxArray* mxstruct);
-
-mxArray* getCameraPropertyInfo(const EdsCameraRef handle, \
-						const RAW_PROPERTY property);
-
-int getNumberOfImages(const EdsCameraRef handle);
-
-
+private:
+	std::string m_fileName;
+	LibRaw m_rawProcessor;
+};
 
 }	/* namespace raw */
 
