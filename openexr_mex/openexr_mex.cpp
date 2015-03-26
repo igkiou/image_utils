@@ -133,7 +133,7 @@ mex::MxArray ExrInputFile::readData(const std::vector<mex::MxString>& channelNam
 	if (numChannels > 1) {
 		transposePermutation.push_back(3);
 	}
-	mex::MxArray retArg = mex::MxArray(pixelBuffer.permute(transposePermutation));
+	mex::MxArray retArg(pixelBuffer.permute(transposePermutation).get_array());
 	pixelBuffer.destroy();
 	return retArg;
 }

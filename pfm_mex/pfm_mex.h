@@ -11,14 +11,12 @@
 #include <fstream>
 #include <string>
 #include <vector>
-#include <ctype.h>
 
 #include "fileformat_mex.h"
 
 namespace pfm {
 
 /*
- * TODO: Change include of ctype to cctype and add std:: where necessary.
  * TODO: Expand to custom file format for multiple images or multiple channels.
  */
 

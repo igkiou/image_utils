@@ -7,7 +7,8 @@
 
 #include <algorithm>
 #include <cmath>
-#include <stdint.h>
+#include <cstdint>
+#include <cctype>
 #include "pfm_mex.h"
 
 namespace pfm {
@@ -16,8 +17,8 @@ namespace {
 
 static PfmHeader::EByteOrder getHostByteOrder() {
 	union {
-		uint8_t  charValue[2];
-		uint16_t shortValue;
+		std::uint8_t  charValue[2];
+		std::uint16_t shortValue;
 	};
 	charValue[0] = 1;
 	charValue[1] = 0;
@@ -340,7 +341,7 @@ mex::MxArray PfmInputFile::readData() {
 		permutationVector.push_back(2);
 		permutationVector.push_back(1);
 	}
-	mex::MxArray retArg = mex::MxArray(pixelBuffer.permute(permutationVector));
+	mex::MxArray retArg(pixelBuffer.permute(permutationVector).get_array());
 	pixelBuffer.destroy();
 	return retArg;
 }

@@ -10,8 +10,8 @@
 
 #include <vector>
 #include <string>
-#include <stdio.h>
-#include <stdarg.h>
+//#include <stdio.h>
+//#include <stdarg.h>
 
 #include "IlmBase/Iex/Iex.h"
 #include "IlmBase/Imath/ImathBox.h"
@@ -49,7 +49,6 @@ namespace openexr {
 
 /*
  * TODO: Maybe add support for preview images?
- * TODO: Fix includes (stdio to cstdio, etc.) and add std:: where necessary.
  * TODO: Add general support for alpha channel?
  * TODO: Move EExrAttributeType enum and registeredAttributeNameAttributeTypeMap
  * in header, to allow for easy expansion of registered attributes.
