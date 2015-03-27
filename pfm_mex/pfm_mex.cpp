@@ -14,8 +14,7 @@
 namespace pfm {
 
 namespace {
-
-static PfmHeader::EByteOrder getHostByteOrder() {
+PfmHeader::EByteOrder getHostByteOrder() {
 	union {
 		std::uint8_t  charValue[2];
 		std::uint16_t shortValue;
@@ -31,7 +30,7 @@ template<typename T>
 inline T endianness_swap(T value) {
 	union {
 		T value;
-		uint8_t byteValue[sizeof(T)];
+		std::uint8_t byteValue[sizeof(T)];
 	} u;
 
 	u.value = value;
@@ -39,7 +38,7 @@ inline T endianness_swap(T value) {
 	return u.value;
 }
 
-} /* namespace */
+}  // namespace
 
 /*
  * PfmHeader implementation.

@@ -64,7 +64,7 @@ const mex::ConstMap<int, EExrAttributeType> intAttributeTypeMap
 	(17,	EExrAttributeType::EInt)
 	(18,	EExrAttributeType::EInvalid);
 
-void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[]) {
+void mexFunction(int nlhs, mxArray */* plhs[] */, int nrhs, const mxArray *prhs[]) {
 
 	/* Check number of input arguments */
 	if (nrhs < 1) {

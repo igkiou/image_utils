@@ -21,9 +21,6 @@
 
 namespace raw {
 
-enum {raw_MAX_STRING_LENGTH=128};
-
-
 typedef float FloatUsed;
 
 mex::MxNumeric<bool> isRawFile(const mex::MxString& fileName);
@@ -49,6 +46,6 @@ private:
 	LibRaw m_rawProcessor;
 };
 
-}	/* namespace raw */
+}  // namespace raw
 
-#endif /* RAW_MEX_H_ */
+#endif  // MEX_UTILS_H_
