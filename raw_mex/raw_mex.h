@@ -40,6 +40,7 @@ public:
 	mex::MxArray getAttribute(const mex::MxString& attributeName) const;
 	mex::MxArray getAttribute() const;
 	mex::MxArray readData();
+	mex::MxArray readData(mex::MxNumeric<bool> doSubtractDarkFrame);
 
 	~RawInputFile() {	}
 

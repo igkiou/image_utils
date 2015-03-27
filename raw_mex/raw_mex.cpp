@@ -5,7 +5,7 @@
  *      Author: igkiou
  */
 
-#include <iostream>
+#include <cstring>
 #include "raw_mex.h"
 
 namespace raw {
@@ -30,7 +30,7 @@ RawInputFile::RawInputFile(const mex::MxString& fileName):
 }
 
 mex::MxString RawInputFile::getFileName() const {
-	return mex::MxString(m_file.fileName());
+	return mex::MxString(m_fileName);
 }
 
 mex::MxNumeric<bool> RawInputFile::isValidFile() const {
@@ -38,7 +38,7 @@ mex::MxNumeric<bool> RawInputFile::isValidFile() const {
 	 * LibRaw always checks validity at construction, so if we're here, file is
 	 * valid.
 	 */
-	return mex::MxArray(mex::MxNumeric<bool>(true).get_array());
+	return mex::MxNumeric<bool>(true);
 }
 
 int RawInputFile::getHeight() const {
@@ -54,12 +54,25 @@ int RawInputFile::getNumberOfChannels() const {
 }
 
 /*
- * TODO: Incomplete. Add copying of image to MxArray. Add option for subtracting
- * dark frame or dcraw processing. Copy dcraw args processing from sample.
+ * TODO: Incomplete. Add option for dcraw processing. Copy dcraw args processing
+ * from sample.
  */
-mex::MxArray RawInputFile::readData(mex::MxNumeric<bool> subtractDarkFrame = false, ) {
+mex::MxArray RawInputFile::readData() {
+	mex::MxNumeric<bool> argumentArray(false);
+	mex::MxArray retArg(readData(argumentArray));
+	argumentArray.destroy();
+	return retArg;
+}
 
-	m_rawProcessor.unpack();
+mex::MxArray RawInputFile::readData(mex::MxNumeric<bool> doSubtractDarkFrame) {
+
+	int errorCode = m_rawProcessor.unpack();
+	mexAssert(errorCode == 0);
+
+	if (doSubtractDarkFrame[0]) {
+		errorCode = m_rawProcessor.subtract_black();
+		mexAssert(errorCode == 0);
+	}
 
 	int width = getWidth();
 	int height = getHeight();
@@ -70,40 +83,25 @@ mex::MxArray RawInputFile::readData(mex::MxNumeric<bool> subtractDarkFrame = fal
 	dimensions.push_back(numChannels);
 	mex::MxNumeric<unsigned short> pixelBuffer(static_cast<int>(dimensions.size()),
 										&dimensions[0]);
-
-
-
-
-	Imf::FrameBuffer frameBuffer;
-	for (int iter = 0; iter < numChannels; ++iter) {
-		mexAssert(m_file.header().channels().findChannel(channelNames[iter].c_str()));
-		FloatUsed* tempBuffer = &pixelBuffer[iter * width * height];
-		frameBuffer.insert(channelNames[iter].c_str(),
-						Imf::Slice(kEXRFloatUsed,
-								(char *) (tempBuffer - dw.min.x - dw.min.y * width),
-								sizeof(*tempBuffer) * 1,
-								sizeof(*tempBuffer) * width,
-								1,
-								1,
-								FLT_MAX));
+	unsigned short* pixelData = pixelBuffer.getData();
+	for (int channel = 0; channel < numChannels; ++channel) {
+		pixelData[channel*width*height] = m_rawProcessor.imgdata.image[0][0];
+//		std::memcpy(&pixelData[channel * width * height],
+//					m_rawProcessor.imgdata.image[channel],
+//					width * height * sizeof(unsigned short));
 	}
-
-	mexAssert(isComplete());
-	m_file.setFrameBuffer(frameBuffer);
-	m_file.readPixels(dw.min.y, dw.max.y);
-	std::vector<int> transposePermutation;
-	transposePermutation.push_back(2);
-	transposePermutation.push_back(1);
-	if (numChannels > 1) {
-		transposePermutation.push_back(3);
-	}
-	mex::MxArray retArg = mex::MxArray(pixelBuffer.permute(transposePermutation));
-	pixelBuffer.destroy();
-	return retArg;
+	return mex::MxArray(pixelBuffer.get_array());
 }
 
 /*
  * TODO: Add attribute getting.
  */
+mex::MxArray RawInputFile::getAttribute(const mex::MxString& attributeName) const {
+	return mex::MxArray();
+}
+
+mex::MxArray RawInputFile::getAttribute() const {
+	return mex::MxArray();
+}
 
 }	/* namespace raw */

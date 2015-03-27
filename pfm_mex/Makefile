@@ -3,7 +3,7 @@ DEBUG_MODE = 1
 
 CFLAGS =
 LDFLAGS =
-INCLUDES = -I../include -I/home/igkiou/MATLAB/mex_utils
+INCLUDES = -I../include
 LIBS =
 
 ifeq ($(USE_GCC), 1)
@@ -13,6 +13,8 @@ else
 endif
 
 include ../matlab.mk
+include ../mex_utils.mk
+include pfm.mk
 
 all: read write get is test
 

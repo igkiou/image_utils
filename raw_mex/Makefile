@@ -14,20 +14,18 @@ endif
 
 include ../matlab.mk
 include ../mex_utils.mk
-include openexr.mk
+include libraw.mk
 
-all: read write get is test
+all: read get is
 
-get: exrget.$(MEXEXT)
-read: exrread.$(MEXEXT)
-write: exrwrite.$(MEXEXT)
-is: isexr.$(MEXEXT)
-test: test_exr.$(MEXEXT)
+get: rawget.$(MEXEXT)
+read: rawread.$(MEXEXT)
+is: israw.$(MEXEXT)
 
-%.$(MEXEXT): %.o openexr_mex.o
+%.$(MEXEXT): %.o raw_mex.o
 	$(LD) $(LDFLAGS) $(INCLUDES) $(CFLAGS) -o $@ $^ $(LIBS) 
 
-%.o: %.cpp openexr_mex.h
+%.o: %.cpp raw_mex.h
 	$(CC) $(INCLUDES) $(LDFLAGS) $(CFLAGS) -c -o $@ $<
 	
 clean:
