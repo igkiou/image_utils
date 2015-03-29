@@ -316,21 +316,22 @@ mex::MxArray PfmInputFile::readData() {
 				pixelBuffer.getNumberOfElements() * sizeof(FloatUsed));
 	mexAssert(m_file);
 
-	if ((m_header.get_scale() != 1.0) ||
-		(getHostByteOrder() != m_header.get_byteOrder())) {
+	bool changeScale((m_header.get_scale() != 1.0));
+	bool swapEndianness((getHostByteOrder() != m_header.get_byteOrder()));
+	if (changeScale || swapEndianness) {
 		for (int iter = 0, end = pixelBuffer.getNumberOfElements();
-			iter < end;
-			++iter) {
-			if (getHostByteOrder() != m_header.get_byteOrder()) {
+				iter < end;
+				++iter) {
+			if (swapEndianness) {
 				pixelRaw[iter] = endianness_swap(pixelRaw[iter]);
 			}
-			if (m_header.get_scale() != 1.0) {
+			if (changeScale) {
 				pixelRaw[iter] *= m_header.get_scale();
 			}
 		}
 	}
 	m_readFile = true;
-
+//	return mex::MxArray(pixelBuffer.get_array());
 	std::vector<int> permutationVector;
 	if (numChannels == 3) {
 		permutationVector.push_back(3);

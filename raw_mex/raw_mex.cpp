@@ -97,7 +97,7 @@ mex::MxArray RawInputFile::readData(mex::MxNumeric<bool> doSubtractDarkFrame) {
 			}
 		}
 	}
-	return pixelBuffer;
+	return mex::MxArray(pixelBuffer.get_array());
 //	std::vector<int> permutationVector;
 //	if (numChannels == 3) {
 //		permutationVector.push_back(3);
