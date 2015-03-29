@@ -8,15 +8,9 @@
 #ifndef RAW_MEX_H_
 #define RAW_MEX_H_
 
-#include <math.h>
-#include <string.h>
-#include <fstream>
 #include <string>
-#include <vector>
-#include <ctype.h>
 
 #include "libraw.h"
-
 #include "fileformat_mex.h"
 
 namespace raw {
@@ -37,7 +31,8 @@ public:
 	mex::MxArray getAttribute(const mex::MxString& attributeName) const;
 	mex::MxArray getAttribute() const;
 	mex::MxArray readData();
-	mex::MxArray readData(mex::MxNumeric<bool> doSubtractDarkFrame);
+	mex::MxArray readData(const mex::MxNumeric<bool>& doSubtractDarkFrame,
+						const mex::MxString& dcrawFlags);
 
 	~RawInputFile() {	}
 

@@ -302,48 +302,43 @@ mex::MxArray PfmInputFile::getAttribute() const {
 
 mex::MxArray PfmInputFile::readData() {
 	mexAssert((m_readHeader && m_header.isValidPfmHeader()) && (!m_readFile));
+	int width = m_header.get_width();
+	int height = m_header.get_height();
 	int numChannels = getNumberOfChannels();
 	std::vector<int> dimensions;
+	dimensions.push_back(width);
+	dimensions.push_back(height);
 	if (numChannels == 3) {
 		dimensions.push_back(numChannels);
 	}
-	dimensions.push_back(m_header.get_width());
-	dimensions.push_back(m_header.get_height());
 	mex::MxNumeric<FloatUsed> pixelBuffer(static_cast<int>(dimensions.size()),
 										&dimensions[0]);
-	FloatUsed* pixelRaw = pixelBuffer.getData();
-	m_file.read(reinterpret_cast<char*>(pixelRaw),
-				pixelBuffer.getNumberOfElements() * sizeof(FloatUsed));
-	mexAssert(m_file);
 
+	FloatUsed channelData[3];
+	FloatUsed* pixelRaw = pixelBuffer.getData();
+//	m_file.read(reinterpret_cast<char*>(pixelRaw), pixelBuffer.getNumberOfElements() * sizeof(FloatUsed));
 	bool changeScale((m_header.get_scale() != 1.0));
 	bool swapEndianness((getHostByteOrder() != m_header.get_byteOrder()));
-	if (changeScale || swapEndianness) {
-		for (int iter = 0, end = pixelBuffer.getNumberOfElements();
-				iter < end;
-				++iter) {
-			if (swapEndianness) {
-				pixelRaw[iter] = endianness_swap(pixelRaw[iter]);
-			}
-			if (changeScale) {
-				pixelRaw[iter] *= m_header.get_scale();
+	for (int iterWidth = 0; iterWidth < width; ++iterWidth) {
+		for (int iterHeight = 0; iterHeight < height; ++iterHeight) {
+			m_file.read(reinterpret_cast<char*>(channelData), numChannels * sizeof(FloatUsed));
+			mexAssert(m_file);
+			for (int iterChannel = 0; iterChannel < numChannels; ++iterChannel) {
+				int pixelIter = iterChannel * width * height
+								+ iterHeight * width + iterWidth;
+				pixelRaw[pixelIter] = channelData[iterChannel];
+				if (swapEndianness) {
+					pixelRaw[pixelIter] = endianness_swap(pixelRaw[pixelIter]);
+				}
+				if (changeScale) {
+					pixelRaw[pixelIter] *= m_header.get_scale();
+				}
 			}
 		}
 	}
+
 	m_readFile = true;
-//	return mex::MxArray(pixelBuffer.get_array());
-	std::vector<int> permutationVector;
-	if (numChannels == 3) {
-		permutationVector.push_back(3);
-		permutationVector.push_back(2);
-		permutationVector.push_back(1);
-	} else {
-		permutationVector.push_back(2);
-		permutationVector.push_back(1);
-	}
-	mex::MxArray retArg(pixelBuffer.permute(permutationVector).get_array());
-	pixelBuffer.destroy();
-	return retArg;
+	return mex::MxArray(pixelBuffer.get_array());
 }
 
 /*
@@ -396,8 +391,8 @@ void PfmOutputFile::setAttribute(const mex::MxStruct& attributes) {
 void PfmOutputFile::writeData(const mex::MxArray& data) {
 
 	mexAssert(!m_writtenFile);
-	mex::MxNumeric<FloatUsed> pixelArray(data.get_array());
-	std::vector<int> dimensions = pixelArray.getDimensions();
+	mex::MxNumeric<FloatUsed> pixelBuffer(data.get_array());
+	std::vector<int> dimensions = pixelBuffer.getDimensions();
 	int numChannels = (dimensions.size() == 2)?(1):(dimensions[2]);
 
 	mexAssert(((numChannels == 1) || (numChannels = 3)) &&
@@ -410,18 +405,21 @@ void PfmOutputFile::writeData(const mex::MxArray& data) {
 								getHostByteOrder());
 	header.writeToFile(m_file);
 
-	std::vector<int> permutationVector;
-	if (colorFormat == PfmHeader::EColorFormat::ERGB) {
-		permutationVector.push_back(3);
+
+	FloatUsed channelData[3];
+	FloatUsed* pixelRaw = pixelBuffer.getData();
+	for (int iterWidth = 0; iterWidth < m_width; ++iterWidth) {
+		for (int iterHeight = 0; iterHeight < m_height; ++iterHeight) {
+			for (int iterChannel = 0; iterChannel < numChannels; ++iterChannel) {
+				int pixelIter = iterChannel * m_width * m_height
+								+ iterHeight * m_width + iterWidth;
+				channelData[iterChannel] = pixelRaw[pixelIter];
+			}
+			m_file.write(reinterpret_cast<char*>(channelData), numChannels * sizeof(FloatUsed));
+			mexAssert(m_file);
+		}
 	}
-	permutationVector.push_back(2);
-	permutationVector.push_back(1);
-	mex::MxNumeric<FloatUsed> pixelBuffer = pixelArray.permute(permutationVector);
-	FloatUsed* pixelsRaw = pixelBuffer.getData();
-	m_file.write(reinterpret_cast<char*>(pixelsRaw),
-				pixelBuffer.getNumberOfElements() * sizeof(FloatUsed));
-	mexAssert(m_file);
-	pixelBuffer.destroy();
+//	m_file.write(reinterpret_cast<char*>(pixelRaw), pixelBuffer.getNumberOfElements() * sizeof(FloatUsed));
 	m_writtenFile = true;
 }
 

@@ -8,8 +8,9 @@
 #include "mex_utils.h"
 #include "openexr_mex.h"
 
-void mexFunction(int nlhs, mxArray */* plhs[] */, int nrhs, const mxArray *prhs[]) {
+void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[]) {
 
+	(void) plhs;
 	/* Check number of input arguments */
 	if (nrhs > 4) {
 		mexErrMsgTxt("Four or fewer input arguments are required.");
