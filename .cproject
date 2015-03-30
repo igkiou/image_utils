@@ -26,6 +26,7 @@
 									<listOptionValue builtIn="false" value="/usr/local/matlab/extern/include"/>
 									<listOptionValue builtIn="false" value="/home/igkiou/MATLAB/mex_utils"/>
 									<listOptionValue builtIn="false" value="/home/igkiou/MATLAB/libraw/libraw"/>
+									<listOptionValue builtIn="false" value="/home/igkiou/MATLAB/libraw"/>
 								</option>
 								<inputType id="cdt.managedbuild.tool.gnu.cpp.compiler.input.950849713" superClass="cdt.managedbuild.tool.gnu.cpp.compiler.input"/>
 							</tool>
