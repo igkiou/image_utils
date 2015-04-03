@@ -5,8 +5,8 @@
  *      Author: igkiou
  */
 
-#include "openexr_mex.h"
 #include "mex_utils.h"
+#include "exr_mex.h"
 
 enum class EExrAttributeType {
 	EBox2f = 0,
@@ -79,7 +79,7 @@ void mexFunction(int nlhs, mxArray */* plhs[] */, int nrhs, const mxArray *prhs[
 	}
 
 	mex::MxString fileName(const_cast<mxArray *>(prhs[0]));
-	openexr::ExrInputFile file(fileName);
+	exr::ExrInputFile file(fileName);
 	mexAssert(intAttributeTypeMap[6] == EExrAttributeType::ECompression);
 	for (std::map<int, EExrAttributeType>::const_iterator iter = intAttributeTypeMap.get_map().begin(),
 		end = intAttributeTypeMap.get_map().end();

@@ -6,7 +6,8 @@
  */
 
 #include "mex_utils.h"
-#include "openexr_mex.h"
+
+#include "exr_mex.h"
 
 void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[]) {
 
@@ -27,7 +28,7 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[]) {
 	std::vector<int> dimensions = image.getDimensions();
 	mexAssert((dimensions.size() == 2) || (dimensions.size() == 3));
 	mex::MxString fileName(mex::MxString(const_cast<mxArray*>(prhs[1])));
-	openexr::ExrOutputFile file(fileName, dimensions[1], dimensions[0]);
+	exr::ExrOutputFile file(fileName, dimensions[1], dimensions[0]);
 
 	if (nrhs >= 4) {
 		mex::MxStruct attributes(const_cast<mxArray*>(prhs[3]));

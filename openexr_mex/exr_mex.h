@@ -1,12 +1,12 @@
 /*
- * openexr_mex.h
+ * exr_mex.h
  *
  *  Created on: May 23, 2012
  *      Author: igkiou
  */
 
-#ifndef OPENEXR_MEX_H_
-#define OPENEXR_MEX_H_
+#ifndef EXR_MEX_H_
+#define EXR_MEX_H_
 
 #include <vector>
 #include <string>
@@ -45,7 +45,7 @@
 
 #include "fileformat_mex.h"
 
-namespace openexr {
+namespace exr {
 
 /*
  * TODO: Maybe add support for preview images?
@@ -59,37 +59,42 @@ namespace openexr {
  * readData(mex::MxCell& channelNames). Similar for getChannelNames.
  */
 
-typedef float FloatUsed;
-const Imf::PixelType kEXRFloatUsed = Imf::FLOAT;
+using PixelType = float;
 
-mex::MxNumeric<bool> isOpenExrFile(const mex::MxString& fileName);
+mex::MxNumeric<bool> isExrFile(const mex::MxString& fileName);
 
 class ExrInputFile : public fileformat::InputFileInterface {
 public:
 	explicit ExrInputFile(const mex::MxString& fileName);
 
-	mex::MxString getFileName() const;
-	mex::MxNumeric<bool> isValidFile() const;
+	mex::MxString getFileName() const override;
+	mex::MxNumeric<bool> isValidFile() const override;
 
-	int getHeight() const;
-	int getWidth() const;
-	int getNumberOfChannels() const;
-	mex::MxArray readData();
+	int getHeight() const override;
+	int getWidth() const override;
+	int getNumberOfChannels() const override;
+	mex::MxArray readData() override;
 	mex::MxArray readDataRGB();
 	mex::MxArray readDataY();
 	mex::MxArray readData(const mex::MxString& channelName);
 	mex::MxArray readData(const std::vector<mex::MxString>& channelNames);
 
 	std::vector<mex::MxString> getChannelNames() const;
-	bool isComplete() const;
+
+	mex::MxArray getAttribute(const mex::MxString& attributeName) const override;
+	mex::MxArray getAttribute() const override;
+
+	/*
+	 * TODO: Should be made private.
+	 */
 	bool hasChannel(const std::string& channelName) const;
 
-	mex::MxArray getAttribute(const mex::MxString& attributeName) const;
-	mex::MxArray getAttribute() const;
-
-	~ExrInputFile() {	}
+	~ExrInputFile() override {	}
 
 private:
+	bool isComplete() const;
+
+
 	Imf::InputFile m_file;
 };
 
@@ -97,22 +102,22 @@ class ExrOutputFile : public fileformat::OutputFileInterface {
 public:
 	ExrOutputFile(const mex::MxString& fileName, int width, int height);
 
-	mex::MxString getFileName() const;
-	int getHeight() const;
-	int getWidth() const;
+	mex::MxString getFileName() const override;
+	int getHeight() const override;
+	int getWidth() const override;
 
 	void setAttribute(const mex::MxString& attributeName,
-						const mex::MxArray& attribute);
-	void setAttribute(const mex::MxStruct& attributes);
+						const mex::MxArray& attribute) override;
+	void setAttribute(const mex::MxStruct& attributes) override;
 
-	void writeData(const mex::MxArray& data);
+	void writeData(const mex::MxArray& data) override;
 	void writeDataRGB(const mex::MxArray& data);
 	void writeDataY(const mex::MxArray& data);
 	void writeData(const mex::MxString& channelName, const mex::MxArray& data);
 	void writeData(const std::vector<mex::MxString>& channelNames,
 				const mex::MxArray& data);
 
-	~ExrOutputFile() {	}
+	~ExrOutputFile() override {	}
 
 private:
 	Imf::Header m_header;
@@ -122,4 +127,4 @@ private:
 
 }	/* namespace exr */
 
-#endif /* OPENEXR_MEX_H_ */
+#endif /* EXR_MEX_H_ */

@@ -6,7 +6,8 @@
  */
 
 #include "mex_utils.h"
-#include "openexr_mex.h"
+
+#include "exr_mex.h"
 
 void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[]) {
 
@@ -20,6 +21,6 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[]) {
 		mexErrMsgTxt("Too many output arguments.");
 	}
 
-	plhs[0] = openexr::isOpenExrFile(
+	plhs[0] = exr::isExrFile(
 					mex::MxString(const_cast<mxArray*>(prhs[0]))).get_array();
 }

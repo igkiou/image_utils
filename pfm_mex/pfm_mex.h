@@ -20,7 +20,7 @@ namespace pfm {
  * TODO: Expand to custom file format for multiple images or multiple channels.
  */
 
-typedef float FloatUsed;
+using PixelType = float;
 
 class PfmHeader {
 public:
@@ -44,13 +44,13 @@ public:
 	PfmHeader(const int width,
 			const int height,
 			const EColorFormat colorFormat,
-			const FloatUsed scale,
+			const PixelType scale,
 			const EByteOrder byteOrder);
 
 	int get_width() const;
 	int get_height() const;
 	EColorFormat get_colorFormat() const;
-	FloatUsed get_scale() const;
+	PixelType get_scale() const;
 	EByteOrder get_byteOrder() const;
 	bool isValidPfmHeader() const;
 
@@ -61,13 +61,13 @@ private:
 	void build(const int width,
 			const int height,
 			const EColorFormat colorFormat,
-			const FloatUsed scale,
+			const PixelType scale,
 			const EByteOrder byteOrder);
 
 	int m_width;
 	int m_height;
 	EColorFormat m_colorFormat;
-	FloatUsed m_scale;
+	PixelType m_scale;
 	EByteOrder m_byteOrder;
 	bool m_isValidPfmHeader;
 };
@@ -78,16 +78,16 @@ class PfmInputFile : public fileformat::InputFileInterface {
 public:
 	explicit PfmInputFile(const mex::MxString& fileName);
 
-	mex::MxString getFileName() const;
-	mex::MxNumeric<bool> isValidFile() const;
-	int getHeight() const;
-	int getWidth() const;
-	int getNumberOfChannels() const;
-	mex::MxArray getAttribute(const mex::MxString& attributeName) const;
-	mex::MxArray getAttribute() const;
-	mex::MxArray readData();
+	mex::MxString getFileName() const override;
+	mex::MxNumeric<bool> isValidFile() const override;
+	int getHeight() const override;
+	int getWidth() const override;
+	int getNumberOfChannels() const override;
+	mex::MxArray getAttribute(const mex::MxString& attributeName) const override;
+	mex::MxArray getAttribute() const override;
+	mex::MxArray readData() override;
 
-	~PfmInputFile() {	}
+	~PfmInputFile() override {	}
 
 private:
 	std::string m_fileName;
@@ -101,22 +101,22 @@ class PfmOutputFile : public fileformat::OutputFileInterface {
 public:
 	PfmOutputFile(const mex::MxString& fileName, int width, int height);
 
-	mex::MxString getFileName() const;
-	int getHeight() const;
-	int getWidth() const;
+	mex::MxString getFileName() const override;
+	int getHeight() const override;
+	int getWidth() const override;
 	void setAttribute(const mex::MxString& attributeName,
-					const mex::MxArray& attribute);
-	void setAttribute(const mex::MxStruct& attributes);
-	void writeData(const mex::MxArray& data);
+					const mex::MxArray& attribute) override;
+	void setAttribute(const mex::MxStruct& attributes) override;
+	void writeData(const mex::MxArray& data) override;
 
-	~PfmOutputFile() {	}
+	~PfmOutputFile() override {	}
 
 private:
 	std::string m_fileName;
 	std::ofstream m_file;
 	int m_width;
 	int m_height;
-	FloatUsed m_scale;
+	PixelType m_scale;
 	PfmHeader m_header;
 	bool m_writtenFile;
 };

@@ -54,7 +54,7 @@ PfmHeader::PfmHeader():
 PfmHeader::PfmHeader(const int width,
 					const int height,
 					const EColorFormat colorFormat,
-					const FloatUsed scale,
+					const PixelType scale,
 					const EByteOrder byteOrder):
 					m_width(),
 					m_height(),
@@ -68,7 +68,7 @@ PfmHeader::PfmHeader(const int width,
 void PfmHeader::build(const int width,
 					const int height,
 					const EColorFormat colorFormat,
-					const FloatUsed scale,
+					const PixelType scale,
 					const EByteOrder byteOrder) {
 	if ((colorFormat == EColorFormat::ERGB) ||
 		(colorFormat == EColorFormat::EGrayscale)) {
@@ -112,7 +112,7 @@ PfmHeader::EColorFormat PfmHeader::get_colorFormat() const {
 	return m_colorFormat;
 }
 
-FloatUsed PfmHeader::get_scale() const {
+PixelType PfmHeader::get_scale() const {
 	return m_scale;
 }
 
@@ -165,9 +165,9 @@ void PfmHeader::readFromFile(std::ifstream& file) {
 		return;
 	}
 
-	FloatUsed scaledByteOrder;
+	PixelType scaledByteOrder;
 	file >> scaledByteOrder;
-	FloatUsed scale = std::abs(scaledByteOrder);
+	PixelType scale = std::abs(scaledByteOrder);
 	PfmHeader::EByteOrder byteOrder = (scaledByteOrder < 0)
 									?(PfmHeader::EByteOrder::ELittleEndian)
 									:(PfmHeader::EByteOrder::EBigEndian);
@@ -202,8 +202,8 @@ void PfmHeader::writeToFile(std::ofstream& file) const {
 	file << '\n';
 	mexAssert(file);
 	file << (m_scale * ((m_byteOrder == PfmHeader::EByteOrder::ELittleEndian)
-						?(-1.0)
-						:(1.0)));
+						?(static_cast<PixelType>(-1.0))
+						:(static_cast<PixelType>(1.0))));
 	mexAssert(file);
 	file << '\n';
 	mexAssert(file);
@@ -214,7 +214,7 @@ void PfmHeader::writeToFile(std::ofstream& file) const {
  */
 mex::MxNumeric<bool> isPfmFile(const mex::MxString& fileName) {
 	PfmInputFile file(fileName);
-	return mex::MxNumeric<bool>(file.isValidFile());
+	return file.isValidFile();
 }
 
 /*
@@ -264,7 +264,7 @@ mex::MxArray PfmInputFile::getAttribute(const mex::MxString& attributeName) cons
 					(m_header.get_colorFormat() == PfmHeader::EColorFormat::ERGB)
 					?("rgb"):("grayscale")).get_array());
 	} else if (!attributeName.get_string().compare("scale")) {
-		return mex::MxArray(mex::MxNumeric<FloatUsed>(m_header.get_scale()).get_array());
+		return mex::MxArray(mex::MxNumeric<PixelType>(m_header.get_scale()).get_array());
 	} else if (!attributeName.get_string().compare("byteOrder")) {
 		return mex::MxArray(mex::MxString(
 					(m_header.get_byteOrder() == PfmHeader::EByteOrder::EBigEndian)
@@ -311,17 +311,17 @@ mex::MxArray PfmInputFile::readData() {
 	if (numChannels == 3) {
 		dimensions.push_back(numChannels);
 	}
-	mex::MxNumeric<FloatUsed> pixelBuffer(static_cast<int>(dimensions.size()),
+	mex::MxNumeric<PixelType> pixelBuffer(static_cast<int>(dimensions.size()),
 										&dimensions[0]);
 
-	FloatUsed channelData[3];
-	FloatUsed* pixelRaw = pixelBuffer.getData();
+	PixelType channelData[3];
+	PixelType* pixelRaw = pixelBuffer.getData();
 //	m_file.read(reinterpret_cast<char*>(pixelRaw), pixelBuffer.getNumberOfElements() * sizeof(FloatUsed));
-	bool changeScale((m_header.get_scale() != 1.0));
+	bool changeScale((m_header.get_scale() != static_cast<PixelType>(1.0)));
 	bool swapEndianness((getHostByteOrder() != m_header.get_byteOrder()));
 	for (int iterWidth = 0; iterWidth < width; ++iterWidth) {
 		for (int iterHeight = 0; iterHeight < height; ++iterHeight) {
-			m_file.read(reinterpret_cast<char*>(channelData), numChannels * sizeof(FloatUsed));
+			m_file.read(reinterpret_cast<char*>(channelData), numChannels * sizeof(PixelType));
 			mexAssert(m_file);
 			for (int iterChannel = 0; iterChannel < numChannels; ++iterChannel) {
 				int pixelIter = iterChannel * width * height
@@ -370,7 +370,7 @@ int PfmOutputFile::getWidth() const {
 void PfmOutputFile::setAttribute(const mex::MxString& attributeName,
 										const mex::MxArray& attribute) {
 	if (!attributeName.get_string().compare("scale")) {
-		const mex::MxNumeric<double> tempArray(attribute.get_array());
+		const mex::MxNumeric<PixelType> tempArray(attribute.get_array());
 		mexAssert(tempArray.getNumberOfElements() == 1);
 		m_scale = tempArray[0];
 	} else {
@@ -391,7 +391,7 @@ void PfmOutputFile::setAttribute(const mex::MxStruct& attributes) {
 void PfmOutputFile::writeData(const mex::MxArray& data) {
 
 	mexAssert(!m_writtenFile);
-	mex::MxNumeric<FloatUsed> pixelBuffer(data.get_array());
+	mex::MxNumeric<PixelType> pixelBuffer(data.get_array());
 	std::vector<int> dimensions = pixelBuffer.getDimensions();
 	int numChannels = (dimensions.size() == 2)?(1):(dimensions[2]);
 
@@ -406,8 +406,8 @@ void PfmOutputFile::writeData(const mex::MxArray& data) {
 	header.writeToFile(m_file);
 
 
-	FloatUsed channelData[3];
-	FloatUsed* pixelRaw = pixelBuffer.getData();
+	PixelType channelData[3];
+	PixelType* pixelRaw = pixelBuffer.getData();
 	for (int iterWidth = 0; iterWidth < m_width; ++iterWidth) {
 		for (int iterHeight = 0; iterHeight < m_height; ++iterHeight) {
 			for (int iterChannel = 0; iterChannel < numChannels; ++iterChannel) {
@@ -415,7 +415,7 @@ void PfmOutputFile::writeData(const mex::MxArray& data) {
 								+ iterHeight * m_width + iterWidth;
 				channelData[iterChannel] = pixelRaw[pixelIter];
 			}
-			m_file.write(reinterpret_cast<char*>(channelData), numChannels * sizeof(FloatUsed));
+			m_file.write(reinterpret_cast<char*>(channelData), numChannels * sizeof(PixelType));
 			mexAssert(m_file);
 		}
 	}

@@ -5,15 +5,42 @@
  *      Author: igkiou
  */
 
-#include "openexr_mex.h"
 #include <typeinfo>
+#include "exr_mex.h"
 
-namespace openexr {
+namespace exr {
+
+namespace {
+
+template <typename ExrPixelType>
+class ImfPixelType {
+public:
+	ImfPixelType() :
+		m_pixelType() {	}
+
+	inline Imf::PixelType get_pixelType() const {
+		return m_pixelType;
+	}
+
+	virtual ~ImfPixelType() { }
+
+private:
+	Imf::PixelType m_pixelType;
+};
+
+template <> inline ImfPixelType<unsigned int>::ImfPixelType() :
+	m_pixelType(Imf::UINT) { }
+
+template <> inline ImfPixelType<float>::ImfPixelType() :
+	m_pixelType(Imf::FLOAT) { }
+
+}  // namespace
+
 
 /*
  * Check valid file function.
  */
-mex::MxNumeric<bool> isOpenExrFile(const mex::MxString& fileName) {
+mex::MxNumeric<bool> isExrFile(const mex::MxString& fileName) {
 	return mex::MxNumeric<bool>(Imf::isOpenExrFile(fileName.c_str()));
 }
 
@@ -30,7 +57,7 @@ mex::MxString ExrInputFile::getFileName() const {
 }
 
 mex::MxNumeric<bool> ExrInputFile::isValidFile() const {
-	return isOpenExrFile(mex::MxString(m_file.fileName()));
+	return isExrFile(mex::MxString(m_file.fileName()));
 }
 
 int ExrInputFile::getHeight() const {
@@ -72,7 +99,7 @@ bool ExrInputFile::isComplete() const {
 }
 
 bool ExrInputFile::hasChannel(const std::string& channelName) const {
-	return m_file.header().channels().findChannel(channelName.c_str()) != 0;
+	return (m_file.header().channels().findChannel(channelName.c_str()) != nullptr);
 }
 
 mex::MxArray ExrInputFile::readDataRGB() {
@@ -107,15 +134,15 @@ mex::MxArray ExrInputFile::readData(const std::vector<mex::MxString>& channelNam
 	if (numChannels > 1) {
 		dimensions.push_back(numChannels);
 	}
-	mex::MxNumeric<FloatUsed> pixelBuffer(static_cast<int>(dimensions.size()),
+	mex::MxNumeric<PixelType> pixelBuffer(static_cast<int>(dimensions.size()),
 										&dimensions[0]);
 
 	Imf::FrameBuffer frameBuffer;
 	for (int iter = 0; iter < numChannels; ++iter) {
-		mexAssert(m_file.header().channels().findChannel(channelNames[iter].c_str()));
-		FloatUsed* tempBuffer = &pixelBuffer[iter * width * height];
+		mexAssert(hasChannel(channelNames[iter]));
+		PixelType* tempBuffer = &pixelBuffer[iter * width * height];
 		frameBuffer.insert(channelNames[iter].c_str(),
-						Imf::Slice(kEXRFloatUsed,
+						Imf::Slice(ImfPixelType<PixelType>().get_pixelType(),
 								(char *) (tempBuffer - dw.min.x - dw.min.y * width),
 								sizeof(*tempBuffer) * 1,
 								sizeof(*tempBuffer) * width,
@@ -530,7 +557,7 @@ void ExrOutputFile::writeData(const mex::MxArray& channelPixels) {
 void ExrOutputFile::writeData(const std::vector<mex::MxString>& channelNames,
 							const mex::MxArray& channelPixels) {
 	mexAssert(!m_writtenFile);
-	mex::MxNumeric<FloatUsed> pixelArray(channelPixels.get_array());
+	mex::MxNumeric<PixelType> pixelArray(channelPixels.get_array());
 	std::vector<int> dimensions = pixelArray.getDimensions();
 	int width = getWidth();
 	int height = getHeight();
@@ -546,17 +573,17 @@ void ExrOutputFile::writeData(const std::vector<mex::MxString>& channelNames,
 	if (numChannels > 1) {
 		transposePermutation.push_back(3);
 	}
-	mex::MxNumeric<FloatUsed> pixelBuffer = pixelArray.permute(transposePermutation);
+	mex::MxNumeric<PixelType> pixelBuffer = pixelArray.permute(transposePermutation);
 	Imf::FrameBuffer frameBuffer;
 	for (int iterChannel = 0; iterChannel < numChannels; ++iterChannel) {
 		m_header.channels().insert(channelNames[iterChannel].c_str(),
-								Imf::Channel(kEXRFloatUsed));
+								Imf::Channel(ImfPixelType<PixelType>().get_pixelType()));
 		frameBuffer.insert(channelNames[iterChannel].c_str(),
-							Imf::Slice(kEXRFloatUsed,
+							Imf::Slice(ImfPixelType<PixelType>().get_pixelType(),
 									(char *) &pixelBuffer[
 									              width * height * iterChannel],
-									sizeof(FloatUsed) * 1,
-									sizeof(FloatUsed) * width));
+									sizeof(PixelType) * 1,
+									sizeof(PixelType) * width));
 	}
 
 	Imf::OutputFile outFile(m_fileName.c_str(), m_header);
@@ -907,4 +934,4 @@ void ExrOutputFile::setAttribute(const mex::MxStruct& attributes) {
 	}
 }
 
-}	/* namespace nuance */
+}  // namespace openexr

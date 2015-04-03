@@ -6,7 +6,8 @@
  */
 
 #include "mex_utils.h"
-#include "openexr_mex.h"
+
+#include "exr_mex.h"
 
 void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[]) {
 
@@ -22,7 +23,7 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[]) {
 		mexErrMsgTxt("Too many output arguments.");
 	}
 
-	openexr::ExrInputFile file(mex::MxString(const_cast<mxArray*>(prhs[0])));
+	exr::ExrInputFile file(mex::MxString(const_cast<mxArray*>(prhs[0])));
 	if ((nrhs >= 2) && (!mex::MxArray(const_cast<mxArray*>(prhs[1])).isEmpty())) {
 		mex::MxCell channelNameArray(const_cast<mxArray*>(prhs[1]));
 		std::vector<mex::MxString> channelNames;
