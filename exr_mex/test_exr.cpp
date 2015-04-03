@@ -5,6 +5,34 @@
  *      Author: igkiou
  */
 
+
+#include "IlmBase/Iex/Iex.h"
+#include "IlmBase/Imath/ImathBox.h"
+#include "OpenEXR/IlmImf/ImfArray.h"
+#include "OpenEXR/IlmImf/ImfAttribute.h"
+#include "OpenEXR/IlmImf/ImfBoxAttribute.h"
+#include "OpenEXR/IlmImf/ImfChannelList.h"
+#include "OpenEXR/IlmImf/ImfChannelListAttribute.h"
+#include "OpenEXR/IlmImf/ImfChromaticitiesAttribute.h"
+#include "OpenEXR/IlmImf/ImfCompressionAttribute.h"
+#include "OpenEXR/IlmImf/ImfDoubleAttribute.h" // new addition
+#include "OpenEXR/IlmImf/ImfEnvmapAttribute.h"
+//#include "ImfExtraAttributes.h"
+#include "OpenEXR/IlmImf/ImfFloatAttribute.h"
+#include "OpenEXR/IlmImf/ImfFloatVectorAttribute.h" // new addition
+#include "OpenEXR/IlmImf/ImfFrameBuffer.h"
+#include "OpenEXR/IlmImf/ImfIntAttribute.h" // new addition
+#include "OpenEXR/IlmImf/ImfLineOrderAttribute.h"
+#include "OpenEXR/IlmImf/ImfOutputFile.h"
+#include "OpenEXR/IlmImf/ImfPixelType.h"
+#include "OpenEXR/IlmImf/ImfRgba.h"
+#include "OpenEXR/IlmImf/ImfRgbaFile.h"
+#include "OpenEXR/IlmImf/ImfStandardAttributes.h"
+#include "OpenEXR/IlmImf/ImfStringAttribute.h"
+#include "OpenEXR/IlmImf/ImfStringVectorAttribute.h" // new addition
+#include "OpenEXR/IlmImf/ImfTestFile.h"
+#include "OpenEXR/IlmImf/ImfVecAttribute.h"
+
 #include "mex_utils.h"
 #include "exr_mex.h"
 
