@@ -311,11 +311,11 @@ mex::MxArray PfmInputFile::readData() {
 	if (numChannels == 3) {
 		dimensions.push_back(numChannels);
 	}
-	mex::MxNumeric<PixelType> pixelBuffer(static_cast<int>(dimensions.size()),
+	mex::MxNumeric<PixelType> pixelArray(static_cast<int>(dimensions.size()),
 										&dimensions[0]);
 
 	PixelType channelData[3];
-	PixelType* pixelRaw = pixelBuffer.getData();
+	PixelType* pixelBuffer = pixelArray.getData();
 //	m_file.read(reinterpret_cast<char*>(pixelRaw), pixelBuffer.getNumberOfElements() * sizeof(FloatUsed));
 	bool changeScale((m_header.get_scale() != static_cast<PixelType>(1.0)));
 	bool swapEndianness((getHostByteOrder() != m_header.get_byteOrder()));
@@ -326,19 +326,19 @@ mex::MxArray PfmInputFile::readData() {
 			for (int iterChannel = 0; iterChannel < numChannels; ++iterChannel) {
 				int pixelIter = iterChannel * width * height
 								+ iterHeight * width + iterWidth;
-				pixelRaw[pixelIter] = channelData[iterChannel];
+				pixelBuffer[pixelIter] = channelData[iterChannel];
 				if (swapEndianness) {
-					pixelRaw[pixelIter] = endianness_swap(pixelRaw[pixelIter]);
+					pixelBuffer[pixelIter] = endianness_swap(pixelBuffer[pixelIter]);
 				}
 				if (changeScale) {
-					pixelRaw[pixelIter] *= m_header.get_scale();
+					pixelBuffer[pixelIter] *= m_header.get_scale();
 				}
 			}
 		}
 	}
 
 	m_readFile = true;
-	return mex::MxArray(pixelBuffer.get_array());
+	return mex::MxArray(pixelArray.get_array());
 }
 
 /*
@@ -391,8 +391,8 @@ void PfmOutputFile::setAttribute(const mex::MxStruct& attributes) {
 void PfmOutputFile::writeData(const mex::MxArray& data) {
 
 	mexAssert(!m_writtenFile);
-	mex::MxNumeric<PixelType> pixelBuffer(data.get_array());
-	std::vector<int> dimensions = pixelBuffer.getDimensions();
+	mex::MxNumeric<PixelType> pixelArray(data.get_array());
+	std::vector<int> dimensions = pixelArray.getDimensions();
 	int numChannels = (dimensions.size() == 2)?(1):(dimensions[2]);
 
 	mexAssert(((numChannels == 1) || (numChannels = 3)) &&
@@ -407,13 +407,13 @@ void PfmOutputFile::writeData(const mex::MxArray& data) {
 
 
 	PixelType channelData[3];
-	PixelType* pixelRaw = pixelBuffer.getData();
+	PixelType* pixelBuffer = pixelArray.getData();
 	for (int iterWidth = 0; iterWidth < m_width; ++iterWidth) {
 		for (int iterHeight = 0; iterHeight < m_height; ++iterHeight) {
 			for (int iterChannel = 0; iterChannel < numChannels; ++iterChannel) {
 				int pixelIter = iterChannel * m_width * m_height
 								+ iterHeight * m_width + iterWidth;
-				channelData[iterChannel] = pixelRaw[pixelIter];
+				channelData[iterChannel] = pixelBuffer[pixelIter];
 			}
 			m_file.write(reinterpret_cast<char*>(channelData), numChannels * sizeof(PixelType));
 			mexAssert(m_file);

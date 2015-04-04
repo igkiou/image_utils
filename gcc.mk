@@ -5,7 +5,7 @@ EXTRAWARNINGFLAGS = -Wdouble-promotion -Wswitch-default -Wuninitialized -Wsugges
 #-Wsign-conversion
 #-Waggregate-return 
 #-Wpadded
-OPTIMFLAGS = -march=native -Ofast -fopenmp -pthread -pipe -flto -fuse-linker-plugin -fuse-ld=gold -fno-exceptions -fvisibility-inlines-hidden 
+OPTIMFLAGS = -march=native -Ofast -fopenmp -pthread -pipe -flto -fuse-linker-plugin -fuse-ld=gold -fno-exceptions -fvisibility-inlines-hidden
 #-Wvector-operation-performance
 #-fno-rtti
 #-funsafe-loop-optimizations

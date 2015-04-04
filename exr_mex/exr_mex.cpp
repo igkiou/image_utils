@@ -159,18 +159,18 @@ mex::MxArray ExrInputFile::readData(const std::vector<mex::MxString>& channelNam
 	if (numChannels > 1) {
 		dimensions.push_back(numChannels);
 	}
-	mex::MxNumeric<PixelType> pixelBuffer(static_cast<int>(dimensions.size()),
+	mex::MxNumeric<PixelType> pixelArray(static_cast<int>(dimensions.size()),
 										&dimensions[0]);
 
 	Imf::FrameBuffer frameBuffer;
-	for (int iter = 0; iter < numChannels; ++iter) {
-		mexAssert(hasChannel(channelNames[iter].get_string()));
-		PixelType* tempBuffer = &pixelBuffer[iter * width * height];
-		frameBuffer.insert(channelNames[iter].c_str(),
+	for (int iterChannel = 0; iterChannel < numChannels; ++iterChannel) {
+		mexAssert(hasChannel(channelNames[iterChannel].get_string()));
+		PixelType* pixelBuffer = &pixelArray[iterChannel * width * height];
+		frameBuffer.insert(channelNames[iterChannel].c_str(),
 						Imf::Slice(ImfPixelType<PixelType>().get_pixelType(),
-								(char *) (tempBuffer - dw.min.x * height - dw.min.y * 1),
-								sizeof(*tempBuffer) * height,
-								sizeof(*tempBuffer) * 1,
+								(char *) (pixelBuffer - dw.min.x * height - dw.min.y * 1),
+								sizeof(*pixelBuffer) * height,
+								sizeof(*pixelBuffer) * 1,
 								1,
 								1,
 								FLT_MAX));
@@ -179,7 +179,7 @@ mex::MxArray ExrInputFile::readData(const std::vector<mex::MxString>& channelNam
 	mexAssert(isComplete());
 	m_file.setFrameBuffer(frameBuffer);
 	m_file.readPixels(dw.min.y, dw.max.y);
-	return mex::MxArray(pixelBuffer.get_array());
+	return mex::MxArray(pixelArray.get_array());
 }
 
 namespace {
@@ -584,29 +584,21 @@ void ExrOutputFile::writeData(const std::vector<mex::MxString>& channelNames,
 					(dimensions[0] == height) &&
 					(dimensions[1] == width));
 
-	std::vector<int> transposePermutation;
-	transposePermutation.push_back(2);
-	transposePermutation.push_back(1);
-	if (numChannels > 1) {
-		transposePermutation.push_back(3);
-	}
-	mex::MxNumeric<PixelType> pixelBuffer = pixelArray.permute(transposePermutation);
 	Imf::FrameBuffer frameBuffer;
 	for (int iterChannel = 0; iterChannel < numChannels; ++iterChannel) {
 		m_header.channels().insert(channelNames[iterChannel].c_str(),
 								Imf::Channel(ImfPixelType<PixelType>().get_pixelType()));
+		PixelType* pixelBuffer = &pixelArray[iterChannel * width * height];
 		frameBuffer.insert(channelNames[iterChannel].c_str(),
 							Imf::Slice(ImfPixelType<PixelType>().get_pixelType(),
-									(char *) &pixelBuffer[
-									              width * height * iterChannel],
-									sizeof(PixelType) * 1,
-									sizeof(PixelType) * width));
+									(char *) pixelBuffer,
+									sizeof(PixelType) * height,
+									sizeof(PixelType) * 1));
 	}
 
 	Imf::OutputFile outFile(m_fileName.c_str(), m_header);
 	outFile.setFrameBuffer(frameBuffer);
 	outFile.writePixels(height);
-	pixelBuffer.destroy();
 	m_writtenFile = true;
 }
 
