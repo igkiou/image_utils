@@ -36,12 +36,16 @@ public:
 	mex::MxArray readData(const mex::MxNumeric<bool>& doSubtractDarkFrame,
 						const mex::MxString& dcrawFlags);
 
+	mex::MxArray getCFAInformation();
+
 	~RawInputFile() override {	}
 
 private:
 	void parseDcrawFlags(const std::string& dcrawFlags);
+	void unpackFile();
 
 	std::string m_fileName;
+	bool m_unpackedFile;
 	LibRawExtension m_rawProcessor;
 };
 

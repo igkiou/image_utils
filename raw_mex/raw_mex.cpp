@@ -28,6 +28,7 @@ mex::MxNumeric<bool> isRawFile(const mex::MxString& fileName) {
  */
 RawInputFile::RawInputFile(const mex::MxString& fileName):
 						m_fileName(fileName.get_string()),
+						m_unpackedFile(false),
 						m_rawProcessor() {
 	int errorCode = m_rawProcessor.open_file(m_fileName.c_str());
 	mexAssert(errorCode == LIBRAW_SUCCESS);
@@ -85,8 +86,8 @@ mex::MxArray RawInputFile::readData(const mex::MxString& dcrawFlags) {
 mex::MxArray RawInputFile::readData(const mex::MxNumeric<bool>& doSubtractDarkFrame,
 									const mex::MxString& dcrawFlags) {
 
-	int errorCode = m_rawProcessor.unpack();
-	mexAssert(errorCode == LIBRAW_SUCCESS);
+	unpackFile();
+	int errorCode;
 
 	if (dcrawFlags.get_string().empty()) {
 		errorCode = m_rawProcessor.raw2image();
@@ -143,6 +144,34 @@ mex::MxArray RawInputFile::readData(const mex::MxNumeric<bool>& doSubtractDarkFr
 
 		return mex::MxArray(pixelArray.get_array());
 	}
+}
+
+mex::MxArray RawInputFile::getCFAInformation() {
+
+//	unpackFile();
+	int width = getWidth();
+	int height = getHeight();
+	mex::MxNumeric<unsigned char> filterArray(height, width);
+
+	unsigned char* filterBuffer = filterArray.getData();
+	for (int pixelWidth = 0; pixelWidth < width; ++pixelWidth) {
+		for (int pixelHeight = 0; pixelHeight < height; ++pixelHeight) {
+			int arrayIndex = pixelWidth * height + pixelHeight;
+			filterBuffer[arrayIndex] = static_cast<unsigned char>(
+								m_rawProcessor.COLOR(pixelHeight, pixelWidth));
+		}
+	}
+
+    bool isRgb = (m_rawProcessor.imgdata.idata.colors != 4);
+    mex::MxString filterNames((isRgb)?("RGBG"):("GCMY"));
+
+    std::vector<std::string> arrayNames;
+    arrayNames.push_back("filterArray");
+    arrayNames.push_back("filterNames");
+    std::vector<mex::MxArray*> arrayVars;
+    arrayVars.push_back(&filterArray);
+    arrayVars.push_back(&filterNames);
+    return mex::MxArray(mex::MxStruct(arrayNames, arrayVars).get_array());
 }
 
 void RawInputFile::parseDcrawFlags(const std::string& dcrawFlags) {
@@ -399,15 +428,24 @@ void RawInputFile::parseDcrawFlags(const std::string& dcrawFlags) {
 	}
 }
 
+void RawInputFile::unpackFile() {
+
+	if (!m_unpackedFile) {
+		int errorCode = m_rawProcessor.unpack();
+		mexAssert(errorCode == LIBRAW_SUCCESS);
+		m_unpackedFile = true;
+	}
+}
+
 /*
  * TODO: Add attribute getting.
  */
 mex::MxArray RawInputFile::getAttribute(const mex::MxString& attributeName) const {
-	return mex::MxArray();
+	return mex::MxNumeric<bool>(false);
 }
 
 mex::MxArray RawInputFile::getAttribute() const {
-	return mex::MxArray();
+	return mex::MxNumeric<bool>(false);
 }
 
 }	/* namespace raw */

@@ -498,9 +498,9 @@ mex::MxArray ExrInputFile::getAttribute() const {
 	std::vector<std::string> nameVec;
 	std::vector<mex::MxArray*> arrayVec;
 	for (Imf::Header::ConstIterator iter = m_file.header().begin(),
-		end = m_file.header().end();
-		iter != end;
-		++iter) {
+			end = m_file.header().end();
+			iter != end;
+			++iter) {
 		nameVec.push_back(std::string(iter.name()));
 		mex::MxArray* tempAttributeArray = new mex::MxArray(
 								getAttribute(mex::MxString(iter.name()))
