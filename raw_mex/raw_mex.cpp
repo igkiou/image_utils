@@ -163,7 +163,7 @@ mex::MxArray RawInputFile::getCFAInformation() {
 	}
 
     bool isRgb = (m_rawProcessor.imgdata.idata.colors != 4);
-    mex::MxString filterNames((isRgb)?("RGBG"):("GCMY"));
+    mex::MxString filterNames(m_rawProcessor.imgdata.idata.cdesc);
 
     std::vector<std::string> arrayNames;
     arrayNames.push_back("filterArray");
