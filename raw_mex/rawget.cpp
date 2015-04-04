@@ -18,7 +18,7 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[]) {
 	}
 
 	/* Check number of output arguments */
-	if (nlhs > 1) {
+	if (nlhs > 2) {
 		mexErrMsgTxt("Too many output arguments.");
 	}
 
@@ -28,5 +28,8 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[]) {
 		plhs[0] = file.getAttribute(attributeName).get_array();
 	} else {
 		plhs[0] = file.getAttribute().get_array();
+	}
+	if (nlhs >= 2) {
+		plhs[1] = file.getCFAInformation().get_array();
 	}
 }

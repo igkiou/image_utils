@@ -9,6 +9,7 @@
 #include <cstdlib>
 #include <cstring>
 #include <cctype>
+#include <ctime>
 #include <string>
 #include "raw_mex.h"
 
@@ -439,13 +440,86 @@ void RawInputFile::unpackFile() {
 
 /*
  * TODO: Add attribute getting.
+ * --sizes:
+ * iwidth - width
+ * iheight - height
+ * --color:
+ * complicated, lots of potentially useful info, but varies with camera
  */
+
 mex::MxArray RawInputFile::getAttribute(const mex::MxString& attributeName) const {
-	return mex::MxNumeric<bool>(false);
+	if (!attributeName.get_string().compare("cameraManufacturer")) {
+		return mex::MxArray(mex::MxString(m_rawProcessor.imgdata.idata.make).get_array());
+	} else if (!attributeName.get_string().compare("cameraModel")) {
+		return mex::MxArray(mex::MxString(m_rawProcessor.imgdata.idata.model).get_array());
+	} else if (!attributeName.get_string().compare("dngVersion")) {
+		return mex::MxArray(mex::MxNumeric<unsigned int>(m_rawProcessor.imgdata.idata.dng_version).get_array());
+	} else if (!attributeName.get_string().compare("iso")) {
+		return mex::MxArray(mex::MxNumeric<float>(m_rawProcessor.imgdata.other.iso_speed).get_array());
+	} else if (!attributeName.get_string().compare("shutter")) {
+		return mex::MxArray(mex::MxNumeric<float>(m_rawProcessor.imgdata.other.shutter).get_array());
+	} else if (!attributeName.get_string().compare("aperture")) {
+		return mex::MxArray(mex::MxNumeric<float>(m_rawProcessor.imgdata.other.aperture).get_array());
+	} else if (!attributeName.get_string().compare("focalLength")) {
+		return mex::MxArray(mex::MxNumeric<float>(m_rawProcessor.imgdata.other.focal_len).get_array());
+	} else if (!attributeName.get_string().compare("timestamp")) {
+		std::string timestampString(std::asctime(std::gmtime(
+				&(m_rawProcessor.imgdata.other.timestamp))));
+		if (!timestampString.empty()) {
+			timestampString.pop_back();
+		}
+		return mex::MxArray(mex::MxString(timestampString).get_array());
+	} else if (!attributeName.get_string().compare("shotOrder")) {
+		return mex::MxArray(mex::MxNumeric<unsigned int>(m_rawProcessor.imgdata.other.shot_order).get_array());
+	} else if (!attributeName.get_string().compare("gpsData")) {
+		return mex::MxArray(mex::MxNumeric<unsigned int>(m_rawProcessor.imgdata.other.gpsdata, 32, 1).get_array());
+	} else if (!attributeName.get_string().compare("imageDescription")) {
+		return mex::MxArray(mex::MxString(m_rawProcessor.imgdata.other.desc).get_array());
+	} else if (!attributeName.get_string().compare("owner")) {
+		return mex::MxArray(mex::MxString(m_rawProcessor.imgdata.other.artist).get_array());
+	} else {
+		mexAssertEx(0, "Unknown attribute type");
+		return mex::MxArray();
+	}
 }
 
 mex::MxArray RawInputFile::getAttribute() const {
-	return mex::MxNumeric<bool>(false);
+
+	std::vector<std::string> nameVec;
+	std::vector<mex::MxArray*> arrayVec;
+
+	nameVec.push_back(std::string("cameraManufacturer"));
+	arrayVec.push_back(new mex::MxArray(getAttribute(mex::MxString("cameraManufacturer")).get_array()));
+	nameVec.push_back(std::string("cameraModel"));
+	arrayVec.push_back(new mex::MxArray(getAttribute(mex::MxString("cameraModel")).get_array()));
+	nameVec.push_back(std::string("dngVersion"));
+	arrayVec.push_back(new mex::MxArray(getAttribute(mex::MxString("dngVersion")).get_array()));
+	nameVec.push_back(std::string("iso"));
+	arrayVec.push_back(new mex::MxArray(getAttribute(mex::MxString("iso")).get_array()));
+	nameVec.push_back(std::string("shutter"));
+	arrayVec.push_back(new mex::MxArray(getAttribute(mex::MxString("shutter")).get_array()));
+	nameVec.push_back(std::string("aperture"));
+	arrayVec.push_back(new mex::MxArray(getAttribute(mex::MxString("aperture")).get_array()));
+	nameVec.push_back(std::string("focalLength"));
+	arrayVec.push_back(new mex::MxArray(getAttribute(mex::MxString("focalLength")).get_array()));
+	nameVec.push_back(std::string("timestamp"));
+	arrayVec.push_back(new mex::MxArray(getAttribute(mex::MxString("timestamp")).get_array()));
+	nameVec.push_back(std::string("shotOrder"));
+	arrayVec.push_back(new mex::MxArray(getAttribute(mex::MxString("shotOrder")).get_array()));
+	nameVec.push_back(std::string("gpsData"));
+	arrayVec.push_back(new mex::MxArray(getAttribute(mex::MxString("gpsData")).get_array()));
+	nameVec.push_back(std::string("imageDescription"));
+	arrayVec.push_back(new mex::MxArray(getAttribute(mex::MxString("imageDescription")).get_array()));
+	nameVec.push_back(std::string("owner"));
+	arrayVec.push_back(new mex::MxArray(getAttribute(mex::MxString("owner")).get_array()));
+
+	mex::MxArray retArg(mex::MxStruct(nameVec, arrayVec).get_array());
+	for (int iter = 0, numAttributes = arrayVec.size();
+		iter < numAttributes;
+		++iter) {
+		delete arrayVec[iter];
+	}
+	return retArg;
 }
 
 }	/* namespace raw */
