@@ -154,8 +154,8 @@ mex::MxArray ExrInputFile::readData(const std::vector<mex::MxString>& channelNam
 	Imath::Box2i dw = m_file.header().dataWindow();
 	int numChannels = channelNames.size();
 	std::vector<int> dimensions;
-	dimensions.push_back(width);
 	dimensions.push_back(height);
+	dimensions.push_back(width);
 	if (numChannels > 1) {
 		dimensions.push_back(numChannels);
 	}
@@ -168,9 +168,9 @@ mex::MxArray ExrInputFile::readData(const std::vector<mex::MxString>& channelNam
 		PixelType* tempBuffer = &pixelBuffer[iter * width * height];
 		frameBuffer.insert(channelNames[iter].c_str(),
 						Imf::Slice(ImfPixelType<PixelType>().get_pixelType(),
-								(char *) (tempBuffer - dw.min.x - dw.min.y * width),
+								(char *) (tempBuffer - dw.min.x * height - dw.min.y * 1),
+								sizeof(*tempBuffer) * height,
 								sizeof(*tempBuffer) * 1,
-								sizeof(*tempBuffer) * width,
 								1,
 								1,
 								FLT_MAX));
@@ -179,15 +179,7 @@ mex::MxArray ExrInputFile::readData(const std::vector<mex::MxString>& channelNam
 	mexAssert(isComplete());
 	m_file.setFrameBuffer(frameBuffer);
 	m_file.readPixels(dw.min.y, dw.max.y);
-	std::vector<int> transposePermutation;
-	transposePermutation.push_back(2);
-	transposePermutation.push_back(1);
-	if (numChannels > 1) {
-		transposePermutation.push_back(3);
-	}
-	mex::MxArray retArg(pixelBuffer.permute(transposePermutation).get_array());
-	pixelBuffer.destroy();
-	return retArg;
+	return mex::MxArray(pixelBuffer.get_array());
 }
 
 namespace {
