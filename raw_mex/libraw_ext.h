@@ -25,11 +25,11 @@
 //
 //};
 
-class LibRawExtension : protected LibRaw {
+class DllDef LibRawExtension : public LibRaw {
 public:
-	explicit LibRawExtension(unsigned int flags = LIBRAW_OPTIONS_NONE);
-	int copy_processed(unsigned short* imgBuffer);
+	LibRawExtension(unsigned int flags = LIBRAW_OPTIONS_NONE);
+	int copy_processed(unsigned short* pixelBuffer);
 
 private:
-	int copy_processed_internal(unsigned short* imgBuffer);
+	void copy_processed_internal(unsigned short* pixelBuffer);
 };

@@ -44,16 +44,16 @@ public:
 	int getHeight() const override;
 	int getWidth() const override;
 	int getNumberOfChannels() const override;
+	mex::MxArray getAttribute(const mex::MxString& attributeName) const override;
+	mex::MxArray getAttribute() const override;
 	mex::MxArray readData() override;
+
 	mex::MxArray readDataRGB();
 	mex::MxArray readDataY();
 	mex::MxArray readData(const mex::MxString& channelName);
 	mex::MxArray readData(const std::vector<mex::MxString>& channelNames);
 
 	std::vector<mex::MxString> getChannelNames() const;
-
-	mex::MxArray getAttribute(const mex::MxString& attributeName) const override;
-	mex::MxArray getAttribute() const override;
 
 	/*
 	 * TODO: Should be made private.

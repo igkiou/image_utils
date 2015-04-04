@@ -11,8 +11,10 @@
 void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[]) {
 
 	/* Check number of input arguments */
-	if (nrhs != 1) {
-		mexErrMsgTxt("Exactly one input argument is required.");
+	if (nrhs > 3) {
+		mexErrMsgTxt("Three or fewer arguments are required.");
+	} else if (nrhs < 1) {
+		mexErrMsgTxt("At least one input argument is required.");
 	}
 
 	/* Check number of output arguments */
@@ -21,7 +23,25 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[]) {
 	}
 
 	raw::RawInputFile file(mex::MxString(const_cast<mxArray*>(prhs[0])));
-	plhs[0] = file.readData().get_array();
+	if ((nrhs == 2) && (!mex::MxArray(const_cast<mxArray*>(prhs[1])).isEmpty())) {
+		plhs[0] = file.readData(mex::MxNumeric<bool>(const_cast<mxArray*>(prhs[1]))).get_array();
+	} else if (nrhs == 3) {
+		if ((!mex::MxArray(const_cast<mxArray*>(prhs[1])).isEmpty()) &&
+				(!mex::MxArray(const_cast<mxArray*>(prhs[2])).isEmpty())) {
+			plhs[0] = file.readData(mex::MxNumeric<bool>(const_cast<mxArray*>(prhs[1])),
+									mex::MxString(const_cast<mxArray*>(prhs[2]))).get_array();
+		} else if ((!mex::MxArray(const_cast<mxArray*>(prhs[1])).isEmpty()) &&
+					(mex::MxArray(const_cast<mxArray*>(prhs[2])).isEmpty())) {
+			plhs[0] = file.readData(mex::MxNumeric<bool>(const_cast<mxArray*>(prhs[1]))).get_array();
+		} else if ((mex::MxArray(const_cast<mxArray*>(prhs[1])).isEmpty()) &&
+				(!mex::MxArray(const_cast<mxArray*>(prhs[2])).isEmpty())) {
+			plhs[0] = file.readData(mex::MxString(const_cast<mxArray*>(prhs[2]))).get_array();
+		} else {
+			plhs[0] = file.readData().get_array();
+		}
+	} else {
+		plhs[0] = file.readData().get_array();
+	}
 	if (nlhs >= 2) {
 		plhs[1] = file.getAttribute().get_array();
 	}

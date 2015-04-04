@@ -5,8 +5,10 @@
  *      Author: igkiou
  */
 
-#include "libraw.h"
 #include "libraw_ext.h"
+//#define LIBRAW_IO_REDEFINED
+//#include "internal/defines.h"
+//#include "internal/var_defines.h"
 
 #define EXCEPTION_HANDLER(e) do{                        \
     /* fprintf(stderr,"Exception %d caught\n",e);*/     \
@@ -38,11 +40,9 @@
   }while(0)
 
 
-explicit LibRawExtension::LibRawExtension(
-		unsigned int flags = LIBRAW_OPTIONS_NONE)
-		: LibRaw(flags) {}
+LibRawExtension::LibRawExtension(unsigned int flags) : LibRaw(flags) {}
 
-int LibRawExtension::copy_processed(unsigned short *imgBuffer) {
+int LibRawExtension::copy_processed(unsigned short* pixelBuffer) {
 	CHECK_ORDER_LOW(LIBRAW_PROGRESS_LOAD_RAW);
 
 	if(!imgdata.image) {
@@ -55,12 +55,52 @@ int LibRawExtension::copy_processed(unsigned short *imgBuffer) {
 			(int (*)[LIBRAW_HISTOGRAM_SIZE]) malloc(sizeof(*libraw_internal_data.output_data.histogram)*4);
 			merror(libraw_internal_data.output_data.histogram,"LibRaw::dcraw_ppm_tiff_writer()");
 		}
-		libraw_internal_data.internal_data.output = f;
-		copy_processed_internal(imgBuffer);
+		copy_processed_internal(pixelBuffer);
 		SET_PROC_FLAG(LIBRAW_PROGRESS_FLIP);
-		libraw_internal_data.internal_data.output = NULL;
 		return 0;
 	} catch (LibRaw_exceptions err) {
 		EXCEPTION_HANDLER(err);
+	}
+}
+
+void LibRawExtension::copy_processed_internal(unsigned short* pixelBuffer) {
+
+	int perc = imgdata.sizes.width * imgdata.sizes.height * imgdata.params.auto_bright_thr;
+	if (libraw_internal_data.internal_output_params.fuji_width) {
+		perc /= 2;
+	}
+
+	int t_white = 0x2000;
+	if (!((imgdata.params.highlight & ~2) || imgdata.params.no_auto_bright)) {
+		for (int t_white = 0, c = 0; c < imgdata.idata.colors; ++c) {
+			int val = 0x2000;
+			for (int total = 0; --val > 32;) {
+				if ((total += libraw_internal_data.output_data.histogram[c][val]) > perc) {
+					break;
+				}
+			}
+			if (t_white < val) {
+				t_white = val;
+			}
+		}
+	}
+	gamma_curve(imgdata.params.gamm[0], imgdata.params.gamm[1], 2, (t_white << 3) / imgdata.params.bright);
+	imgdata.sizes.iheight = imgdata.sizes.height;
+	imgdata.sizes.iwidth = imgdata.sizes.width;
+//	if (imgdata.sizes.flip & 4) {
+//		SWAP(imgdata.sizes.height, imgdata.sizes.width);
+//	}
+
+	int width = imgdata.sizes.width;
+	int height = imgdata.sizes.height;
+	int colors = imgdata.idata.colors;
+	for (int pixelChannel = 0; pixelChannel < colors; ++pixelChannel) {
+		for (int pixelWidth = 0; pixelWidth < width; ++pixelWidth) {
+			for (int pixelHeight = 0; pixelHeight < height; ++pixelHeight) {
+				int arrayIndex = pixelChannel * width * height + pixelWidth * height + pixelHeight;
+				int rawIndex = pixelHeight * width + pixelWidth;
+				pixelBuffer[arrayIndex] = imgdata.color.curve[imgdata.image[rawIndex][pixelChannel]];
+			}
+		}
 	}
 }

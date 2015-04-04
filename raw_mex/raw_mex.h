@@ -10,12 +10,12 @@
 
 #include <string>
 
-#include "libraw.h"
+#include "libraw_ext.h"
 #include "fileformat_mex.h"
 
 namespace raw {
 
-typedef float FloatUsed;
+using PixelType = unsigned short;
 
 mex::MxNumeric<bool> isRawFile(const mex::MxString& fileName);
 
@@ -23,22 +23,26 @@ class RawInputFile : public fileformat::InputFileInterface {
 public:
 	explicit RawInputFile(const mex::MxString& fileName);
 
-	mex::MxString getFileName() const;
-	mex::MxNumeric<bool> isValidFile() const;
-	int getHeight() const;
-	int getWidth() const;
-	int getNumberOfChannels() const;
-	mex::MxArray getAttribute(const mex::MxString& attributeName) const;
-	mex::MxArray getAttribute() const;
-	mex::MxArray readData();
+	mex::MxString getFileName() const override;
+	mex::MxNumeric<bool> isValidFile() const override;
+	int getHeight() const override;
+	int getWidth() const override;
+	int getNumberOfChannels() const override;
+	mex::MxArray getAttribute(const mex::MxString& attributeName) const override;
+	mex::MxArray getAttribute() const override;
+	mex::MxArray readData() override;
+	mex::MxArray readData(const mex::MxNumeric<bool>& doSubtractDarkFrame);
+	mex::MxArray readData(const mex::MxString& dcrawFlags);
 	mex::MxArray readData(const mex::MxNumeric<bool>& doSubtractDarkFrame,
 						const mex::MxString& dcrawFlags);
 
-	~RawInputFile() {	}
+	~RawInputFile() override {	}
 
 private:
+	void parseDcrawFlags(const std::string& dcrawFlags);
+
 	std::string m_fileName;
-	LibRaw m_rawProcessor;
+	LibRawExtension m_rawProcessor;
 };
 
 }  // namespace raw
