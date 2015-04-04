@@ -24,13 +24,7 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[]) {
 
 	exr::ExrInputFile file(mex::MxString(const_cast<mxArray*>(prhs[0])));
 	if ((nrhs >= 2) && (!mex::MxArray(const_cast<mxArray*>(prhs[1])).isEmpty())) {
-		mex::MxCell channelNameArray(const_cast<mxArray*>(prhs[1]));
-		std::vector<mex::MxString> channelNames;
-		for (int iter = 0, end = channelNameArray.getNumberOfElements();
-			iter < end;
-			++iter) {
-			channelNames.push_back(mex::MxString(channelNameArray[iter]));
-		}
+		mex::MxCell channelNames(const_cast<mxArray*>(prhs[1]));
 		plhs[0] = file.readData(channelNames).get_array();
 	} else {
 		/*

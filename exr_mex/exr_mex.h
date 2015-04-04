@@ -26,8 +26,6 @@ namespace exr {
  * TODO: Provide better exposure of registered attributes and their types to
  * user.
  * TODO: Provide set attribute variant that allows specifying type of attribute.
- * TODO: Replace readData(const std::vector<mex::MxString>& channelNames) with
- * readData(mex::MxCell& channelNames). Similar for getChannelNames.
  */
 
 using PixelType = float;
@@ -51,9 +49,7 @@ public:
 	mex::MxArray readDataRGB();
 	mex::MxArray readDataY();
 	mex::MxArray readData(const mex::MxString& channelName);
-	mex::MxArray readData(const std::vector<mex::MxString>& channelNames);
-
-	std::vector<mex::MxString> getChannelNames() const;
+	mex::MxArray readData(const mex::MxCell& channelNames);
 
 	/*
 	 * TODO: Should be made private.
@@ -63,7 +59,9 @@ public:
 	~ExrInputFile() override {	}
 
 private:
+	std::vector<std::string> getChannelNames() const;
 	bool isComplete() const;
+	mex::MxArray readData(const std::vector<std::string>& channelNameVector);
 
 
 	Imf::InputFile m_file;
@@ -85,12 +83,15 @@ public:
 	void writeDataRGB(const mex::MxArray& data);
 	void writeDataY(const mex::MxArray& data);
 	void writeData(const mex::MxString& channelName, const mex::MxArray& data);
-	void writeData(const std::vector<mex::MxString>& channelNames,
+	void writeData(const mex::MxCell& channelNames,
 				const mex::MxArray& data);
 
 	~ExrOutputFile() override {	}
 
 private:
+	void writeData(const std::vector<std::string>& channelNameVector,
+				const mex::MxArray& data);
+
 	Imf::Header m_header;
 	std::string m_fileName;
 	bool m_writtenFile;
