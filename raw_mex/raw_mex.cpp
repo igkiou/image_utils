@@ -61,40 +61,35 @@ int RawInputFile::getNumberOfChannels() const {
 }
 
 mex::MxArray RawInputFile::readData() {
-	mex::MxNumeric<bool> doSubtractDarkFrame(false);
-	mex::MxString dcrawFlags("");
-	mex::MxArray retArg(readData(doSubtractDarkFrame, dcrawFlags));
-	doSubtractDarkFrame.destroy();
-	dcrawFlags.destroy();
-	return retArg;
+	return readData(false, "");
 }
 
 mex::MxArray RawInputFile::readData(
 							const mex::MxNumeric<bool>& doSubtractDarkFrame) {
-	mex::MxString dcrawFlags("");
-	mex::MxArray retArg(readData(doSubtractDarkFrame, dcrawFlags));
-	dcrawFlags.destroy();
-	return retArg;
+	return readData(doSubtractDarkFrame[0], "");
 }
 
 mex::MxArray RawInputFile::readData(const mex::MxString& dcrawFlags) {
-	mex::MxNumeric<bool> doSubtractDarkFrame(false);
-	mex::MxArray retArg(readData(doSubtractDarkFrame, dcrawFlags));
-	doSubtractDarkFrame.destroy();
-	return retArg;
+	return readData(false, dcrawFlags.get_string());
 }
 
-mex::MxArray RawInputFile::readData(const mex::MxNumeric<bool>& doSubtractDarkFrame,
-									const mex::MxString& dcrawFlags) {
+mex::MxArray RawInputFile::readData(
+								const mex::MxNumeric<bool>& doSubtractDarkFrame,
+								const mex::MxString& dcrawFlags) {
+	return readData(doSubtractDarkFrame[0], dcrawFlags.get_string());
+}
+
+mex::MxArray RawInputFile::readData(bool doSubtractDarkFrame,
+										const std::string& dcrawFlags) {
 
 	unpackFile();
 	int errorCode;
 
-	if (dcrawFlags.get_string().empty()) {
+	if (dcrawFlags.empty()) {
 		errorCode = m_rawProcessor.raw2image();
 		mexAssert(errorCode == LIBRAW_SUCCESS);
 
-		if (doSubtractDarkFrame[0]) {
+		if (doSubtractDarkFrame) {
 			errorCode = m_rawProcessor.subtract_black();
 			mexAssert(errorCode == LIBRAW_SUCCESS);
 		}
@@ -115,7 +110,7 @@ mex::MxArray RawInputFile::readData(const mex::MxNumeric<bool>& doSubtractDarkFr
 		return mex::MxArray(pixelArray.get_array());
 	} else {
 
-		parseDcrawFlags(dcrawFlags.get_string());
+		parseDcrawFlags(dcrawFlags);
 
 		/*
 		 * raw_mex only supports 16-bit formats and processes data as if it was
@@ -163,7 +158,6 @@ mex::MxArray RawInputFile::getCFAInformation() {
 		}
 	}
 
-    bool isRgb = (m_rawProcessor.imgdata.idata.colors != 4);
     mex::MxString filterNames(m_rawProcessor.imgdata.idata.cdesc);
 
     std::vector<std::string> arrayNames;
@@ -185,16 +179,14 @@ void RawInputFile::parseDcrawFlags(const std::string& dcrawFlags) {
 		currentPos = ++std::find(currentPos, dcrawFlags.end(), ' ');
 	}
 
-	int i,arg,c,ret;
-	char opm,opt,*cp,*sp;
-	int use_bigfile=0, use_timing=0;
-	void *iobuffer=0;
-
-	for (arg = 1; arg < argc; ++arg) {
+	const char* sp = "cnbrkStqmHABCgU";
+	for (int arg = 1; arg < argc; ++arg) {
 		const char *optstr = argv[arg];
-		opt = argv[arg][1];
-		if ((cp = std::strchr(sp=(char*)"cnbrkStqmHABCgU", opt))!=0) {
-			for (i=0; i < "111411111144221"[cp-sp]-'0'; i++) {
+		const char opm = argv[arg][0];
+		const char opt = argv[arg][1];
+		const char *cp = std::strchr(sp, opt);
+		if (cp != nullptr) {
+			for (int i = 0; i < "111411111144221"[cp-sp]-'0'; ++i) {
 				if ((arg + i >= argc) || (!std::isdigit(argv[arg+i][0]) && !optstr[2])) {
 					std::fprintf(stderr,"Non-numeric argument to \"-%c\"\n", opt);
 					mexAssertEx(0, "Unknown attribute type");
@@ -244,7 +236,7 @@ void RawInputFile::parseDcrawFlags(const std::string& dcrawFlags) {
 				break;
 			}
 			case 'r': {
-				for(c=0;c<4;c++) {
+				for(int c = 0; c < 4; ++c) {
 					mexAssertEx(arg < argc - 1, "Unknown attribute type");
 					m_rawProcessor.imgdata.params.user_mul[c] = (float)std::atof(argv[++arg]);
 				}
@@ -343,14 +335,14 @@ void RawInputFile::parseDcrawFlags(const std::string& dcrawFlags) {
 				break;
 			}
 			case 'A': {
-				for(c=0; c<4;c++) {
+				for(int c = 0; c < 4; ++c) {
 					mexAssertEx(arg < argc - 1, "Unknown attribute type");
 					m_rawProcessor.imgdata.params.greybox[c] = std::atoi(argv[++arg]);
 				}
 				break;
 			}
 			case 'B': {
-				for(c=0; c<4;c++) {
+				for(int c = 0; c < 4; ++c) {
 					mexAssertEx(arg < argc - 1, "Unknown attribute type");
 					m_rawProcessor.imgdata.params.cropbox[c] = std::atoi(argv[++arg]);
 				}
@@ -388,10 +380,6 @@ void RawInputFile::parseDcrawFlags(const std::string& dcrawFlags) {
 				m_rawProcessor.imgdata.params.no_auto_bright = 1;
 				break;
 			}
-			case 'F': {
-				use_bigfile=1;
-				break;
-			}
 			case 'd': {
 				if(!strcmp(optstr,"-dcbi")) {
 					mexAssertEx(arg < argc - 1, "Unknown attribute type");
@@ -409,7 +397,7 @@ void RawInputFile::parseDcrawFlags(const std::string& dcrawFlags) {
 				} else if(!strcmp(optstr,"-dsrawrgb2")) {
 					m_rawProcessor.imgdata.params.sraw_ycc = 2;
 				} else if(!strcmp(optstr,"-dbnd")) {
-					for(c=0; c<4; c++) {
+					for(int c = 0; c < 4; ++c) {
 						mexAssertEx(arg < argc - 1, "Unknown attribute type");
 						m_rawProcessor.imgdata.params.wf_deband_treshold[c] = (float)std::atof(argv[++arg]);
 						m_rawProcessor.imgdata.params.wf_debanding = 1;
@@ -446,41 +434,8 @@ void RawInputFile::unpackFile() {
  * --color:
  * complicated, lots of potentially useful info, but varies with camera
  */
-
 mex::MxArray RawInputFile::getAttribute(const mex::MxString& attributeName) const {
-	if (!attributeName.get_string().compare("cameraManufacturer")) {
-		return mex::MxArray(mex::MxString(m_rawProcessor.imgdata.idata.make).get_array());
-	} else if (!attributeName.get_string().compare("cameraModel")) {
-		return mex::MxArray(mex::MxString(m_rawProcessor.imgdata.idata.model).get_array());
-	} else if (!attributeName.get_string().compare("dngVersion")) {
-		return mex::MxArray(mex::MxNumeric<unsigned int>(m_rawProcessor.imgdata.idata.dng_version).get_array());
-	} else if (!attributeName.get_string().compare("iso")) {
-		return mex::MxArray(mex::MxNumeric<float>(m_rawProcessor.imgdata.other.iso_speed).get_array());
-	} else if (!attributeName.get_string().compare("shutter")) {
-		return mex::MxArray(mex::MxNumeric<float>(m_rawProcessor.imgdata.other.shutter).get_array());
-	} else if (!attributeName.get_string().compare("aperture")) {
-		return mex::MxArray(mex::MxNumeric<float>(m_rawProcessor.imgdata.other.aperture).get_array());
-	} else if (!attributeName.get_string().compare("focalLength")) {
-		return mex::MxArray(mex::MxNumeric<float>(m_rawProcessor.imgdata.other.focal_len).get_array());
-	} else if (!attributeName.get_string().compare("timestamp")) {
-		std::string timestampString(std::asctime(std::gmtime(
-				&(m_rawProcessor.imgdata.other.timestamp))));
-		if (!timestampString.empty()) {
-			timestampString.pop_back();
-		}
-		return mex::MxArray(mex::MxString(timestampString).get_array());
-	} else if (!attributeName.get_string().compare("shotOrder")) {
-		return mex::MxArray(mex::MxNumeric<unsigned int>(m_rawProcessor.imgdata.other.shot_order).get_array());
-	} else if (!attributeName.get_string().compare("gpsData")) {
-		return mex::MxArray(mex::MxNumeric<unsigned int>(m_rawProcessor.imgdata.other.gpsdata, 32, 1).get_array());
-	} else if (!attributeName.get_string().compare("imageDescription")) {
-		return mex::MxArray(mex::MxString(m_rawProcessor.imgdata.other.desc).get_array());
-	} else if (!attributeName.get_string().compare("owner")) {
-		return mex::MxArray(mex::MxString(m_rawProcessor.imgdata.other.artist).get_array());
-	} else {
-		mexAssertEx(0, "Unknown attribute type");
-		return mex::MxArray();
-	}
+	return getAttribute(attributeName.get_string());
 }
 
 mex::MxArray RawInputFile::getAttribute() const {
@@ -489,29 +444,29 @@ mex::MxArray RawInputFile::getAttribute() const {
 	std::vector<mex::MxArray*> arrayVec;
 
 	nameVec.push_back(std::string("cameraManufacturer"));
-	arrayVec.push_back(new mex::MxArray(getAttribute(mex::MxString("cameraManufacturer")).get_array()));
+	arrayVec.push_back(new mex::MxArray(getAttribute(*(--(nameVec.end()))).get_array()));
 	nameVec.push_back(std::string("cameraModel"));
-	arrayVec.push_back(new mex::MxArray(getAttribute(mex::MxString("cameraModel")).get_array()));
+	arrayVec.push_back(new mex::MxArray(getAttribute(*(--(nameVec.end()))).get_array()));
 	nameVec.push_back(std::string("dngVersion"));
-	arrayVec.push_back(new mex::MxArray(getAttribute(mex::MxString("dngVersion")).get_array()));
+	arrayVec.push_back(new mex::MxArray(getAttribute(*(--(nameVec.end()))).get_array()));
 	nameVec.push_back(std::string("iso"));
-	arrayVec.push_back(new mex::MxArray(getAttribute(mex::MxString("iso")).get_array()));
+	arrayVec.push_back(new mex::MxArray(getAttribute(*(--(nameVec.end()))).get_array()));
 	nameVec.push_back(std::string("shutter"));
-	arrayVec.push_back(new mex::MxArray(getAttribute(mex::MxString("shutter")).get_array()));
+	arrayVec.push_back(new mex::MxArray(getAttribute(*(--(nameVec.end()))).get_array()));
 	nameVec.push_back(std::string("aperture"));
-	arrayVec.push_back(new mex::MxArray(getAttribute(mex::MxString("aperture")).get_array()));
+	arrayVec.push_back(new mex::MxArray(getAttribute(*(--(nameVec.end()))).get_array()));
 	nameVec.push_back(std::string("focalLength"));
-	arrayVec.push_back(new mex::MxArray(getAttribute(mex::MxString("focalLength")).get_array()));
+	arrayVec.push_back(new mex::MxArray(getAttribute(*(--(nameVec.end()))).get_array()));
 	nameVec.push_back(std::string("timestamp"));
-	arrayVec.push_back(new mex::MxArray(getAttribute(mex::MxString("timestamp")).get_array()));
+	arrayVec.push_back(new mex::MxArray(getAttribute(*(--(nameVec.end()))).get_array()));
 	nameVec.push_back(std::string("shotOrder"));
-	arrayVec.push_back(new mex::MxArray(getAttribute(mex::MxString("shotOrder")).get_array()));
+	arrayVec.push_back(new mex::MxArray(getAttribute(*(--(nameVec.end()))).get_array()));
 	nameVec.push_back(std::string("gpsData"));
-	arrayVec.push_back(new mex::MxArray(getAttribute(mex::MxString("gpsData")).get_array()));
+	arrayVec.push_back(new mex::MxArray(getAttribute(*(--(nameVec.end()))).get_array()));
 	nameVec.push_back(std::string("imageDescription"));
-	arrayVec.push_back(new mex::MxArray(getAttribute(mex::MxString("imageDescription")).get_array()));
+	arrayVec.push_back(new mex::MxArray(getAttribute(*(--(nameVec.end()))).get_array()));
 	nameVec.push_back(std::string("owner"));
-	arrayVec.push_back(new mex::MxArray(getAttribute(mex::MxString("owner")).get_array()));
+	arrayVec.push_back(new mex::MxArray(getAttribute(*(--(nameVec.end()))).get_array()));
 
 	mex::MxArray retArg(mex::MxStruct(nameVec, arrayVec).get_array());
 	for (int iter = 0, numAttributes = arrayVec.size();
@@ -520,6 +475,42 @@ mex::MxArray RawInputFile::getAttribute() const {
 		delete arrayVec[iter];
 	}
 	return retArg;
+}
+
+mex::MxArray RawInputFile::getAttribute(const std::string& attributeName) const {
+	if (!attributeName.compare("cameraManufacturer")) {
+		return mex::MxArray(mex::MxString(m_rawProcessor.imgdata.idata.make).get_array());
+	} else if (!attributeName.compare("cameraModel")) {
+		return mex::MxArray(mex::MxString(m_rawProcessor.imgdata.idata.model).get_array());
+	} else if (!attributeName.compare("dngVersion")) {
+		return mex::MxArray(mex::MxNumeric<unsigned int>(m_rawProcessor.imgdata.idata.dng_version).get_array());
+	} else if (!attributeName.compare("iso")) {
+		return mex::MxArray(mex::MxNumeric<float>(m_rawProcessor.imgdata.other.iso_speed).get_array());
+	} else if (!attributeName.compare("shutter")) {
+		return mex::MxArray(mex::MxNumeric<float>(m_rawProcessor.imgdata.other.shutter).get_array());
+	} else if (!attributeName.compare("aperture")) {
+		return mex::MxArray(mex::MxNumeric<float>(m_rawProcessor.imgdata.other.aperture).get_array());
+	} else if (!attributeName.compare("focalLength")) {
+		return mex::MxArray(mex::MxNumeric<float>(m_rawProcessor.imgdata.other.focal_len).get_array());
+	} else if (!attributeName.compare("timestamp")) {
+		std::string timestampString(std::asctime(std::gmtime(
+								&(m_rawProcessor.imgdata.other.timestamp))));
+		if (!timestampString.empty()) {
+			timestampString.pop_back();
+		}
+		return mex::MxArray(mex::MxString(timestampString).get_array());
+	} else if (!attributeName.compare("shotOrder")) {
+		return mex::MxArray(mex::MxNumeric<unsigned int>(m_rawProcessor.imgdata.other.shot_order).get_array());
+	} else if (!attributeName.compare("gpsData")) {
+		return mex::MxArray(mex::MxNumeric<unsigned int>(m_rawProcessor.imgdata.other.gpsdata, 32, 1).get_array());
+	} else if (!attributeName.compare("imageDescription")) {
+		return mex::MxArray(mex::MxString(m_rawProcessor.imgdata.other.desc).get_array());
+	} else if (!attributeName.compare("owner")) {
+		return mex::MxArray(mex::MxString(m_rawProcessor.imgdata.other.artist).get_array());
+	} else {
+		mexAssertEx(0, "Unknown attribute type");
+		return mex::MxArray();
+	}
 }
 
 }	/* namespace raw */

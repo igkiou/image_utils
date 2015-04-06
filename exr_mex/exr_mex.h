@@ -62,7 +62,7 @@ private:
 	std::vector<std::string> getChannelNames() const;
 	bool isComplete() const;
 	mex::MxArray readData(const std::vector<std::string>& channelNameVector);
-
+	mex::MxArray getAttribute(const std::string& attributeName) const;
 
 	Imf::InputFile m_file;
 };
@@ -91,6 +91,8 @@ public:
 private:
 	void writeData(const std::vector<std::string>& channelNameVector,
 				const mex::MxArray& data);
+	void setAttribute(const std::string& attributeName,
+					const mex::MxArray& attribute);
 
 	Imf::Header m_header;
 	std::string m_fileName;

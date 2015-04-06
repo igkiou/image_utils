@@ -41,6 +41,9 @@ public:
 	~RawInputFile() override {	}
 
 private:
+	mex::MxArray readData(bool doSubtractDarkFrame,
+						const std::string& dcrawFlags);
+	mex::MxArray getAttribute(const std::string& attributeName) const;
 	void parseDcrawFlags(const std::string& dcrawFlags);
 	void unpackFile();
 

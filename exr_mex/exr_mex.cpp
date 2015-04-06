@@ -424,6 +424,33 @@ mex::MxCell toMxArray(
 } /* namespace */
 
 mex::MxArray ExrInputFile::getAttribute(const mex::MxString& attributeName) const {
+	return getAttribute(attributeName.get_string());
+}
+
+mex::MxArray ExrInputFile::getAttribute() const {
+
+	std::vector<std::string> nameVec;
+	std::vector<mex::MxArray*> arrayVec;
+	for (Imf::Header::ConstIterator iter = m_file.header().begin(),
+			end = m_file.header().end();
+			iter != end;
+			++iter) {
+		nameVec.push_back(std::string(iter.name()));
+		mex::MxArray* tempAttributeArray = new mex::MxArray(
+								getAttribute(std::string(iter.name()))
+								.get_array());
+		arrayVec.push_back(tempAttributeArray);
+	}
+	mex::MxArray retArg(mex::MxStruct(nameVec, arrayVec).get_array());
+	for (int iter = 0, numAttributes = arrayVec.size();
+		iter < numAttributes;
+		++iter) {
+		delete arrayVec[iter];
+	}
+	return retArg;
+}
+
+mex::MxArray ExrInputFile::getAttribute(const std::string& attributeName) const {
 	const Imf::Attribute& attribute = m_file.header()[attributeName.c_str()];
 	const EExrAttributeType type = attributeTypeNameMap.find(std::string(attribute.typeName()));
 	switch(type) {
@@ -507,29 +534,6 @@ mex::MxArray ExrInputFile::getAttribute(const mex::MxString& attributeName) cons
 			return mex::MxArray();
 		}
 	}
-}
-
-mex::MxArray ExrInputFile::getAttribute() const {
-
-	std::vector<std::string> nameVec;
-	std::vector<mex::MxArray*> arrayVec;
-	for (Imf::Header::ConstIterator iter = m_file.header().begin(),
-			end = m_file.header().end();
-			iter != end;
-			++iter) {
-		nameVec.push_back(std::string(iter.name()));
-		mex::MxArray* tempAttributeArray = new mex::MxArray(
-								getAttribute(mex::MxString(iter.name()))
-								.get_array());
-		arrayVec.push_back(tempAttributeArray);
-	}
-	mex::MxArray retArg(mex::MxStruct(nameVec, arrayVec).get_array());
-	for (int iter = 0, numAttributes = arrayVec.size();
-		iter < numAttributes;
-		++iter) {
-		delete arrayVec[iter];
-	}
-	return retArg;
 }
 
 /*
@@ -825,13 +829,29 @@ const mex::ConstMap<std::string, EExrAttributeType> registeredAttributeNameAttri
 	(std::string("isoSpeed"),			EExrAttributeType::EFloat)
 	(std::string("envmap"),				EExrAttributeType::EEnvmap);
 
+
 void ExrOutputFile::setAttribute(const mex::MxString& attributeName,
+										const mex::MxArray& attribute) {
+	setAttribute(attributeName.get_string(), attribute);
+}
+
+void ExrOutputFile::setAttribute(const mex::MxStruct& attributes) {
+
+	for (int iter = 0, numFields = attributes.getNumberOfFields();
+		iter < numFields;
+		++iter) {
+		setAttribute(attributes.getFieldName(iter),
+					mex::MxArray(attributes[iter]));
+	}
+}
+
+void ExrOutputFile::setAttribute(const std::string& attributeName,
 								const mex::MxArray& attribute) {
 
 	std::map<std::string, EExrAttributeType>::const_iterator iteratorToType =
 											registeredAttributeNameAttributeTypeMap.
 											get_map().
-											find(attributeName.get_string());
+											find(attributeName);
 	const EExrAttributeType type(
 				(iteratorToType != registeredAttributeNameAttributeTypeMap.get_map().end())
 				?(iteratorToType->second)
@@ -959,16 +979,6 @@ void ExrOutputFile::setAttribute(const mex::MxString& attributeName,
 			mexAssertEx(0, "Unknown attribute type");
 			break;
 		}
-	}
-}
-
-void ExrOutputFile::setAttribute(const mex::MxStruct& attributes) {
-
-	for (int iter = 0, numFields = attributes.getNumberOfFields();
-		iter < numFields;
-		++iter) {
-		setAttribute(mex::MxString(attributes.getFieldName(iter)),
-					mex::MxArray(attributes[iter]));
 	}
 }
 

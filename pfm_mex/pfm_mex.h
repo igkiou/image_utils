@@ -10,7 +10,6 @@
 
 #include <fstream>
 #include <string>
-#include <vector>
 
 #include "fileformat_mex.h"
 
@@ -90,6 +89,8 @@ public:
 	~PfmInputFile() override {	}
 
 private:
+	mex::MxArray getAttribute(const std::string& attributeName) const;
+
 	std::string m_fileName;
 	std::ifstream m_file;
 	PfmHeader m_header;
@@ -112,6 +113,9 @@ public:
 	~PfmOutputFile() override {	}
 
 private:
+	void setAttribute(const std::string& attributeName,
+					const mex::MxArray& attribute);
+
 	std::string m_fileName;
 	std::ofstream m_file;
 	int m_width;

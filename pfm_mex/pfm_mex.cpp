@@ -9,6 +9,7 @@
 #include <cmath>
 #include <cstdint>
 #include <cctype>
+#include <vector>
 #include "pfm_mex.h"
 
 namespace pfm {
@@ -255,24 +256,7 @@ int PfmInputFile::getNumberOfChannels() const {
 }
 
 mex::MxArray PfmInputFile::getAttribute(const mex::MxString& attributeName) const {
-	if (!attributeName.get_string().compare("width")) {
-		return mex::MxArray(mex::MxNumeric<int>(m_header.get_width()).get_array());
-	} else if (!attributeName.get_string().compare("height")) {
-		return mex::MxArray(mex::MxNumeric<int>(m_header.get_height()).get_array());
-	} else if (!attributeName.get_string().compare("colorFormat")) {
-		return mex::MxArray(mex::MxString(
-					(m_header.get_colorFormat() == PfmHeader::EColorFormat::ERGB)
-					?("rgb"):("grayscale")).get_array());
-	} else if (!attributeName.get_string().compare("scale")) {
-		return mex::MxArray(mex::MxNumeric<PixelType>(m_header.get_scale()).get_array());
-	} else if (!attributeName.get_string().compare("byteOrder")) {
-		return mex::MxArray(mex::MxString(
-					(m_header.get_byteOrder() == PfmHeader::EByteOrder::EBigEndian)
-					?("big endian"):("little endian")).get_array());
-	} else {
-		mexAssertEx(0, "Unknown attribute type");
-		return mex::MxArray();
-	}
+	return getAttribute(attributeName.get_string());
 }
 
 mex::MxArray PfmInputFile::getAttribute() const {
@@ -281,15 +265,15 @@ mex::MxArray PfmInputFile::getAttribute() const {
 	std::vector<mex::MxArray*> arrayVec;
 
 	nameVec.push_back(std::string("width"));
-	arrayVec.push_back(new mex::MxArray(getAttribute(mex::MxString("width")).get_array()));
+	arrayVec.push_back(new mex::MxArray(getAttribute(*(--(nameVec.end()))).get_array()));
 	nameVec.push_back(std::string("height"));
-	arrayVec.push_back(new mex::MxArray(getAttribute(mex::MxString("height")).get_array()));
+	arrayVec.push_back(new mex::MxArray(getAttribute(*(--(nameVec.end()))).get_array()));
 	nameVec.push_back(std::string("colorFormat"));
-	arrayVec.push_back(new mex::MxArray(getAttribute(mex::MxString("colorFormat")).get_array()));
+	arrayVec.push_back(new mex::MxArray(getAttribute(*(--(nameVec.end()))).get_array()));
 	nameVec.push_back(std::string("scale"));
-	arrayVec.push_back(new mex::MxArray(getAttribute(mex::MxString("scale")).get_array()));
+	arrayVec.push_back(new mex::MxArray(getAttribute(*(--(nameVec.end()))).get_array()));
 	nameVec.push_back(std::string("byteOrder"));
-	arrayVec.push_back(new mex::MxArray(getAttribute(mex::MxString("byteOrder")).get_array()));
+	arrayVec.push_back(new mex::MxArray(getAttribute(*(--(nameVec.end()))).get_array()));
 
 	mex::MxArray retArg(mex::MxStruct(nameVec, arrayVec).get_array());
 	for (int iter = 0, numAttributes = arrayVec.size();
@@ -298,6 +282,27 @@ mex::MxArray PfmInputFile::getAttribute() const {
 		delete arrayVec[iter];
 	}
 	return retArg;
+}
+
+mex::MxArray PfmInputFile::getAttribute(const std::string& attributeName) const {
+	if (!attributeName.compare("width")) {
+		return mex::MxArray(mex::MxNumeric<int>(m_header.get_width()).get_array());
+	} else if (!attributeName.compare("height")) {
+		return mex::MxArray(mex::MxNumeric<int>(m_header.get_height()).get_array());
+	} else if (!attributeName.compare("colorFormat")) {
+		return mex::MxArray(mex::MxString(
+					(m_header.get_colorFormat() == PfmHeader::EColorFormat::ERGB)
+					?("rgb"):("grayscale")).get_array());
+	} else if (!attributeName.compare("scale")) {
+		return mex::MxArray(mex::MxNumeric<PixelType>(m_header.get_scale()).get_array());
+	} else if (!attributeName.compare("byteOrder")) {
+		return mex::MxArray(mex::MxString(
+					(m_header.get_byteOrder() == PfmHeader::EByteOrder::EBigEndian)
+					?("big endian"):("little endian")).get_array());
+	} else {
+		mexAssertEx(0, "Unknown attribute type");
+		return mex::MxArray();
+	}
 }
 
 mex::MxArray PfmInputFile::readData() {
@@ -369,13 +374,7 @@ int PfmOutputFile::getWidth() const {
 
 void PfmOutputFile::setAttribute(const mex::MxString& attributeName,
 										const mex::MxArray& attribute) {
-	if (!attributeName.get_string().compare("scale")) {
-		const mex::MxNumeric<PixelType> tempArray(attribute.get_array());
-		mexAssert(tempArray.getNumberOfElements() == 1);
-		m_scale = tempArray[0];
-	} else {
-		mexAssertEx(0, "Unknown attribute type");
-	}
+	setAttribute(attributeName.get_string(), attribute);
 }
 
 void PfmOutputFile::setAttribute(const mex::MxStruct& attributes) {
@@ -383,8 +382,19 @@ void PfmOutputFile::setAttribute(const mex::MxStruct& attributes) {
 	for (int iter = 0, numFields = attributes.getNumberOfFields();
 		iter < numFields;
 		++iter) {
-		setAttribute(mex::MxString(attributes.getFieldName(iter)),
+		setAttribute(attributes.getFieldName(iter),
 					mex::MxArray(attributes[iter]));
+	}
+}
+
+void PfmOutputFile::setAttribute(const std::string& attributeName,
+										const mex::MxArray& attribute) {
+	if (!attributeName.compare("scale")) {
+		const mex::MxNumeric<PixelType> tempArray(attribute.get_array());
+		mexAssert(tempArray.getNumberOfElements() == 1);
+		m_scale = tempArray[0];
+	} else {
+		mexAssertEx(0, "Unknown attribute type");
 	}
 }
 
