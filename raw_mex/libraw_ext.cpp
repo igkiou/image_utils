@@ -6,9 +6,6 @@
  */
 
 #include "libraw_ext.h"
-//#define LIBRAW_IO_REDEFINED
-//#include "internal/defines.h"
-//#include "internal/var_defines.h"
 
 #define EXCEPTION_HANDLER(e) do{                        \
     /* fprintf(stderr,"Exception %d caught\n",e);*/     \
@@ -39,6 +36,7 @@
       }                                                         \
   }while(0)
 
+namespace libraw {
 
 LibRawExtension::LibRawExtension(unsigned int flags) : LibRaw(flags) {}
 
@@ -52,8 +50,10 @@ int LibRawExtension::copy_processed(unsigned short* pixelBuffer) {
 	try {
 		if(!libraw_internal_data.output_data.histogram) {
 			libraw_internal_data.output_data.histogram =
-			(int (*)[LIBRAW_HISTOGRAM_SIZE]) malloc(sizeof(*libraw_internal_data.output_data.histogram)*4);
-			merror(libraw_internal_data.output_data.histogram,"LibRaw::dcraw_ppm_tiff_writer()");
+			(int (*)[LIBRAW_HISTOGRAM_SIZE]) malloc(
+					sizeof(*libraw_internal_data.output_data.histogram) * 4);
+			merror(libraw_internal_data.output_data.histogram,
+											"LibRaw::dcraw_ppm_tiff_writer()");
 		}
 		copy_processed_internal(pixelBuffer);
 		SET_PROC_FLAG(LIBRAW_PROGRESS_FLIP);
@@ -64,8 +64,8 @@ int LibRawExtension::copy_processed(unsigned short* pixelBuffer) {
 }
 
 void LibRawExtension::copy_processed_internal(unsigned short* pixelBuffer) {
-
-	int perc = imgdata.sizes.width * imgdata.sizes.height * imgdata.params.auto_bright_thr;
+	int perc = imgdata.sizes.width * imgdata.sizes.height
+			* imgdata.params.auto_bright_thr;
 	if (libraw_internal_data.internal_output_params.fuji_width) {
 		perc /= 2;
 	}
@@ -104,3 +104,5 @@ void LibRawExtension::copy_processed_internal(unsigned short* pixelBuffer) {
 		}
 	}
 }
+
+}  // namespace libraw

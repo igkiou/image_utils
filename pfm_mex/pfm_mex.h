@@ -23,7 +23,6 @@ using PixelType = float;
 
 class PfmHeader {
 public:
-
 	enum class EColorFormat {
 		ERGB = 0,
 		EGrayscale,

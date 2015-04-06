@@ -57,7 +57,6 @@ int RawInputFile::getWidth() const {
 
 int RawInputFile::getNumberOfChannels() const {
 	return m_rawProcessor.imgdata.idata.colors;
-//	return int(1);
 }
 
 mex::MxArray RawInputFile::readData() {
@@ -81,7 +80,6 @@ mex::MxArray RawInputFile::readData(
 
 mex::MxArray RawInputFile::readData(bool doSubtractDarkFrame,
 										const std::string& dcrawFlags) {
-
 	unpackFile();
 	int errorCode;
 
@@ -104,12 +102,11 @@ mex::MxArray RawInputFile::readData(bool doSubtractDarkFrame,
 				int arrayIndex = pixelWidth * height + pixelHeight;
 				int rawIndex = pixelHeight * width + pixelWidth;
 				pixelBuffer[arrayIndex] = m_rawProcessor.imgdata.image[rawIndex]
-									[m_rawProcessor.COLOR(pixelHeight, pixelWidth)];
+								[m_rawProcessor.COLOR(pixelHeight, pixelWidth)];
 			}
 		}
 		return mex::MxArray(pixelArray.get_array());
 	} else {
-
 		parseDcrawFlags(dcrawFlags);
 
 		/*
@@ -131,8 +128,8 @@ mex::MxArray RawInputFile::readData(bool doSubtractDarkFrame,
 		if (numChannels > 1) {
 			dimensions.push_back(numChannels);
 		}
-		mex::MxNumeric<PixelType> pixelArray(static_cast<int>(dimensions.size()),
-															&dimensions[0]);
+		mex::MxNumeric<PixelType> pixelArray(
+						static_cast<int>(dimensions.size()), &dimensions[0]);
 		PixelType* pixelBuffer = pixelArray.getData();
 
 		errorCode = m_rawProcessor.copy_processed(pixelBuffer);
@@ -143,8 +140,6 @@ mex::MxArray RawInputFile::readData(bool doSubtractDarkFrame,
 }
 
 mex::MxArray RawInputFile::getCFAInformation() {
-
-//	unpackFile();
 	int width = getWidth();
 	int height = getHeight();
 	mex::MxNumeric<unsigned char> filterArray(height, width);
@@ -187,14 +182,17 @@ void RawInputFile::parseDcrawFlags(const std::string& dcrawFlags) {
 		const char *cp = std::strchr(sp, opt);
 		if (cp != nullptr) {
 			for (int i = 0; i < "111411111144221"[cp-sp]-'0'; ++i) {
-				if ((arg + i >= argc) || (!std::isdigit(argv[arg+i][0]) && !optstr[2])) {
-					std::fprintf(stderr,"Non-numeric argument to \"-%c\"\n", opt);
+				if ((arg + i >= argc) ||
+						(!std::isdigit(argv[arg+i][0]) && !optstr[2])) {
+					std::fprintf(stderr, "Non-numeric argument to \"-%c\"\n",
+																		opt);
 					mexAssertEx(0, "Unknown attribute type");
 				}
 			}
 		}
-		if(!std::strchr("ftdeam",opt) && (std::strlen(argv[arg]) > 1) && (argv[arg][2] != ' ')) {
-			std::fprintf (stderr,"Unknown option \"%s\".\n",argv[arg-1]);
+		if (!std::strchr("ftdeam", opt) && (std::strlen(argv[arg]) > 1) &&
+														(argv[arg][2] != ' ')) {
+			std::fprintf(stderr, "Unknown option \"%s\".\n", argv[arg - 1]);
 			mexAssertEx(0, "Unknown attribute type");
 		}
 		switch (opt) {
@@ -207,113 +205,134 @@ void RawInputFile::parseDcrawFlags(const std::string& dcrawFlags) {
 			}
 			case 'c': {
 				mexAssertEx(arg < argc - 1, "Unknown attribute type");
-				m_rawProcessor.imgdata.params.adjust_maximum_thr = (float)std::atof(argv[++arg]);
+				m_rawProcessor.imgdata.params.adjust_maximum_thr =
+									static_cast<float>(std::atof(argv[++arg]));
 				break;
 			}
 			case 'U': {
 				mexAssertEx(arg < argc - 1, "Unknown attribute type");
-				m_rawProcessor.imgdata.params.auto_bright_thr = (float)std::atof(argv[++arg]);
+				m_rawProcessor.imgdata.params.auto_bright_thr =
+									static_cast<float>(std::atof(argv[++arg]));
 				break;
 			}
 			case 'n': {
 				mexAssertEx(arg < argc - 1, "Unknown attribute type");
-				m_rawProcessor.imgdata.params.threshold = (float)std::atof(argv[++arg]);
+				m_rawProcessor.imgdata.params.threshold =
+									static_cast<float>(std::atof(argv[++arg]));
 				break;
 			}
 			case 'b': {
 				mexAssertEx(arg < argc - 1, "Unknown attribute type");
-				m_rawProcessor.imgdata.params.bright = (float)std::atof(argv[++arg]);
+				m_rawProcessor.imgdata.params.bright =
+									static_cast<float>(std::atof(argv[++arg]));
 				break;
 			}
 			case 'P': {
 				mexAssertEx(arg < argc - 1, "Unknown attribute type");
-				m_rawProcessor.imgdata.params.bad_pixels = const_cast<char *>(argv[++arg]);
+				m_rawProcessor.imgdata.params.bad_pixels =
+												const_cast<char *>(argv[++arg]);
 				break;
 			}
 			case 'K': {
 				mexAssertEx(arg < argc - 1, "Unknown attribute type");
-				m_rawProcessor.imgdata.params.dark_frame = const_cast<char *>(argv[++arg]);
+				m_rawProcessor.imgdata.params.dark_frame =
+												const_cast<char *>(argv[++arg]);
 				break;
 			}
 			case 'r': {
 				for(int c = 0; c < 4; ++c) {
 					mexAssertEx(arg < argc - 1, "Unknown attribute type");
-					m_rawProcessor.imgdata.params.user_mul[c] = (float)std::atof(argv[++arg]);
+					m_rawProcessor.imgdata.params.user_mul[c] =
+									static_cast<float>(std::atof(argv[++arg]));
 				}
 				break;
 			}
 			case 'C': {
 				mexAssertEx(arg < argc - 1, "Unknown attribute type");
-				m_rawProcessor.imgdata.params.aber[0] = 1 / std::atof(argv[++arg]);
+				m_rawProcessor.imgdata.params.aber[0]
+												   = 1 / std::atof(argv[++arg]);
 				mexAssertEx(arg < argc - 1, "Unknown attribute type");
-				m_rawProcessor.imgdata.params.aber[2] = 1 / std::atof(argv[++arg]);
+				m_rawProcessor.imgdata.params.aber[2]
+												   = 1 / std::atof(argv[++arg]);
 				break;
 			}
 			case 'g': {
 				mexAssertEx(arg < argc - 1, "Unknown attribute type");
-				m_rawProcessor.imgdata.params.gamm[0] = 1 / std::atof(argv[++arg]);
+				m_rawProcessor.imgdata.params.gamm[0]
+												   = 1 / std::atof(argv[++arg]);
 				mexAssertEx(arg < argc - 1, "Unknown attribute type");
-				m_rawProcessor.imgdata.params.gamm[1] =  std::atof(argv[++arg]);
+				m_rawProcessor.imgdata.params.gamm[1]
+												   =  std::atof(argv[++arg]);
 				break;
 			}
 			case 'k': {
 				mexAssertEx(arg < argc - 1, "Unknown attribute type");
-				m_rawProcessor.imgdata.params.user_black = std::atoi(argv[++arg]);
+				m_rawProcessor.imgdata.params.user_black
+													= std::atoi(argv[++arg]);
 				break;
 			}
 			case 'S': {
 				mexAssertEx(arg < argc - 1, "Unknown attribute type");
-				m_rawProcessor.imgdata.params.user_sat = std::atoi(argv[++arg]);
+				m_rawProcessor.imgdata.params.user_sat
+													= std::atoi(argv[++arg]);
 				break;
 			}
 			case 't': {
 				if(!argv[arg][2]) {
 					mexAssertEx(arg < argc - 1, "Unknown attribute type");
-					m_rawProcessor.imgdata.params.user_flip = std::atoi(argv[++arg]);
+					m_rawProcessor.imgdata.params.user_flip
+													= std::atoi(argv[++arg]);
 				} else {
-					std::fprintf (stderr,"Unknown option \"%s\".\n",argv[arg]);
+					std::fprintf(stderr, "Unknown option \"%s\".\n", argv[arg]);
 					mexAssertEx(0, "Unknown attribute type");
 				}
 				break;
 			}
 			case 'q': {
 				mexAssertEx(arg < argc - 1, "Unknown attribute type");
-				m_rawProcessor.imgdata.params.user_qual = std::atoi(argv[++arg]);
+				m_rawProcessor.imgdata.params.user_qual
+													= std::atoi(argv[++arg]);
 				break;
 			}
 			case 'm': {
 				if(!argv[arg][2]) {
 					mexAssertEx(arg < argc - 1, "Unknown attribute type");
-					m_rawProcessor.imgdata.params.med_passes = std::atoi(argv[++arg]);
+					m_rawProcessor.imgdata.params.med_passes
+													= std::atoi(argv[++arg]);
 				} else {
-					std::fprintf (stderr,"Unknown option \"%s\".\n",argv[arg]);
+					std::fprintf(stderr, "Unknown option \"%s\".\n", argv[arg]);
 					mexAssertEx(0, "Unknown attribute type");
 				}
 				break;
 			}
 			case 'H': {
 				mexAssertEx(arg < argc - 1, "Unknown attribute type");
-				m_rawProcessor.imgdata.params.highlight = std::atoi(argv[++arg]);
+				m_rawProcessor.imgdata.params.highlight
+											= std::atoi(argv[++arg]);
 				break;
 			}
 			case 's': {
 				mexAssertEx(arg < argc - 1, "Unknown attribute type");
-				m_rawProcessor.imgdata.params.shot_select = std::abs(std::atoi(argv[++arg]));
+				m_rawProcessor.imgdata.params.shot_select
+											= std::abs(std::atoi(argv[++arg]));
 				break;
 			}
 			case 'o': {
 				mexAssertEx(arg < argc - 1, "Unknown attribute type");
-				if(std::isdigit(argv[arg + 1][0]) && !std::isdigit(argv[arg + 1][1])) {
-					m_rawProcessor.imgdata.params.output_color = std::atoi(argv[++arg]);
-				}
-				else {
-					m_rawProcessor.imgdata.params.output_profile = const_cast<char *>(argv[++arg]);
+				if (std::isdigit(argv[arg + 1][0]) &&
+						!std::isdigit(argv[arg + 1][1])) {
+					m_rawProcessor.imgdata.params.output_color
+													= std::atoi(argv[++arg]);
+				} else {
+					m_rawProcessor.imgdata.params.output_profile
+											= const_cast<char *>(argv[++arg]);
 				}
 				break;
 			}
 			case 'p': {
 				mexAssertEx(arg < argc - 1, "Unknown attribute type");
-				m_rawProcessor.imgdata.params.camera_profile = const_cast<char *>(argv[++arg]);
+				m_rawProcessor.imgdata.params.camera_profile
+											= const_cast<char *>(argv[++arg]);
 				break;
 			}
 			case 'h': {
@@ -321,14 +340,16 @@ void RawInputFile::parseDcrawFlags(const std::string& dcrawFlags) {
 				break;
 			}
 			case 'f': {
-				if(!std::strcmp(optstr,"-fbdd")) {
+				if (!std::strcmp(optstr, "-fbdd")) {
 					mexAssertEx(arg < argc - 1, "Unknown attribute type");
-					m_rawProcessor.imgdata.params.fbdd_noiserd = std::atoi(argv[++arg]);
+					m_rawProcessor.imgdata.params.fbdd_noiserd
+													= std::atoi(argv[++arg]);
 				} else {
 					if(!argv[arg-1][2]) {
 						m_rawProcessor.imgdata.params.four_color_rgb = 1;
 					} else {
-						std::fprintf (stderr,"Unknown option \"%s\".\n",argv[arg]);
+						std::fprintf(stderr, "Unknown option \"%s\".\n",
+																	argv[arg]);
 						mexAssertEx(0, "Unknown attribute type");
 					}
 				}
@@ -337,29 +358,32 @@ void RawInputFile::parseDcrawFlags(const std::string& dcrawFlags) {
 			case 'A': {
 				for(int c = 0; c < 4; ++c) {
 					mexAssertEx(arg < argc - 1, "Unknown attribute type");
-					m_rawProcessor.imgdata.params.greybox[c] = std::atoi(argv[++arg]);
+					m_rawProcessor.imgdata.params.greybox[c]
+													= std::atoi(argv[++arg]);
 				}
 				break;
 			}
 			case 'B': {
 				for(int c = 0; c < 4; ++c) {
 					mexAssertEx(arg < argc - 1, "Unknown attribute type");
-					m_rawProcessor.imgdata.params.cropbox[c] = std::atoi(argv[++arg]);
+					m_rawProcessor.imgdata.params.cropbox[c]
+													= std::atoi(argv[++arg]);
 				}
 				break;
-
 			}
 			case 'a': {
-				if(!std::strcmp(optstr,"-aexpo")) {
+				if (!std::strcmp(optstr, "-aexpo")) {
 					m_rawProcessor.imgdata.params.exp_correc = 1;
 					mexAssertEx(arg < argc - 1, "Unknown attribute type");
-					m_rawProcessor.imgdata.params.exp_shift = (float)std::atof(argv[++arg]);
+					m_rawProcessor.imgdata.params.exp_shift
+								= static_cast<float>(std::atof(argv[++arg]));
 					mexAssertEx(arg < argc - 1, "Unknown attribute type");
-					m_rawProcessor.imgdata.params.exp_preser = (float)std::atof(argv[++arg]);
-				} else if(!argv[arg][2]) {
+					m_rawProcessor.imgdata.params.exp_preser
+								= static_cast<float>(std::atof(argv[++arg]));
+				} else if (!argv[arg][2]) {
 					m_rawProcessor.imgdata.params.use_auto_wb = 1;
 				} else {
-					std::fprintf (stderr,"Unknown option \"%s\".\n",argv[arg]);
+					std::fprintf(stderr, "Unknown option \"%s\".\n", argv[arg]);
 					mexAssertEx(0, "Unknown attribute type");
 				}
 				break;
@@ -381,35 +405,37 @@ void RawInputFile::parseDcrawFlags(const std::string& dcrawFlags) {
 				break;
 			}
 			case 'd': {
-				if(!strcmp(optstr,"-dcbi")) {
+				if (!strcmp(optstr, "-dcbi")) {
 					mexAssertEx(arg < argc - 1, "Unknown attribute type");
-					m_rawProcessor.imgdata.params.dcb_iterations = std::atoi(argv[++arg]);
-				} else if(!strcmp(optstr,"-disars")) {
-					m_rawProcessor.imgdata.params.use_rawspeed=0;
-				} else if(!strcmp(optstr,"-disadcf")) {
-					m_rawProcessor.imgdata.params.force_foveon_x3f=1;
-				} else if(!strcmp(optstr,"-disinterp")) {
-					m_rawProcessor.imgdata.params.no_interpolation=1;
-				} else if(!strcmp(optstr,"-dcbe")) {
+					m_rawProcessor.imgdata.params.dcb_iterations
+													= std::atoi(argv[++arg]);
+				} else if (!strcmp(optstr, "-disars")) {
+					m_rawProcessor.imgdata.params.use_rawspeed = 0;
+				} else if (!strcmp(optstr, "-disadcf")) {
+					m_rawProcessor.imgdata.params.force_foveon_x3f = 1;
+				} else if (!strcmp(optstr, "-disinterp")) {
+					m_rawProcessor.imgdata.params.no_interpolation = 1;
+				} else if (!strcmp(optstr, "-dcbe")) {
 					m_rawProcessor.imgdata.params.dcb_enhance_fl = 1;
-				} else if(!strcmp(optstr,"-dsrawrgb1")) {
+				} else if (!strcmp(optstr, "-dsrawrgb1")) {
 					m_rawProcessor.imgdata.params.sraw_ycc = 1;
-				} else if(!strcmp(optstr,"-dsrawrgb2")) {
+				} else if (!strcmp(optstr, "-dsrawrgb2")) {
 					m_rawProcessor.imgdata.params.sraw_ycc = 2;
-				} else if(!strcmp(optstr,"-dbnd")) {
+				} else if (!strcmp(optstr, "-dbnd")) {
 					for(int c = 0; c < 4; ++c) {
 						mexAssertEx(arg < argc - 1, "Unknown attribute type");
-						m_rawProcessor.imgdata.params.wf_deband_treshold[c] = (float)std::atof(argv[++arg]);
+						m_rawProcessor.imgdata.params.wf_deband_treshold[c]
+								= static_cast<float>(std::atof(argv[++arg]));
 						m_rawProcessor.imgdata.params.wf_debanding = 1;
 					}
 				} else {
-					fprintf (stderr,"Unknown option \"%s\".\n",argv[arg]);
+					fprintf(stderr, "Unknown option \"%s\".\n", argv[arg]);
 					mexAssertEx(0, "Unknown attribute type");
 				}
 				break;
 			}
 			default: {
-				fprintf (stderr,"Unknown option \"-%c\".\n", opt);
+				fprintf(stderr, "Unknown option \"-%c\".\n", opt);
 				mexAssertEx(0, "Unknown attribute type");
 				break;
 			}
@@ -418,7 +444,6 @@ void RawInputFile::parseDcrawFlags(const std::string& dcrawFlags) {
 }
 
 void RawInputFile::unpackFile() {
-
 	if (!m_unpackedFile) {
 		int errorCode = m_rawProcessor.unpack();
 		mexAssert(errorCode == LIBRAW_SUCCESS);
@@ -434,12 +459,12 @@ void RawInputFile::unpackFile() {
  * --color:
  * complicated, lots of potentially useful info, but varies with camera
  */
-mex::MxArray RawInputFile::getAttribute(const mex::MxString& attributeName) const {
+mex::MxArray RawInputFile::getAttribute(const mex::MxString& attributeName)
+																		const {
 	return getAttribute(attributeName.get_string());
 }
 
 mex::MxArray RawInputFile::getAttribute() const {
-
 	std::vector<std::string> nameVec;
 	std::vector<mex::MxArray*> arrayVec;
 

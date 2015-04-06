@@ -49,9 +49,9 @@ private:
 
 	std::string m_fileName;
 	bool m_unpackedFile;
-	LibRawExtension m_rawProcessor;
+	libraw::LibRawExtension m_rawProcessor;
 };
 
 }  // namespace raw
 
-#endif  // MEX_UTILS_H_
+#endif  // RAW_MEX_H_

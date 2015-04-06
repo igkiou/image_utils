@@ -5,6 +5,9 @@
  *      Author: igkiou
  */
 
+#ifndef LIBRAW_EXT_H_
+#define LIBRAW_EXT_H_
+
 #include "libraw.h"
 
 //class DllDef LibRawExt : public LibRaw {
@@ -25,6 +28,8 @@
 //
 //};
 
+namespace libraw {
+
 class DllDef LibRawExtension : public LibRaw {
 public:
 	LibRawExtension(unsigned int flags = LIBRAW_OPTIONS_NONE);
@@ -33,3 +38,7 @@ public:
 private:
 	void copy_processed_internal(unsigned short* pixelBuffer);
 };
+
+}  // namespace libraw
+
+#endif  // LIBRAW_EXT_H_

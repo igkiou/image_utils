@@ -164,7 +164,6 @@ mex::MxArray ExrInputFile::readData() {
 
 mex::MxArray ExrInputFile::readData(
 							const std::vector<std::string>& channelNameVector) {
-
 	int width = getWidth();
 	int height = getHeight();
 	Imath::Box2i dw = m_file.header().dataWindow();
@@ -428,7 +427,6 @@ mex::MxArray ExrInputFile::getAttribute(const mex::MxString& attributeName) cons
 }
 
 mex::MxArray ExrInputFile::getAttribute() const {
-
 	std::vector<std::string> nameVec;
 	std::vector<mex::MxArray*> arrayVec;
 	for (Imf::Header::ConstIterator iter = m_file.header().begin(),
@@ -581,7 +579,6 @@ void ExrOutputFile::writeData(const mex::MxString& channelName,
 }
 
 void ExrOutputFile::writeData(const mex::MxArray& channelPixels) {
-
 	std::vector<int> dimensions = channelPixels.getDimensions();
 	int numChannels = (dimensions.size() == 2)?(1):(dimensions[2]);
 	std::vector<std::string> channelNameVector;
@@ -836,7 +833,6 @@ void ExrOutputFile::setAttribute(const mex::MxString& attributeName,
 }
 
 void ExrOutputFile::setAttribute(const mex::MxStruct& attributes) {
-
 	for (int iter = 0, numFields = attributes.getNumberOfFields();
 		iter < numFields;
 		++iter) {
@@ -847,7 +843,6 @@ void ExrOutputFile::setAttribute(const mex::MxStruct& attributes) {
 
 void ExrOutputFile::setAttribute(const std::string& attributeName,
 								const mex::MxArray& attribute) {
-
 	std::map<std::string, EExrAttributeType>::const_iterator iteratorToType =
 											registeredAttributeNameAttributeTypeMap.
 											get_map().
@@ -859,26 +854,22 @@ void ExrOutputFile::setAttribute(const std::string& attributeName,
 	switch(type) {
 		case EExrAttributeType::EBox2f: {
 			const mex::MxStruct tempArray(attribute.get_array());
-			mexAssert(
-					(tempArray.getNumberOfFields() == 1) &&
+			mexAssert((tempArray.getNumberOfFields() == 1) &&
 					((tempArray.isField(std::string("min"))) &&
 					(mex::MxNumeric<float>(tempArray[std::string("min")]).getNumberOfElements() == 2)) &&
 					((tempArray.isField(std::string("max"))) &&
-					(mex::MxNumeric<float>(tempArray[std::string("max")]).getNumberOfElements() == 2))
-			);
+					(mex::MxNumeric<float>(tempArray[std::string("max")]).getNumberOfElements() == 2)));
 			m_header.insert(attributeName.c_str(),
 					toAttribute<Imath::Box<Imath::Vec2<float> > >(tempArray));
 			break;
 		}
 		case EExrAttributeType::EBox2i: {
 			const mex::MxStruct tempArray(attribute.get_array());
-			mexAssert(
-					(tempArray.getNumberOfFields() == 1) &&
+			mexAssert((tempArray.getNumberOfFields() == 1) &&
 					((tempArray.isField(std::string("min"))) &&
 					(mex::MxNumeric<int>(tempArray[std::string("min")]).getNumberOfElements() == 2)) &&
 					((tempArray.isField(std::string("max"))) &&
-					(mex::MxNumeric<int>(tempArray[std::string("max")]).getNumberOfElements() == 2))
-			);
+					(mex::MxNumeric<int>(tempArray[std::string("max")]).getNumberOfElements() == 2)));
 			m_header.insert(attributeName.c_str(),
 					toAttribute<Imath::Box<Imath::Vec2<int> > >(tempArray));
 			break;
@@ -889,8 +880,7 @@ void ExrOutputFile::setAttribute(const std::string& attributeName,
 		}
 		case EExrAttributeType::EChromaticities: {
 			const mex::MxStruct tempArray(attribute.get_array());
-			mexAssert(
-					(tempArray.getNumberOfFields() == 4) &&
+			mexAssert((tempArray.getNumberOfFields() == 4) &&
 					((tempArray.isField(std::string("red"))) &&
 					(mex::MxNumeric<float>(tempArray[std::string("red")]).getNumberOfElements() == 2)) &&
 					((tempArray.isField(std::string("green"))) &&
@@ -898,8 +888,7 @@ void ExrOutputFile::setAttribute(const std::string& attributeName,
 					((tempArray.isField(std::string("blue"))) &&
 					(mex::MxNumeric<float>(tempArray[std::string("blue")]).getNumberOfElements() == 2)) &&
 					((tempArray.isField(std::string("white"))) &&
-					(mex::MxNumeric<float>(tempArray[std::string("white")]).getNumberOfElements() == 2))
-			);
+					(mex::MxNumeric<float>(tempArray[std::string("white")]).getNumberOfElements() == 2)));
 			m_header.insert(attributeName.c_str(),
 					toAttribute<Imf::Chromaticities>(tempArray));
 			break;
@@ -982,4 +971,4 @@ void ExrOutputFile::setAttribute(const std::string& attributeName,
 	}
 }
 
-}  // namespace openexr
+}  // namespace exr

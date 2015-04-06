@@ -260,7 +260,6 @@ mex::MxArray PfmInputFile::getAttribute(const mex::MxString& attributeName) cons
 }
 
 mex::MxArray PfmInputFile::getAttribute() const {
-
 	std::vector<std::string> nameVec;
 	std::vector<mex::MxArray*> arrayVec;
 
@@ -378,7 +377,6 @@ void PfmOutputFile::setAttribute(const mex::MxString& attributeName,
 }
 
 void PfmOutputFile::setAttribute(const mex::MxStruct& attributes) {
-
 	for (int iter = 0, numFields = attributes.getNumberOfFields();
 		iter < numFields;
 		++iter) {
@@ -399,7 +397,6 @@ void PfmOutputFile::setAttribute(const std::string& attributeName,
 }
 
 void PfmOutputFile::writeData(const mex::MxArray& data) {
-
 	mexAssert(!m_writtenFile);
 	mex::MxNumeric<PixelType> pixelArray(data.get_array());
 	std::vector<int> dimensions = pixelArray.getDimensions();
