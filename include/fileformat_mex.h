@@ -14,7 +14,6 @@ namespace fileformat {
 
 class InputFileInterface {
 public:
-
 	virtual mex::MxString getFileName() const = 0;
 	virtual mex::MxNumeric<bool> isValidFile() const = 0;
 	virtual int getHeight() const = 0;
@@ -24,12 +23,11 @@ public:
 									const = 0;
 	virtual mex::MxArray getAttribute() const = 0;
 	virtual mex::MxArray readData() = 0;
-	virtual ~InputFileInterface() {	};
+	virtual ~InputFileInterface() = default;
 };
 
 class OutputFileInterface {
 public:
-
 	virtual mex::MxString getFileName() const = 0;
 	virtual int getHeight() const = 0;
 	virtual int getWidth() const = 0;
@@ -37,7 +35,7 @@ public:
 							const mex::MxArray& attribute) = 0;
 	virtual void setAttribute(const mex::MxStruct& attributes) = 0;
 	virtual void writeData(const mex::MxArray& data) = 0;
-	virtual ~OutputFileInterface() {	};
+	virtual ~OutputFileInterface() = default;
 };
 
 }  // namespace fileformat

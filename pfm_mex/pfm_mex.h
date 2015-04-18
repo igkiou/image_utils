@@ -85,7 +85,7 @@ public:
 	mex::MxArray getAttribute() const override;
 	mex::MxArray readData() override;
 
-	~PfmInputFile() override {	}
+	~PfmInputFile() override = default;
 
 private:
 	mex::MxArray getAttribute(const std::string& attributeName) const;
@@ -109,7 +109,7 @@ public:
 	void setAttribute(const mex::MxStruct& attributes) override;
 	void writeData(const mex::MxArray& data) override;
 
-	~PfmOutputFile() override {	}
+	~PfmOutputFile() override = default;
 
 private:
 	void setAttribute(const std::string& attributeName,

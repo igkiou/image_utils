@@ -56,7 +56,7 @@ public:
 	 */
 	bool hasChannel(const std::string& channelName) const;
 
-	~ExrInputFile() override {	}
+	~ExrInputFile() override = default;
 
 private:
 	std::vector<std::string> getChannelNames() const;
@@ -86,7 +86,7 @@ public:
 	void writeData(const mex::MxCell& channelNames,
 				const mex::MxArray& data);
 
-	~ExrOutputFile() override {	}
+	~ExrOutputFile() override = default;
 
 private:
 	void writeData(const std::vector<std::string>& channelNameVector,

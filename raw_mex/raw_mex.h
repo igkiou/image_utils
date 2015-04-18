@@ -38,7 +38,7 @@ public:
 
 	mex::MxArray getCFAInformation();
 
-	~RawInputFile() override {	}
+	~RawInputFile() override = default;
 
 private:
 	mex::MxArray readData(bool doSubtractDarkFrame,

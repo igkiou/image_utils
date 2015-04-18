@@ -22,20 +22,20 @@
 							<tool id="cdt.managedbuild.tool.gnu.archiver.base.1072805111" name="GCC Archiver" superClass="cdt.managedbuild.tool.gnu.archiver.base"/>
 							<tool id="cdt.managedbuild.tool.gnu.cpp.compiler.base.2146512484" name="GCC C++ Compiler" superClass="cdt.managedbuild.tool.gnu.cpp.compiler.base">
 								<option id="gnu.cpp.compiler.option.include.paths.134084930" name="Include paths (-I)" superClass="gnu.cpp.compiler.option.include.paths" valueType="includePath">
-									<listOptionValue builtIn="false" value="/home/igkiou/MATLAB/openexr"/>
 									<listOptionValue builtIn="false" value="/usr/local/matlab/extern/include"/>
 									<listOptionValue builtIn="false" value="/home/igkiou/MATLAB/mex_utils"/>
-									<listOptionValue builtIn="false" value="/home/igkiou/MATLAB/libraw/libraw"/>
-									<listOptionValue builtIn="false" value="/home/igkiou/MATLAB/libraw"/>
+									<listOptionValue builtIn="false" value="/home/igkiou/cpp/openexr"/>
+									<listOptionValue builtIn="false" value="/home/igkiou/cpp/libraw"/>
+									<listOptionValue builtIn="false" value="/home/igkiou/cpp/libraw/libraw"/>
 								</option>
 								<inputType id="cdt.managedbuild.tool.gnu.cpp.compiler.input.950849713" superClass="cdt.managedbuild.tool.gnu.cpp.compiler.input"/>
 							</tool>
 							<tool id="cdt.managedbuild.tool.gnu.c.compiler.base.1805112364" name="GCC C Compiler" superClass="cdt.managedbuild.tool.gnu.c.compiler.base">
 								<option id="gnu.c.compiler.option.include.paths.1218125837" name="Include paths (-I)" superClass="gnu.c.compiler.option.include.paths" valueType="includePath">
-									<listOptionValue builtIn="false" value="/home/igkiou/MATLAB/openexr"/>
 									<listOptionValue builtIn="false" value="/usr/local/matlab/extern/include"/>
 									<listOptionValue builtIn="false" value="/home/igkiou/MATLAB/mex_utils"/>
-									<listOptionValue builtIn="false" value="/home/igkiou/MATLAB/libraw/libraw"/>
+									<listOptionValue builtIn="false" value="/home/igkiou/cpp/libraw/libraw"/>
+									<listOptionValue builtIn="false" value="/home/igkiou/cpp/openexr"/>
 								</option>
 								<inputType id="cdt.managedbuild.tool.gnu.c.compiler.input.379656789" superClass="cdt.managedbuild.tool.gnu.c.compiler.input"/>
 							</tool>
