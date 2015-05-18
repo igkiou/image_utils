@@ -10,21 +10,14 @@
 
 #include "mex_utils.h"
 
-/*
- * TODO: Force all derived types to be non-copyable and non-movable. Check
- * whether deleting copy and move  constructors and operators for Interface is
- * sufficient to enforce this for derived classes.
- */
-
 namespace imformat {
 
 class ImformatInputFileInterface {
 public:
+
+	ImformatInputFileInterface() = default;
 	ImformatInputFileInterface(const ImformatInputFileInterface& other) = delete;
 	ImformatInputFileInterface& operator=(const ImformatInputFileInterface& other) = delete;
-
-	ImformatInputFileInterface(ImformatInputFileInterface&& other) = delete;
-	ImformatInputFileInterface& operator=(ImformatInputFileInterface&& other) = delete;
 
 	virtual mex::MxString getFileName() const = 0;
 	virtual mex::MxNumeric<bool> isValidFile() const = 0;
@@ -40,11 +33,9 @@ public:
 
 class ImformatOutputFileInterface {
 public:
+	ImformatOutputFileInterface() = default;
 	ImformatOutputFileInterface(const ImformatOutputFileInterface& other) = delete;
 	ImformatOutputFileInterface& operator=(const ImformatOutputFileInterface& other) = delete;
-
-	ImformatOutputFileInterface(ImformatOutputFileInterface&& other) = delete;
-	ImformatOutputFileInterface& operator=(ImformatOutputFileInterface&& other) = delete;
 
 	virtual mex::MxString getFileName() const = 0;
 	virtual int getHeight() const = 0;
