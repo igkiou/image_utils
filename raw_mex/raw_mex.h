@@ -11,7 +11,7 @@
 #include <string>
 
 #include "libraw_ext.h"
-#include "fileformat_mex.h"
+#include "imformat_mex.h"
 
 namespace raw {
 
@@ -19,7 +19,7 @@ using PixelType = unsigned short;
 
 mex::MxNumeric<bool> isRawFile(const mex::MxString& fileName);
 
-class RawInputFile : public fileformat::InputFileInterface {
+class RawInputFile : public imformat::ImformatInputFileInterface {
 public:
 	explicit RawInputFile(const mex::MxString& fileName);
 
