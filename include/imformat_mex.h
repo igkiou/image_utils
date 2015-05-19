@@ -1,19 +1,24 @@
 /*
- * image_utils//image_utils/include/fileformat_mex.h/fileformat_mex.h
+ * image_utils//image_utils/include/imformat_mex.h
  *
  *  Created on: Feb 11, 2015
  *      Author: igkiou
  */
 
-#ifndef FILEFORMAT_MEX_H_
-#define FILEFORMAT_MEX_H_
+#ifndef IMFORMAT_MEX_H_
+#define IMFORMAT_MEX_H_
 
 #include "mex_utils.h"
 
-namespace fileformat {
+namespace imformat {
 
-class InputFileInterface {
+class ImformatInputFileInterface {
 public:
+
+	ImformatInputFileInterface() = default;
+	ImformatInputFileInterface(const ImformatInputFileInterface& other) = delete;
+	ImformatInputFileInterface& operator=(const ImformatInputFileInterface& other) = delete;
+
 	virtual mex::MxString getFileName() const = 0;
 	virtual mex::MxNumeric<bool> isValidFile() const = 0;
 	virtual int getHeight() const = 0;
@@ -23,11 +28,15 @@ public:
 									const = 0;
 	virtual mex::MxArray getAttribute() const = 0;
 	virtual mex::MxArray readData() = 0;
-	virtual ~InputFileInterface() = default;
+	virtual ~ImformatInputFileInterface() = default;
 };
 
-class OutputFileInterface {
+class ImformatOutputFileInterface {
 public:
+	ImformatOutputFileInterface() = default;
+	ImformatOutputFileInterface(const ImformatOutputFileInterface& other) = delete;
+	ImformatOutputFileInterface& operator=(const ImformatOutputFileInterface& other) = delete;
+
 	virtual mex::MxString getFileName() const = 0;
 	virtual int getHeight() const = 0;
 	virtual int getWidth() const = 0;
@@ -35,9 +44,9 @@ public:
 							const mex::MxArray& attribute) = 0;
 	virtual void setAttribute(const mex::MxStruct& attributes) = 0;
 	virtual void writeData(const mex::MxArray& data) = 0;
-	virtual ~OutputFileInterface() = default;
+	virtual ~ImformatOutputFileInterface() = default;
 };
 
-}  // namespace fileformat
+}  // namespace imformat
 
-#endif /* FILEFORMAT_MEX_H_ */
+#endif /* IMFORMAT_MEX_H_ */
