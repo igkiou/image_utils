@@ -32,7 +32,7 @@ end
 function Y = tonemap_sigmoid_gain(X, gainType, scale, shift)
 
 if ((nargin < 2) || isempty(gainType)),
-	gainType = 'tanh';
+	gainType = 'erf';
 end;
 
 if (strcmpi(gainType, 'tanh')),
