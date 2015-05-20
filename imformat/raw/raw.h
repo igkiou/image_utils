@@ -10,8 +10,8 @@
 
 #include <string>
 
-#include "libraw_ext.h"
-#include "imformat_mex.h"
+#include "../include/imformat.h"
+#include "../raw/libraw_ext.h"
 
 namespace raw {
 

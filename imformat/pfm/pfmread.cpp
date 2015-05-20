@@ -6,7 +6,8 @@
  */
 
 #include "mex_utils.h"
-#include "pfm_mex.h"
+
+#include "../pfm/pfm.h"
 
 void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[]) {
 

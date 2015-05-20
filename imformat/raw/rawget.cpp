@@ -6,7 +6,8 @@
  */
 
 #include "mex_utils.h"
-#include "raw_mex.h"
+
+#include "../raw/raw.h"
 
 void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[]) {
 

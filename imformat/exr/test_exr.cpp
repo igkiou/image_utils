@@ -34,7 +34,8 @@
 #include "OpenEXR/IlmImf/ImfVecAttribute.h"
 
 #include "mex_utils.h"
-#include "exr_mex.h"
+
+#include "exr.h"
 
 enum class EExrAttributeType {
 	EBox2f = 0,

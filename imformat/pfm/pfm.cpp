@@ -10,7 +10,8 @@
 #include <cstdint>
 #include <cctype>
 #include <vector>
-#include "pfm_mex.h"
+
+#include "../pfm/pfm.h"
 
 namespace pfm {
 

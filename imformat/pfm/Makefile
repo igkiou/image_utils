@@ -24,10 +24,10 @@ write: pfmwrite.$(MEXEXT)
 is: ispfm.$(MEXEXT)
 test: test_pfm.$(MEXEXT)
 
-%.$(MEXEXT): %.o pfm_mex.o
+%.$(MEXEXT): %.o pfm.o
 	$(LD) $(LDFLAGS) $(INCLUDES) $(CFLAGS) -o $@ $^ $(LIBS) 
 
-%.o: %.cpp pfm_mex.h
+%.o: %.cpp pfm.h
 	$(CC) $(INCLUDES) $(LDFLAGS) $(CFLAGS) -c -o $@ $<
 	
 clean:

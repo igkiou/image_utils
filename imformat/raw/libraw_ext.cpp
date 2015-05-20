@@ -5,7 +5,7 @@
  *      Author: igkiou
  */
 
-#include "libraw_ext.h"
+#include "../raw/libraw_ext.h"
 
 #define EXCEPTION_HANDLER(e) do{                        \
     /* fprintf(stderr,"Exception %d caught\n",e);*/     \

@@ -24,10 +24,10 @@ write: exrwrite.$(MEXEXT)
 is: isexr.$(MEXEXT)
 test: test_exr.$(MEXEXT)
 
-%.$(MEXEXT): %.o exr_mex.o
+%.$(MEXEXT): %.o exr.o
 	$(LD) $(LDFLAGS) $(INCLUDES) $(CFLAGS) -o $@ $^ $(LIBS) 
 
-%.o: %.cpp exr_mex.h
+%.o: %.cpp exr.h
 	$(CC) $(INCLUDES) $(LDFLAGS) $(CFLAGS) -c -o $@ $<
 	
 clean:

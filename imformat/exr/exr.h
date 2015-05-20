@@ -14,7 +14,7 @@
 #include "OpenEXR/IlmImf/ImfHeader.h"
 #include "OpenEXR/IlmImf/ImfInputFile.h"
 
-#include "imformat_mex.h"
+#include "../include/imformat.h"
 
 namespace exr {
 

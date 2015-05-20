@@ -22,10 +22,10 @@ get: rawget.$(MEXEXT)
 read: rawread.$(MEXEXT)
 is: israw.$(MEXEXT)
 
-%.$(MEXEXT): %.o libraw_ext.o raw_mex.o 
+%.$(MEXEXT): %.o libraw_ext.o raw.o 
 	$(LD) $(LDFLAGS) $(INCLUDES) $(CFLAGS) -o $@ $^ $(LIBS) 
 
-%.o: %.cpp raw_mex.h libraw_ext.h
+%.o: %.cpp raw.h libraw_ext.h
 	$(CC) $(INCLUDES) $(LDFLAGS) $(CFLAGS) -c -o $@ $<
 	
 clean:

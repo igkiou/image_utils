@@ -7,7 +7,7 @@
 
 #include "mex_utils.h"
 
-#include "exr_mex.h"
+#include "exr.h"
 
 void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[]) {
 

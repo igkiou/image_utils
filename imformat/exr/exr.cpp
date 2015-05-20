@@ -30,8 +30,8 @@
 #include "OpenEXR/IlmImf/ImfStringVectorAttribute.h" // new addition
 #include "OpenEXR/IlmImf/ImfTestFile.h"
 #include "OpenEXR/IlmImf/ImfVecAttribute.h"
+#include "exr.h"
 
-#include "exr_mex.h"
 
 namespace exr {
 

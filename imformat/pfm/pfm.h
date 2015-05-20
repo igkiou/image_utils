@@ -11,7 +11,7 @@
 #include <fstream>
 #include <string>
 
-#include "imformat_mex.h"
+#include "../include/imformat.h"
 
 namespace pfm {
 

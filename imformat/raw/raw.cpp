@@ -11,7 +11,8 @@
 #include <cctype>
 #include <ctime>
 #include <string>
-#include "raw_mex.h"
+
+#include "../raw/raw.h"
 
 namespace raw {
 
