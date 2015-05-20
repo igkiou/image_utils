@@ -11,7 +11,7 @@
 #include <cctype>
 #include <vector>
 
-#include "../pfm/pfm.h"
+#include "pfm.h"
 
 namespace pfm {
 
