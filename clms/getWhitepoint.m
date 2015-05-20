@@ -4,14 +4,18 @@ if (nargin < 2),
 	if (~ischar(spec)),
 		error('When a single argument is provided, it must be a string.');
 	end;
+
+	spec = lower(spec);
+	if (strcmp(spec, 'flat')),
+		spec = 'ee';
+	end;
 	
-	switch lower(spec)
-		case 'flat'
-			xyz = [1.000081049323616 1.0 1.000339540500596];
-		case 'd65'
-			xyz = [0.950456, 1, 1.088754];
-		otherwise
-			xyz = whitepoint(spec);
+	if(any(strcmp(spec, {'d65', 'a', 'ee'}))),
+		[wavelengths, spectrum] = illuminant('d65');
+		xyz = cube2XYZ(spectrum2cube(spectrum), wavelengths); 
+		xyz = squeeze(xyz)' / xyz(2);
+	else
+		xyz = whitepoint(spec);
 	end;
 else
 	if (numel(spec) ~= numel(wavelengths)),

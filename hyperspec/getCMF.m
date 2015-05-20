@@ -1,7 +1,7 @@
 function [CMF foundWavelengths indsOrig] = getCMF(formulary, wavelengths)
 
 if ((nargin < 1) || isempty(formulary)),
-	formulary = 'CIE_1931';
+	formulary = '1931_FULL';
 end;
 
 if ((nargin < 2) || isempty(wavelengths)),

@@ -9,13 +9,15 @@ if (strcmpi(wtpoint, 'd65')),
 	return;
 else
 	WXYZ = getWhitepoint(wtpoint);
-	Xn = WXYZ(1);
-	Yn = WXYZ(2);
-	Zn = WXYZ(3);
-
-	LAB(:, :, 1) = 116 * f(XYZ(:, :, 2) / Yn) - 16;
-	LAB(:, :, 2) = 500 * (f(XYZ(:, :, 1) / Xn) - f(XYZ(:, :, 2) / Yn));
-	LAB(:, :, 3) = 200 * (f(XYZ(:, :, 2) / Yn) - f(XYZ(:, :, 3) / Zn));
+	XYZ(:, :, 1) = XYZ(:, :, 1) / WXYZ(1);
+	XYZ(:, :, 2) = XYZ(:, :, 2) / WXYZ(2);
+	XYZ(:, :, 3) = XYZ(:, :, 3) / WXYZ(3);
+	XYZ = f(XYZ);
+	
+	LAB = zeros(size(XYZ));
+	LAB(:, :, 1) = 116 * XYZ(:, :, 2) - 16;
+	LAB(:, :, 2) = 500 * (XYZ(:, :, 1) - XYZ(:, :, 2));
+	LAB(:, :, 3) = 200 * (XYZ(:, :, 2) - XYZ(:, :, 3));
 	return;
 end;
 
@@ -23,10 +25,13 @@ end
 
 function ft = f(t)
 
-inds = t > (6 / 29) ^ 3;
+epsilon = 216 / 24389; % (6 / 29) ^ 3;
+kappa = 24389 / 27;
+
+inds = t > epsilon;
 ft = zeros(size(t));
 ft(inds) = t(inds) .^ (1 / 3);
-ft(~inds) = 1 / 3 * (29 / 6) ^ 2 * t(~inds) + 4 / 29;
+ft(~inds) = (kappa * t(~inds) + 16) / 116;
 
 end
 

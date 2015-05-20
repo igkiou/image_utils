@@ -10,7 +10,7 @@ if ((nargin < 3) || isempty(compensation_function)),
 end;
 
 if ((nargin < 4) || isempty(formulary)),
-	formulary = 'CIE_1931';
+	formulary = '1931_FULL';
 end;
 
 if (length(compensation_function) ~= numWavelengths),
