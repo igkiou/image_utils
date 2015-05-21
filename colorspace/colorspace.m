@@ -250,7 +250,7 @@ case {'xyz','xyy','lab','luv','lch','cat02lms'}
    % Convert to CIE XYZ
    Image = xyz(Image,SrcSpace);
    % Convert XYZ to RGB
-   T = getXYZ2RGBTransform('d65');
+   T = getXYZ2RGBTransform('d65', 'srgb');
    R = T(1)*Image(:,:,1) + T(4)*Image(:,:,2) + T(7)*Image(:,:,3);  % R
    G = T(2)*Image(:,:,1) + T(5)*Image(:,:,2) + T(8)*Image(:,:,3);  % G
    B = T(3)*Image(:,:,1) + T(6)*Image(:,:,2) + T(9)*Image(:,:,3);  % B
@@ -289,7 +289,7 @@ case {'xyz','xyy','lab','luv','lch','cat02lms'}
    % Convert to CIE XYZ
    Image = xyz(Image,SrcSpace);
    % Convert XYZ to RGB
-   T = getXYZ2RGBTransform('d65');
+   T = getXYZ2RGBTransform('d65', 'srgb');
    R = T(1)*Image(:,:,1) + T(4)*Image(:,:,2) + T(7)*Image(:,:,3);  % R
    G = T(2)*Image(:,:,1) + T(5)*Image(:,:,2) + T(8)*Image(:,:,3);  % G
    B = T(3)*Image(:,:,1) + T(6)*Image(:,:,2) + T(9)*Image(:,:,3);  % B
@@ -314,7 +314,7 @@ return;
 
 function Image = xyz(Image,SrcSpace)
 % Convert to CIE XYZ from 'SrcSpace'
-WhitePoint = [0.950456,1,1.088754];  
+WhitePoint = getWhitepoint('d65');
 
 switch SrcSpace
 case 'xyz'
@@ -357,7 +357,8 @@ case 'cat02lms'
    Image(:,:,3) = T(3)*L + T(6)*M + T(9)*S;  % Z
 case 'rgb'
 	% Convert RGB to XYZ
-   T = eye(3) / ([3.2406, -1.5372, -0.4986; -0.9689, 1.8758, 0.0415; 0.0557, -0.2040, 1.057]);
+   T = getRGB2XYZTransformation('d65', 'srgb');
+%    T = eye(3) / ([3.2406, -1.5372, -0.4986; -0.9689, 1.8758, 0.0415; 0.0557, -0.2040, 1.057]);
    R = Image(:,:,1);
    G = Image(:,:,2);
    B = Image(:,:,3);
@@ -372,7 +373,7 @@ otherwise   % Convert from some gamma-corrected space
    G = invgammacorrection(Image(:,:,2));
    B = invgammacorrection(Image(:,:,3));
    % Convert RGB to XYZ
-   T = eye(3) / getXYZ2RGBTransform('d65');
+   T = getRGB2XYZTransform('d65', 'srgb');
    Image(:,:,1) = T(1)*R + T(4)*G + T(7)*B;  % X 
    Image(:,:,2) = T(2)*R + T(5)*G + T(8)*B;  % Y
    Image(:,:,3) = T(3)*R + T(6)*G + T(9)*B;  % Z
@@ -427,7 +428,7 @@ return;
 
 function Image = lab(Image,SrcSpace)
 % Convert to CIE L*a*b* (CIELAB)
-WhitePoint = [0.950456,1,1.088754];
+WhitePoint = getWhitepoint('d65');
 
 switch SrcSpace
 case 'lab'
@@ -455,7 +456,7 @@ return;
 
 function Image = luv(Image,SrcSpace)
 % Convert to CIE L*u*v* (CIELUV)
-WhitePoint = [0.950456,1,1.088754];
+WhitePoint = getWhitepoint('d65');
 WhitePointU = (4*WhitePoint(1))./(WhitePoint(1) + 15*WhitePoint(2) + 3*WhitePoint(3));
 WhitePointV = (9*WhitePoint(2))./(WhitePoint(1) + 15*WhitePoint(2) + 3*WhitePoint(3));
 

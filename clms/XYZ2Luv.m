@@ -1,14 +1,14 @@
-function LUV = XYZ2Luv(XYZ, wtpoint)
+function LUV = XYZ2Luv(XYZ, whitepoint)
 
-if ((nargin < 2) || isempty(wtpoint)),
-	wtpoint = 'D65';
+if ((nargin < 2) || isempty(whitepoint)),
+	whitepoint = 'D65';
 end;
 
-if (strcmpi(wtpoint, 'd65')),
+if (strcmpi(whitepoint, 'd65')),
 	LUV = colorspace('XYZ->LUV', XYZ);
 	return;
 else
-	WXYZ = getWhitepoint(wtpoint);
+	WXYZ = getWhitepoint(whitepoint);
 	Xn = WXYZ(1);
 	Yn = WXYZ(2);
 	Zn = WXYZ(3);

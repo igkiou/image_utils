@@ -1,3 +1,3 @@
 function color = image2Color(img)
 
-color = spectrum2cube(img);
+color = cube2spectrum(img);
