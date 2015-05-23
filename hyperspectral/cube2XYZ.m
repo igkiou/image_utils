@@ -10,7 +10,7 @@ if ((nargin < 3) || isempty(compensation_function)),
 end;
 
 if ((nargin < 4) || isempty(formulary)),
-	formulary = '1931_FULL';
+	formulary = 'cie1931';
 end;
 
 if (length(compensation_function) ~= numWavelengths),
@@ -21,9 +21,9 @@ if (size(cube, 3) ~= numWavelengths)
 	error('Number of channels in the cube and length of wavelenghts must be equal.');
 end;
 
-[CMF foundWavelengths indsOrig] = getCMF(formulary, wavelengths);
+[CMF, foundWavelengths, indsOrig] = getCMF(formulary, wavelengths);
 numFoundWavelengths = length(foundWavelengths);
-CMF = CMF / sum(CMF(:, 2), 1);
+% CMF = CMF / sum(CMF(:, 2), 1);
 XYZ = zeros(size(cube, 1), size(cube, 2), 3);
   
 for iterChannel = 1:3,

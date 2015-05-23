@@ -5,19 +5,17 @@ if ((nargin < 1) || isempty(spec)),
 end;
 
 if (nargin < 2),
-	spec = lower(spec);
-	if(any(strcmp(spec, {'d65', 'a', 'flat'}))),
+	if (any(strcmpi(spec, {'d65', 'a', 'flat'}))),
 		[spectrum, wavelengths] = getIlluminant(spec);
 		XYZ = image2Color(cube2XYZ(spectrum2cube(spectrum), wavelengths)); 
 		XYZ = XYZ / XYZ(2);
-	elseif (strcmp(spec, 'd50')),
-		xyY(1:2) = T2xy(5003);
-		xyY(3) = 1;
-		XYZ = image2Color(xyY2XYZ(color2Image(xyY)));
-	elseif (isnumeric(spec)),	
-		xyY(1:2) = T2xy(spec);
-		xyY(3) = 1;
-		XYZ = image2Color(xyY2XYZ(color2Image(xyY)));
+	elseif (any(strcmpi(spec, {'d50'})) || isnumeric(spec)),
+% 		xyY(1:2) = getIlluminantChromaticities(spec);
+% 		xyY(3) = 1;
+% 		XYZ = image2Color(xyY2XYZ(color2Image(xyY)));
+		[spectrum, wavelengths] = getIlluminant(spec);
+		XYZ = image2Color(cube2XYZ(spectrum2cube(spectrum), wavelengths)); 
+		XYZ = XYZ / XYZ(2);
 	else
 		XYZ = whitepoint(spec);
 	end;

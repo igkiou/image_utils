@@ -18,7 +18,7 @@ elseif (strcmpi(formulary, 'cie1964')),
 	cmfWavelengths = tempMat(:, 1);
 	CMF = tempMat(:, 2:4);
 else
-	error('Unknown illuminant');
+	error('Unknown formulary');
 end;
 
 if ((nargin < 2) || isempty(wavelengths)),
@@ -29,8 +29,7 @@ else
 	indsOrig = find(~isnan(CMFInterp(:, 1)));
 	CMF = CMFInterp(indsOrig, :);
 	foundWavelengths = wavelengths(indsOrig);
-	numFoundWavelengths = length(foundWavelengths);
-	if (numFoundWavelengths ~= numel(wavelengths)),
+	if (numel(foundWavelengths) ~= numel(wavelengths)),
 		warning('Not all wavelengths in the original vector found in CMF file.');
 	end;
 end;

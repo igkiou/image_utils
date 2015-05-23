@@ -20,7 +20,7 @@ elseif (strcmpi(illumName, 'd65')),
 	illumWavelengths = tempMat(:, 1);
 	illum = tempMat(:, 2);
 elseif (strcmpi(illumName, 'd50')),
-	[illum, illumWavelengths] = T2DIlluminant(5003);
+	[illum, illumWavelengths] = T2DIlluminant(getIlluminantTemperature(illumName));
 elseif (isnumeric(illumName)),
 	[illum, illumWavelengths] = T2DIlluminant(illumName);
 else
