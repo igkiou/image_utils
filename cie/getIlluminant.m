@@ -4,7 +4,7 @@ if ((nargin < 1) || isempty(illumName)),
 	illumName = 'd65';
 end;
 
-if (strcmpi(illumName, 'flat')),
+if (any(strcmpi(illumName, {'flat', 'e'}))),
 	if ((nargin < 2) || isempty(wavelengths)),
 		illumWavelengths = (300:5:830)';
 	else

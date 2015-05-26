@@ -357,7 +357,7 @@ case 'cat02lms'
    Image(:,:,3) = T(3)*L + T(6)*M + T(9)*S;  % Z
 case 'rgb'
 	% Convert RGB to XYZ
-   T = getRGB2XYZTransformation('d65', 'srgb');
+   T = getRGB2XYZTransform('d65', 'srgb');
 %    T = eye(3) / ([3.2406, -1.5372, -0.4986; -0.9689, 1.8758, 0.0415; 0.0557, -0.2040, 1.057]);
    R = Image(:,:,1);
    G = Image(:,:,2);

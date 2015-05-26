@@ -1,7 +1,7 @@
 function xy = T2xy(T)
 
 xy = zeros(2, numel(T));
-inds = (T > 4000) & (T < 7000);
+inds = (T >= 4000) & (T <= 7000);
 
 xy(1, inds) = 0.244063 ... 
 		+ 0.09911 * 10 ^ 3 ./ T(inds) ...

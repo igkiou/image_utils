@@ -1,4 +1,4 @@
-function [T, Tinv] = getRGB2XYZTransformation(whitepoint, colorspace)
+function [T, Tinv] = getRGB2XYZTransform(whitepoint, colorspace)
 
 if ((nargin < 1) || isempty(whitepoint)),
 	whitepoint = 'd65';

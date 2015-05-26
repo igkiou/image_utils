@@ -5,7 +5,7 @@ if ((nargin < 1) || isempty(spec)),
 end;
 
 if (nargin < 2),
-	if (any(strcmpi(spec, {'d65', 'a', 'flat'}))),
+	if (any(strcmpi(spec, {'d65', 'a', 'flat', 'e'}))),
 		[spectrum, wavelengths] = getIlluminant(spec);
 		XYZ = image2Color(cube2XYZ(spectrum2cube(spectrum), wavelengths)); 
 		XYZ = XYZ / XYZ(2);

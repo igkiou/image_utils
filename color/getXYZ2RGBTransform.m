@@ -8,7 +8,7 @@ if ((nargin < 2) || isempty(colorspace)),
 	colorspace = 'srgb';
 end;
 
-[~, T] = getRGB2XYZTransformation(whitepoint, colorspace);
+[~, T] = getRGB2XYZTransfor(whitepoint, colorspace);
 
 %% Old version
 % if (strcmpi(whitepoint, 'd50')),
