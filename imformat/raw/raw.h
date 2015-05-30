@@ -13,6 +13,10 @@
 #include "../include/imformat.h"
 #include "../raw/libraw_ext.h"
 
+/*
+ * TODO: Read color and lens attributes.
+ */
+
 namespace raw {
 
 using PixelType = unsigned short;
