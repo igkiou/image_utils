@@ -16,6 +16,8 @@ if (nargin < 2),
 		[spectrum, wavelengths] = getIlluminant(spec);
 		XYZ = image2Color(cube2XYZ(spectrum2cube(spectrum), wavelengths)); 
 		XYZ = XYZ / XYZ(2);
+	elseif (strcmpi(spec, {'aces'})),
+		XYZ = [0.95265, 1, 1.00883];
 	else
 		XYZ = whitepoint(spec);
 	end;

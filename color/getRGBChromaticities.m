@@ -16,6 +16,9 @@ elseif (strcmpi(colorspace, 'apple')),
 elseif (strcmpi(colorspace, 'prophoto')),
 	xy = [0.7347 0.1596 0.0366;... 
 		0.2653 0.8404 0.0001];
+elseif (strcmpi(colorspace, 'aces')),
+	xy = [0.73470 0 0.00010;...
+		0.26530 1 -0.07700];
 else
 	error('Unknown RGB colorspace');
 end;
