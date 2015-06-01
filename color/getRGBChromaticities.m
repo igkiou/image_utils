@@ -19,6 +19,9 @@ elseif (strcmpi(colorspace, 'prophoto')),
 elseif (strcmpi(colorspace, 'aces')),
 	xy = [0.73470 0 0.00010;...
 		0.26530 1 -0.07700];
+elseif (strcmpi(colorspace, 'beta')),
+	xy = [0.6888 0.1986 0.1265;...
+		0.3112 0.7551 0.0352];
 else
 	error('Unknown RGB colorspace');
 end;
