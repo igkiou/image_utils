@@ -14,7 +14,7 @@ function [Y levels] = posterize(X, N, bounds)
 %    original image as MIN and MAX.
 %
 
-if (nargin < 2),
+if ((nargin < 2) || isempty(N)),
 	N = 10;
 end;
 

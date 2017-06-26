@@ -16,6 +16,7 @@ include ../matlab.mk
 include ../mex_utils.mk
 include openexr.mk
 
+#all: read write
 all: read write get is test
 
 get: exrget.$(MEXEXT)

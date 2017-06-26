@@ -10,7 +10,7 @@
 
 #include <string>
 
-#include "../include/imformat.h"
+#include "../include/file.h"
 #include "../raw/libraw_ext.h"
 
 /*
@@ -23,7 +23,7 @@ using PixelType = unsigned short;
 
 mex::MxNumeric<bool> isRawFile(const mex::MxString& fileName);
 
-class RawInputFile : public imformat::ImformatInputFileInterface {
+class RawInputFile : public file::InputFileInterface {
 public:
 	explicit RawInputFile(const mex::MxString& fileName);
 

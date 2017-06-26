@@ -5,31 +5,31 @@
  *      Author: igkiou
  */
 
-#include "IlmBase/Iex/Iex.h"
-#include "IlmBase/Imath/ImathBox.h"
-#include "OpenEXR/IlmImf/ImfArray.h"
-#include "OpenEXR/IlmImf/ImfAttribute.h"
-#include "OpenEXR/IlmImf/ImfBoxAttribute.h"
-#include "OpenEXR/IlmImf/ImfChannelList.h"
-#include "OpenEXR/IlmImf/ImfChannelListAttribute.h"
-#include "OpenEXR/IlmImf/ImfChromaticitiesAttribute.h"
-#include "OpenEXR/IlmImf/ImfCompressionAttribute.h"
-#include "OpenEXR/IlmImf/ImfDoubleAttribute.h" // new addition
-#include "OpenEXR/IlmImf/ImfEnvmapAttribute.h"
-#include "OpenEXR/IlmImf/ImfFloatAttribute.h"
-#include "OpenEXR/IlmImf/ImfFloatVectorAttribute.h" // new addition
-#include "OpenEXR/IlmImf/ImfFrameBuffer.h"
-#include "OpenEXR/IlmImf/ImfIntAttribute.h" // new addition
-#include "OpenEXR/IlmImf/ImfLineOrderAttribute.h"
-#include "OpenEXR/IlmImf/ImfOutputFile.h"
-#include "OpenEXR/IlmImf/ImfPixelType.h"
-#include "OpenEXR/IlmImf/ImfRgba.h"
-#include "OpenEXR/IlmImf/ImfRgbaFile.h"
-#include "OpenEXR/IlmImf/ImfStandardAttributes.h"
-#include "OpenEXR/IlmImf/ImfStringAttribute.h"
-#include "OpenEXR/IlmImf/ImfStringVectorAttribute.h" // new addition
-#include "OpenEXR/IlmImf/ImfTestFile.h"
-#include "OpenEXR/IlmImf/ImfVecAttribute.h"
+#include "OpenEXR/Iex.h"
+#include "OpenEXR/ImathBox.h"
+#include "OpenEXR/ImfArray.h"
+#include "OpenEXR/ImfAttribute.h"
+#include "OpenEXR/ImfBoxAttribute.h"
+#include "OpenEXR/ImfChannelList.h"
+#include "OpenEXR/ImfChannelListAttribute.h"
+#include "OpenEXR/ImfChromaticitiesAttribute.h"
+#include "OpenEXR/ImfCompressionAttribute.h"
+#include "OpenEXR/ImfDoubleAttribute.h" // new addition
+#include "OpenEXR/ImfEnvmapAttribute.h"
+#include "OpenEXR/ImfFloatAttribute.h"
+//#include "OpenEXR/ImfFloatVectorAttribute.h" // new addition
+#include "OpenEXR/ImfFrameBuffer.h"
+#include "OpenEXR/ImfIntAttribute.h" // new addition
+#include "OpenEXR/ImfLineOrderAttribute.h"
+#include "OpenEXR/ImfOutputFile.h"
+#include "OpenEXR/ImfPixelType.h"
+#include "OpenEXR/ImfRgba.h"
+#include "OpenEXR/ImfRgbaFile.h"
+#include "OpenEXR/ImfStandardAttributes.h"
+#include "OpenEXR/ImfStringAttribute.h"
+#include "OpenEXR/ImfStringVectorAttribute.h" // new addition
+#include "OpenEXR/ImfTestFile.h"
+#include "OpenEXR/ImfVecAttribute.h"
 #include "exr.h"
 
 
@@ -208,7 +208,7 @@ enum class EExrAttributeType {
 	EDouble,
 	EEnvmap,
 	EFloat,
-	EFloatVector,
+//	EFloatVector,
 	EInt,
 	ELineOrder,
 	EString,
@@ -229,7 +229,7 @@ mex::ConstBiMap<EExrAttributeType, std::string> attributeTypeNameMap =
 	(EExrAttributeType::EDouble, std::string(Imf::DoubleAttribute::staticTypeName()))
 	(EExrAttributeType::EEnvmap, std::string(Imf::EnvmapAttribute::staticTypeName()))
 	(EExrAttributeType::EFloat, std::string(Imf::FloatAttribute::staticTypeName()))
-	(EExrAttributeType::EFloatVector, std::string(Imf::FloatVectorAttribute::staticTypeName()))
+//	(EExrAttributeType::EFloatVector, std::string(Imf::FloatVectorAttribute::staticTypeName()))
 	(EExrAttributeType::EInt, std::string(Imf::IntAttribute::staticTypeName()))
 	(EExrAttributeType::ELineOrder, std::string(Imf::LineOrderAttribute::staticTypeName()))
 	(EExrAttributeType::EString, std::string(Imf::StringAttribute::staticTypeName()))
@@ -492,11 +492,11 @@ mex::MxArray ExrInputFile::getAttribute(const std::string& attributeName) const 
 					static_cast<const Imf::TypedAttribute<float>&>(
 													attribute)).get_array());
 		}
-		case EExrAttributeType::EFloatVector: {
-			return mex::MxArray(toMxArray(
-					static_cast<const Imf::TypedAttribute<std::vector<float> >&>(
-													attribute)).get_array());
-		}
+//		case EExrAttributeType::EFloatVector: {
+//			return mex::MxArray(toMxArray(
+//					static_cast<const Imf::TypedAttribute<std::vector<float> >&>(
+//													attribute)).get_array());
+//		}
 		case EExrAttributeType::EInt: {
 			return mex::MxArray(toMxArray(
 					static_cast<const Imf::TypedAttribute<int>&>(
@@ -731,11 +731,11 @@ Imf::TypedAttribute<Imath::Box<Imath::Vec2<int> > > toAttribute(
 }
 
 // VectorT
-template <>
-Imf::TypedAttribute<std::vector<float> > toAttribute(
-									const mex::MxNumeric<float>& mxNumeric) {
-	return Imf::TypedAttribute<std::vector<float> >(mxNumeric.vectorize());
-}
+//template <>
+//Imf::TypedAttribute<std::vector<float> > toAttribute(
+//									const mex::MxNumeric<float>& mxNumeric) {
+//	return Imf::TypedAttribute<std::vector<float> >(mxNumeric.vectorize());
+//}
 
 // VectorString
 template <>
@@ -800,8 +800,8 @@ const mex::ConstMap<std::string, EExrAttributeType> registeredAttributeNameAttri
 	= mex::ConstMap<std::string, EExrAttributeType>
 	(std::string("gain"),				EExrAttributeType::EFloat)
 	(std::string("wavelength"),			EExrAttributeType::EFloat)
-	(std::string("wavelengths"),		EExrAttributeType::EFloatVector)
-	(std::string("scanSteps"),			EExrAttributeType::EFloatVector)
+//	(std::string("wavelengths"),		EExrAttributeType::EFloatVector)
+//	(std::string("scanSteps"),			EExrAttributeType::EFloatVector)
 	(std::string("extTube"),			EExrAttributeType::EString)
 	(std::string("lens"),				EExrAttributeType::EString)
 	(std::string("material"),			EExrAttributeType::EString)
@@ -820,7 +820,7 @@ const mex::ConstMap<std::string, EExrAttributeType> registeredAttributeNameAttri
 	(std::string("altitude"),			EExrAttributeType::EFloat)
 	(std::string("focus"),				EExrAttributeType::EFloat)
 	(std::string("expTime"),			EExrAttributeType::EFloat)
-	(std::string("exposures"),			EExrAttributeType::EFloatVector)
+//	(std::string("exposures"),			EExrAttributeType::EFloatVector)
 	(std::string("multiView"),			EExrAttributeType::EStringVector)
 	(std::string("aperture"),			EExrAttributeType::EFloat)
 	(std::string("isoSpeed"),			EExrAttributeType::EFloat)
@@ -919,12 +919,12 @@ void ExrOutputFile::setAttribute(const std::string& attributeName,
 					toAttribute<float>(tempArray));
 			break;
 		}
-		case EExrAttributeType::EFloatVector: {
-			const mex::MxNumeric<float> tempArray(attribute.get_array());
-			m_header.insert(attributeName.c_str(),
-					toAttribute<std::vector<float> >(tempArray));
-			break;
-		}
+//		case EExrAttributeType::EFloatVector: {
+//			const mex::MxNumeric<float> tempArray(attribute.get_array());
+//			m_header.insert(attributeName.c_str(),
+//					toAttribute<std::vector<float> >(tempArray));
+//			break;
+//		}
 		case EExrAttributeType::EInt: {
 			const mex::MxNumeric<int> tempArray(attribute.get_array());
 			mexAssert(tempArray.getNumberOfElements() == 1);

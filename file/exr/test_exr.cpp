@@ -6,32 +6,32 @@
  */
 
 
-#include "IlmBase/Iex/Iex.h"
-#include "IlmBase/Imath/ImathBox.h"
-#include "OpenEXR/IlmImf/ImfArray.h"
-#include "OpenEXR/IlmImf/ImfAttribute.h"
-#include "OpenEXR/IlmImf/ImfBoxAttribute.h"
-#include "OpenEXR/IlmImf/ImfChannelList.h"
-#include "OpenEXR/IlmImf/ImfChannelListAttribute.h"
-#include "OpenEXR/IlmImf/ImfChromaticitiesAttribute.h"
-#include "OpenEXR/IlmImf/ImfCompressionAttribute.h"
-#include "OpenEXR/IlmImf/ImfDoubleAttribute.h" // new addition
-#include "OpenEXR/IlmImf/ImfEnvmapAttribute.h"
+#include "OpenEXR/Iex.h"
+#include "OpenEXR/ImathBox.h"
+#include "OpenEXR/ImfArray.h"
+#include "OpenEXR/ImfAttribute.h"
+#include "OpenEXR/ImfBoxAttribute.h"
+#include "OpenEXR/ImfChannelList.h"
+#include "OpenEXR/ImfChannelListAttribute.h"
+#include "OpenEXR/ImfChromaticitiesAttribute.h"
+#include "OpenEXR/ImfCompressionAttribute.h"
+#include "OpenEXR/ImfDoubleAttribute.h" // new addition
+#include "OpenEXR/ImfEnvmapAttribute.h"
 //#include "ImfExtraAttributes.h"
-#include "OpenEXR/IlmImf/ImfFloatAttribute.h"
-#include "OpenEXR/IlmImf/ImfFloatVectorAttribute.h" // new addition
-#include "OpenEXR/IlmImf/ImfFrameBuffer.h"
-#include "OpenEXR/IlmImf/ImfIntAttribute.h" // new addition
-#include "OpenEXR/IlmImf/ImfLineOrderAttribute.h"
-#include "OpenEXR/IlmImf/ImfOutputFile.h"
-#include "OpenEXR/IlmImf/ImfPixelType.h"
-#include "OpenEXR/IlmImf/ImfRgba.h"
-#include "OpenEXR/IlmImf/ImfRgbaFile.h"
-#include "OpenEXR/IlmImf/ImfStandardAttributes.h"
-#include "OpenEXR/IlmImf/ImfStringAttribute.h"
-#include "OpenEXR/IlmImf/ImfStringVectorAttribute.h" // new addition
-#include "OpenEXR/IlmImf/ImfTestFile.h"
-#include "OpenEXR/IlmImf/ImfVecAttribute.h"
+#include "OpenEXR/ImfFloatAttribute.h"
+//#include "OpenEXR/ImfFloatVectorAttribute.h" // new addition
+#include "OpenEXR/ImfFrameBuffer.h"
+#include "OpenEXR/ImfIntAttribute.h" // new addition
+#include "OpenEXR/ImfLineOrderAttribute.h"
+#include "OpenEXR/ImfOutputFile.h"
+#include "OpenEXR/ImfPixelType.h"
+#include "OpenEXR/ImfRgba.h"
+#include "OpenEXR/ImfRgbaFile.h"
+#include "OpenEXR/ImfStandardAttributes.h"
+#include "OpenEXR/ImfStringAttribute.h"
+#include "OpenEXR/ImfStringVectorAttribute.h" // new addition
+#include "OpenEXR/ImfTestFile.h"
+#include "OpenEXR/ImfVecAttribute.h"
 
 #include "mex_utils.h"
 
@@ -46,7 +46,7 @@ enum class EExrAttributeType {
 	EDouble,
 	EEnvmap,
 	EFloat,
-	EFloatVector,
+//	EFloatVector,
 	EInt,
 	ELineOrder,
 	EString,
@@ -67,7 +67,7 @@ mex::ConstBiMap<EExrAttributeType, std::string> attributeTypeNameMap =
 	(EExrAttributeType::EDouble, std::string(Imf::DoubleAttribute::staticTypeName()))
 	(EExrAttributeType::EEnvmap, std::string(Imf::EnvmapAttribute::staticTypeName()))
 	(EExrAttributeType::EFloat, std::string(Imf::FloatAttribute::staticTypeName()))
-	(EExrAttributeType::EFloatVector, std::string(Imf::FloatVectorAttribute::staticTypeName()))
+//	(EExrAttributeType::EFloatVector, std::string(Imf::FloatVectorAttribute::staticTypeName()))
 	(EExrAttributeType::EInt, std::string(Imf::IntAttribute::staticTypeName()))
 	(EExrAttributeType::ELineOrder, std::string(Imf::LineOrderAttribute::staticTypeName()))
 	(EExrAttributeType::EString, std::string(Imf::StringAttribute::staticTypeName()))

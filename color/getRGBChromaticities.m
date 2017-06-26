@@ -22,6 +22,10 @@ elseif (strcmpi(colorspace, 'aces')),
 elseif (strcmpi(colorspace, 'beta')),
 	xy = [0.6888 0.1986 0.1265;...
 		0.3112 0.7551 0.0352];
+elseif (strcmpi(colorspace, 'cie')),
+	xy(:, 1) = smp(image2Color(XYZ2xyY(color2Image(getCMF([], 700.0)))), 1:2);
+	xy(:, 2) = smp(image2Color(XYZ2xyY(color2Image(getCMF([], 546.1)))), 1:2);
+	xy(:, 3) = smp(image2Color(XYZ2xyY(color2Image(getCMF([], 435.8)))), 1:2);
 else
 	error('Unknown RGB colorspace');
 end;

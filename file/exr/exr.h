@@ -11,10 +11,10 @@
 #include <vector>
 #include <string>
 
-#include "OpenEXR/IlmImf/ImfHeader.h"
-#include "OpenEXR/IlmImf/ImfInputFile.h"
+#include "OpenEXR/ImfHeader.h"
+#include "OpenEXR/ImfInputFile.h"
 
-#include "../include/imformat.h"
+#include "../include/file.h"
 
 namespace exr {
 
@@ -32,7 +32,7 @@ using PixelType = float;
 
 mex::MxNumeric<bool> isExrFile(const mex::MxString& fileName);
 
-class ExrInputFile : public imformat::ImformatInputFileInterface {
+class ExrInputFile : public file::InputFileInterface {
 public:
 	explicit ExrInputFile(const mex::MxString& fileName);
 
@@ -67,7 +67,7 @@ private:
 	Imf::InputFile m_file;
 };
 
-class ExrOutputFile : public imformat::ImformatOutputFileInterface {
+class ExrOutputFile : public file::OutputFileInterface {
 public:
 	ExrOutputFile(const mex::MxString& fileName, int width, int height);
 

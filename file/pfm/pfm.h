@@ -11,7 +11,7 @@
 #include <fstream>
 #include <string>
 
-#include "../include/imformat.h"
+#include "../include/file.h"
 
 namespace pfm {
 
@@ -72,7 +72,7 @@ private:
 
 mex::MxNumeric<bool> isPfmFile(const mex::MxString& fileName);
 
-class PfmInputFile : public imformat::ImformatInputFileInterface {
+class PfmInputFile : public file::InputFileInterface {
 public:
 	explicit PfmInputFile(const mex::MxString& fileName);
 
@@ -97,7 +97,7 @@ private:
 	bool m_readFile;
 };
 
-class PfmOutputFile : public imformat::ImformatOutputFileInterface {
+class PfmOutputFile : public file::OutputFileInterface {
 public:
 	PfmOutputFile(const mex::MxString& fileName, int width, int height);
 
