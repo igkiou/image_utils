@@ -32,7 +32,6 @@
 #include "OpenEXR/ImfVecAttribute.h"
 #include "exr.h"
 
-
 namespace exr {
 
 namespace {
@@ -164,21 +163,21 @@ mex::MxArray ExrInputFile::readData() {
 
 mex::MxArray ExrInputFile::readData(
 							const std::vector<std::string>& channelNameVector) {
-	int width = getWidth();
-	int height = getHeight();
+	unsigned long long int width = static_cast<unsigned long long int>(getWidth());
+	unsigned long long int height = static_cast<unsigned long long int>(getHeight());
 	Imath::Box2i dw = m_file.header().dataWindow();
-	int numChannels = channelNameVector.size();
-	std::vector<int> dimensions;
+	unsigned long long int numChannels = static_cast<unsigned long long int>(channelNameVector.size());
+	std::vector<unsigned long long int> dimensions;
 	dimensions.push_back(height);
 	dimensions.push_back(width);
 	if (numChannels > 1) {
 		dimensions.push_back(numChannels);
 	}
-	mex::MxNumeric<PixelType> pixelArray(static_cast<int>(dimensions.size()),
+	mex::MxNumeric<PixelType> pixelArray(static_cast<unsigned long long int>(dimensions.size()),
 										&dimensions[0]);
 
 	Imf::FrameBuffer frameBuffer;
-	for (int iterChannel = 0; iterChannel < numChannels; ++iterChannel) {
+	for (unsigned long long int iterChannel = 0; iterChannel < numChannels; ++iterChannel) {
 		mexAssert(hasChannel(channelNameVector[iterChannel]));
 		PixelType* pixelBuffer = &pixelArray[iterChannel * width * height];
 		frameBuffer.insert(channelNameVector[iterChannel].c_str(),
