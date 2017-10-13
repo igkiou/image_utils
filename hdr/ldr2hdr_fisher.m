@@ -81,8 +81,8 @@ hdr = numerator ./ denominator;
 % hdr(someProperlyExposed) = numerator(someProperlyExposed) ...
 % 								./ max(denominator(someProperlyExposed), 1);
 
-hdr = fillNeverProperlyExposedPixels(hdr, ...
-						someUnderExposed, someOverExposed, someProperlyExposed);
+% hdr = fillNeverProperlyExposedPixels(hdr, ...
+% 						someUnderExposed, someOverExposed, someProperlyExposed);
 
 hdr = hdr / maxVal;
 hdr = single(hdr);

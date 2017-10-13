@@ -61,8 +61,8 @@ end;
 
 hdr = hdr ./ max(properlyExposedCount, 1);
 
-hdr = fillNeverProperlyExposedPixels(hdr, ...
-						someUnderExposed, someOverExposed, someProperlyExposed);
+% hdr = fillNeverProperlyExposedPixels(hdr, ...
+% 						someUnderExposed, someOverExposed, someProperlyExposed);
 
 hdr = hdr / maxVal;
 hdr = single(hdr);
